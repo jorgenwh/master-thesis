@@ -1,0 +1,82 @@
+\documentclass[12pt,letterpaper]{article}
+
+\edef\origparind{\the\parindent}
+
+% packages
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[font=footnotesize]{caption}
+\usepackage{relsize}
+\usepackage{environ}
+\usepackage[skip=0.5cm]{parskip}
+\usepackage[sorting=none]{biblatex}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{paralist}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{titling}
+\usepackage{blindtext}
+\usepackage{titlesec}
+\usepackage{subcaption}
+\usepackage{multicol}
+
+
+% --- stuff from google that I have no idea about ---
+\usetikzlibrary{positioning}
+\pgfplotsset{compat=1.16}
+\parindent=\origparind\relax
+\DeclareCaptionType{equ}[][]
+\setstretch{1.4}
+\emergencystretch=2em
+%\setlength{\droptitle}{-6.5em}
+
+\makeatletter
+\def\maketag@@@#1{\hbox{\m@th\normalfont\normalsize#1}}
+\makeatother
+
+\NewEnviron{EQUATIONS}{%
+  \scalebox{1.25}{$\BODY$}
+}
+
+\titleformat*{\section}{\large\bfseries}
+\titleformat*{\subsection}{\normalsize\bfseries}
+
+\addbibresource{bibliography.bib}
+% --- stuff from google that I have no idea about END ---
+
+\title{\textbf{Speeding up genotyping through GPU acceleration}}
+\date{}
+\author{Jørgen Wictor Henriksen}
+
+\begin{document}
+
+% title
+\maketitle
+\newpage
+
+% abstract
+\input{sections/abstract/include.tex}
+\newpage
+
+% table of contents
+\tableofcontents
+\newpage
+
+% sections
+\input{sections/introduction/include.tex}
+
+Placeholder cite \cite{numpy}
+
+% bibliography
+\newpage
+\printbibliography
+
+\end{document}

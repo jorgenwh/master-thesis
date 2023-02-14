@@ -1,1 +1,4 @@
 \subsubsection{Programming Model and CUDA}
+
+Modern GPUs can in effect be considered to be massive \textit{Single Instruction Multiple Data} (SIMD) machines. Strict flow control is therefore important; The same set of instructions should run in the same order for maximum utilization of the GPU's capability.
+Furthermore, since GPUs are commonly a discrete compute unit from a computer's CPU, it contains its own \textit{Random Access Memory} (RAM) unit, requiring data to be copied from the ...

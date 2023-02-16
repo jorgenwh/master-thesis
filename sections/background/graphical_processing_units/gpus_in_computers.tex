@@ -3,9 +3,9 @@
 Two main computer GPU setups are prominent today: \textit{integrated} graphical processing units (iGPU), and \textit{discrete} graphical processing units (dGPU).
 iGPUs are GPUs integrated onto the same die as a computer's CPU, where the two share the same physical \textit{Random Access Memory} (RAM) unit.
 dGPUs are dedicated GPU devices that are physically distinct from the host computer's CPU and RAM, and have their own physical RAM.
-dGPUs are significantly more powerful in terms of compute throughput when compared to iGPU.
+dGPUs are significantly more powerful in terms of compute throughput when compared to iGPUs.
 However, having their own physical RAM introduces an overhead;
-Memory needs to be copied both to and from the dGPU's RAM in order to utilize the dGPU.
+Memory buffers with input data have to be copied to the dGPU's RAM before processing, and results have to be copied back from the dGPU's RAM to the host RAM.
 
 \begin{figure}[h!]\label{figure:igpu-and-dgpu-system}
 \begin{center}
@@ -51,3 +51,8 @@ Memory needs to be copied both to and from the dGPU's RAM in order to utilize th
 \caption{\textbf{Left}: A computer setup with a CPU and an iGPU sharing the same die and the same physical RAM. \textbf{Right}: A computer setup where a dGPU is connected over PCIe and the dGPU has its own physical RAM, adding the overhead of copying data both to and from the host computer when utilizing the GPU.}
 \end{center}
 \end{figure}
+
+For the work presented in this thesis, only dGPUs were utilized. 
+Therefore, the term GPU will from here on out be referring to a dGPU and not an iGPU.
+This means that all GPU implementations discussed in this thesis will include copying memory back and fourth from the \textit{host} (CPU) RAM and the \textit{device} (GPU) RAM.
+It is also possible for a single computer to have several connected GPUs, allowing for further parallelization of both memory transfers and compute, however this was not utilized in this thesis' work.

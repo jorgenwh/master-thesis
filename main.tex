@@ -2,7 +2,9 @@
 
 % packages
 \usepackage[utf8]{inputenc}
-\usepackage[margin=1in]{geometry}
+\usepackage[margin=1in]{geometry} % ORIGINAL
+\usepackage[skip=0.5cm]{parskip} % ORIGINAL
+%\usepackage[skip=10pt plus1pt, indent=20pt]{parskip} % NEW
 \usepackage{setspace}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
@@ -12,7 +14,6 @@
 \usepackage[font=footnotesize]{caption}
 \usepackage{relsize}
 \usepackage{environ}
-\usepackage[skip=0.5cm]{parskip}
 \usepackage[sorting=none]{biblatex}
 \usepackage{tikz}
 \usepackage{pgfplots}
@@ -33,7 +34,7 @@
 \pgfplotsset{compat=1.16}
 \parindent=\origparind\relax
 \DeclareCaptionType{equ}[][]
-\emergencystretch=2em
+%\emergencystretch=2em
 
 \makeatletter
 \def\maketag@@@#1{\hbox{\m@th\normalfont\normalsize#1}}
@@ -41,7 +42,10 @@
 
 % make text lines be further away from each other
 %\setstretch{1.4}
-\linespread{1.4}
+
+\linespread{1.4} % ORIGINAL
+%\linespread{1.3}
+%\linespread{1.25}
 
 % env for equations and mathematical expressions
 \NewEnviron{EQUATIONS}{%
@@ -49,11 +53,25 @@
 }
 
 % set size and (something else?) for the section and subsection headers (I think)
-\titleformat*{\section}{\large\bfseries}
-\titleformat*{\subsection}{\normalsize\bfseries}
+%\titleformat*{\section}{\large\bfseries}
+%\titleformat*{\subsection}{\normalsize\bfseries}
 
 % make abstract header larger
 \renewcommand{\abstractnamefont}{\normalfont\large\bfseries}
+
+% make urls in references look way less unacceptable
+\renewcommand{\UrlFont}{\small\rm}
+
+\makeatletter
+\newrobustcmd{\mkbiblege}[1]{%
+  \begingroup
+  \blx@blxinit
+  \blx@setsfcodes
+  <#1>
+  \endgroup}
+\makeatother
+
+\DeclareFieldFormat{url}{\bibstring{url}\space\mkbiblege{\url{#1}}}
 % --- stuff from google END ---
 
 \addbibresource{bibliography.bib}
@@ -65,35 +83,34 @@
 \begin{document}
 
 % title
-%\maketitle
-%\newpage
+\maketitle
+\newpage
 
 % abstract
-%\input{sections/abstract/include.tex}
-%\newpage
+\input{sections/abstract/include.tex}
+\newpage
 
 % table of contents
-%\tableofcontents
-%\newpage
+\tableofcontents
+\newpage
 
-\input{misc/concise_methods.tex}
 % sections
-%\input{sections/introduction/include.tex}
-%\newpage
-%\input{sections/background/include.tex}
-%\newpage
-%\input{sections/thesis_goal/include.tex}
-%\newpage
-%\input{sections/methods/include.tex}
-%\newpage
-%\input{sections/results/include.tex}
-%\newpage
-%\input{sections/discussions/include.tex}
-%\newpage
-%\input{sections/conclusion/include.tex}
+\input{sections/introduction/include.tex}
+\newpage
+\input{sections/background/include.tex}
+\newpage
+\input{sections/thesis_goal/include.tex}
+\newpage
+\input{sections/methods/include.tex}
+\newpage
+\input{sections/results/include.tex}
+\newpage
+\input{sections/discussions/include.tex}
+\newpage
+\input{sections/conclusion/include.tex}
 
 % bibliography
-%\newpage
-%\printbibliography
+\newpage
+\printbibliography
 
 \end{document}

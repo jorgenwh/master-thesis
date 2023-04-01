@@ -1,10 +1,11 @@
-\subsection{CUDA Hash Table for \textit{k}mer Counting}
-In order to solve the \textit{k}mer counting problem described in section ?, GKAGE uses a GPU accelerated static hash table.
+\subsubsection{CUDA Hash Table for \textit{k}mer Counting}
+In order to solve the \textit{k}mer counting problem described in section \ref{background:kmer_counting}, GKAGE uses a GPU accelerated static hash table.
 %In order to solve the \textit{k}mer counting problem described in section \ref{background:kmer_counting}, GKAGE uses a GPU accelerated static hash table.
 The hash table uses open addressing with a simple linear probing scheme for insertions (during initialization), counts and queries.
-In order to use the hash table for counting in Python, Python bindings are implemented using pybind11 \cite{pybind11} (Move this and add info about how this interplays with NumPy and CuPy arrays?). 
+%In order to use the hash table for counting in Python, Python bindings are implemented using pybind11 \cite{pybind11} (Move this and add info about how this interplays with NumPy and CuPy arrays?). 
 
-The CUDA hash table is implemented as a C++ class with two arrays, one for the keys and one for the values (counts), allocated in the GPU's global memory.
+The hash table is implemented using Nvidia's CUDA framework (described in section \ref{background:graphical_processing_units:programming_model_and_cuda}. 
+as a C++ class with two arrays, one for the keys and one for the values (counts), allocated in the GPU's global memory.
 The class implements methods for the three main operations:
 \begin{compactenum}
   \item
@@ -23,16 +24,9 @@ All of the operations (insert, count and query) work on a single \textit{k}mer b
 Notably, all of the operations take in an array of \textit{k}mers, and all of the corresponding CUDA implementations launch a single thread for each \textit{k}mer to fulfill the operation that is supposed to happen for that \textit{k}mer.
 For example, when counting \textit{k}mers, an array of \textit{n} \textit{k}mers will be provided, and \textit{n} CUDA threads will be started, each taking care of incrementing the count of a single \textit{k}mer in the hash table.
 
-\noindent\begin{minipage}{.49535\linewidth}
 \begin{equation}
-  p_i=hash(k) \bmod c
+  p_0=hash(k) \bmod c \hspace{7em} p_{i}=(p_{i-1}+1) \bmod c
 \end{equation}
-\end{minipage}
-\begin{minipage}{.5\linewidth}
-\begin{equation}
-  p_{c+1}=(p_c+1) \bmod c
-\end{equation}
-\end{minipage}
 
 \definecolor{misscolor}{RGB}{255,215,215}
 \definecolor{hitcolor}{RGB}{215,255,215}

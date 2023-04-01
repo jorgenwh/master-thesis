@@ -1,17 +1,10 @@
 \subsubsection{DNA, Chromosomes and Genomes} \label{background:biology:dna_chromosomes_and_genomes}
-\textit{Deoxyribonucleic acid} (DNA) is a type of molecule that carries the genetic instructions for the development, function, and reproduction of all known living organisms.
-The molecule is composed of two connected strands that wind around each other into a double helix shape.
-Each strand is made up of a sugar and phosphate backbone, with each sugar carrying one out of four bases, often referred to as \textit{nucleotides}. 
-The four DNA nucleotides are: \textit{cytosine}, \textit{guanine}, \textit{adenine} and \textit{thymine}, and they are typically referred to by their abbreviations C, G, A and T respectively.
-Furthermore, chemical bonds form between complementary pairs of nucleotides: AT/TA and CG/GC, meaning that A and T, and C and G are complementary. 
-The two strands are connected by these bonds formed between these nucleotides.
-Since the sequence of nucleotides in one strand is complementary to the other, the two strands do in fact encode the same genetic information.
-In other words, by having one strand, the other can be determined by reversing the strand you have and then exchanging each nucleotide by its complement.
 
-DNA is organized into structures called \textit{chromosomes}. 
-Humans have 46 chromosomes made up by two sets of 23 chromosomes where each chromosome occurs twice. One is inherited from the male parent and the other is inherited from the female parent.
-
-The \textit{genome} of an organism usually refers to the entirety of an organism's genetic information. 
+DNA, or \textit{deoxyribonucleic acid}, is a type of molecule that contains all the genetic material found in the cells of all known living organisms \cite{nhgri_dna}. 
+The molecule is composed of two complementary strands of \textit{nucleotides} that are twisted together to form a double helix structure, connected by bonds formed between complementary nucleotides.
+The two strands are in turn composed of the four nucleotide bases: adenine (A), guanine (G), cytosine (C) and thymine (T), where A and T, and C and G are complementary bases \cite[p.15]{singh}.
+Furthermore, the two complementary strands of nucleotide bases actually encode the precise same information.
+This is because with knowledge of just one of the strands' nucleotide sequence, say \textit{$strand_1$}, we can determine the sequence of the other strand, \textit{$strand_2$}, by exchanging each nucleotide in \textit{$strand_1$} with their complements and finally reversing the strand to determine what \textit{$strand_2$}'s sequence is.
 
 \begin{figure}[ht!]
 \begin{center}
@@ -19,8 +12,8 @@ The \textit{genome} of an organism usually refers to the entirety of an organism
 \begin{tikzpicture}
   % texts
   \node at(2.25,2.5)(title){\textit{DNA}};
-  \node at(-2,0)(title){\textit{strand 2}};
-  \node at(-2,1.5)(title){\textit{strand 1}};
+  \node at(-2,0)(title){\textit{$strand_2$}};
+  \node at(-2,1.5)(title){\textit{$strand_1$}};
   % lower nodes
   \node at(0,0)(n1){...};
   \node at(.75,0)(n2){A};
@@ -56,7 +49,16 @@ The \textit{genome} of an organism usually refers to the entirety of an organism
 \end{center}
 \end{figure}
 
-Studying organisms' DNA is important for a variety of reasons.
-It is particularly important to understand genetic diseases and how to best treat them.
+Relatively small differences in these DNA sequences are what differentiates individuals within the same species from one other.
+It is therefore interesting to study these sequences of nucleotides encoding organisms' genetic information, as the encoded information can reveal details about both associated physical traits and diseases.
+In human cells, these DNA strands are estimated to be roughly $3 * 10^{9}$ bases long \cite[p.13]{singh}.
 
-...
+DNA is organized into structures called \textit{chromosomes}. 
+Humans have 23 chromosome pairs, making up a total of 46 chromosomes.
+Each of the pairs include one version of the chromosome inherited from the male parent, and one version inherited from the female parent \cite{nhgri_chromosome}.
+
+The term \textit{genome} can be used to refer to the complete genetic material of an organism.
+In practice, however, the genome of an organism often simply refers to the complete DNA nucleotide sequence of one set of chromosomes for that organism \cite[p.13]{singh}.
+Commonly in bioinformatics, one can also encounter the term \textit{reference genome}, referring to a theoretical reconstruction of an organism's genome created by scientists.
+Such genome reconstructions are commonly used when examining new DNA sequences, often by aligning new DNA sequences to the reference in order to see at which positions their nucleotides differ and what differences are present at those positions \cite{gatk}.
+

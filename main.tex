@@ -27,6 +27,8 @@
 \usepackage{subcaption}
 \usepackage{multicol}
 \usepackage{abstract}
+\usepackage{float}
+\usepackage{xcolor}
 
 % --- stuff from google ---
 \edef\origparind{\the\parindent}
@@ -34,7 +36,8 @@
 \pgfplotsset{compat=1.16}
 \parindent=\origparind\relax
 \DeclareCaptionType{equ}[][]
-%\emergencystretch=2em
+
+\emergencystretch=1em
 
 \makeatletter
 \def\maketag@@@#1{\hbox{\m@th\normalfont\normalsize#1}}
@@ -87,30 +90,30 @@
 \newpage
 
 % abstract
-\input{sections/abstract/include.tex}
-\newpage
+%\input{sections/abstract/include.tex}
+%\newpage
 
 % table of contents
 \tableofcontents
 \newpage
 
 % sections
-\input{sections/introduction/include.tex}
-\newpage
-\input{sections/background/include.tex}
-\newpage
-\input{sections/thesis_goal/include.tex}
-\newpage
+%\input{sections/introduction/include.tex}
+%\newpage
+%\input{sections/background/include.tex}
+%\newpage
+%\input{sections/thesis_goal/include.tex}
+%\newpage
 \input{sections/methods/include.tex}
 \newpage
-\input{sections/results/include.tex}
-\newpage
-\input{sections/discussions/include.tex}
-\newpage
-\input{sections/conclusion/include.tex}
+%\input{sections/results/include.tex}
+%\newpage
+%\input{sections/discussions/include.tex}
+%\newpage
+%\input{sections/conclusion/include.tex}
 
 % bibliography
-\newpage
-\printbibliography
+%\newpage
+%\printbibliography
 
 \end{document}

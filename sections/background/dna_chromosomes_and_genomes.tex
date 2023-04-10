@@ -1,21 +1,21 @@
-\subsubsection{DNA, Chromosomes and Genomes} \label{background:biology:dna_chromosomes_and_genomes}
+\subsection{DNA, Chromosomes and Genomes} \label{background:dna_chromosomes_and_genomes}
 
 DNA, or \textit{deoxyribonucleic acid}, is a type of molecule that contains all the genetic material found in the cells of all known living organisms \cite{nhgri_dna}. 
 The molecule is composed of two complementary strands of \textit{nucleotides} that are twisted together to form a double helix structure, connected by bonds formed between complementary nucleotides.
 The two strands are in turn composed of the four nucleotide bases: adenine (A), guanine (G), cytosine (C) and thymine (T), where A and T, and C and G are complementary bases \cite[p.15]{singh}.
 Furthermore, the two complementary strands of nucleotide bases actually encode the precise same information.
-This is because with knowledge of just one of the strands' nucleotide sequence, say \textit{$strand_1$}, we can determine the sequence of the other strand, \textit{$strand_2$}, by exchanging each nucleotide in \textit{$strand_1$} with their complements and finally reversing the strand to determine what \textit{$strand_2$}'s sequence is.
+This is because with knowledge of just one of the strands' nucleotide sequence, say \textit{strand$_1$}, we can determine the sequence of the other strand, \textit{strand$_2$}, by exchanging each nucleotide in \textit{strand$_1$} with their complements and finally reversing the strand to determine what \textit{strand$_2$}'s sequence is.
 
-\begin{figure}[ht!]
+\begin{figure}[H]
 \begin{center}
 \scalebox{1}{
 \begin{tikzpicture}
   % texts
   \node at(2.25,2.5)(title){\textit{DNA}};
-  \node at(-2,0)(title){\textit{$strand_2$}};
-  \node at(-2,1.5)(title){\textit{$strand_1$}};
+  \node at(-2,0)(title){\textit{strand$_2$}};
+  \node at(-2,1.5)(title){\textit{strand$_1$}};
   % lower nodes
-  \node at(0,0)(n1){...};
+  \node at(0,0)(n1){$...$};
   \node at(.75,0)(n2){A};
   \node at(1.25,0)(n3){T};
   \node at(1.75, 0)(n4){G};
@@ -23,9 +23,9 @@ This is because with knowledge of just one of the strands' nucleotide sequence, 
   \node at(2.75,0)(n5){C};
   \node at(3.25,0)(n5){T};
   \node at(3.75,0)(n5){G};
-  \node at(4.5,0)(n5){...};
+  \node at(4.5,0)(n5){$...$};
   % upper nodes
-  \node at(0,1.5)(n1){...};
+  \node at(0,1.5)(n1){$...$};
   \node at(.75,1.5)(n2){T};
   \node at(1.25,1.5)(n3){A};
   \node at(1.75,1.5)(n4){C};
@@ -33,7 +33,7 @@ This is because with knowledge of just one of the strands' nucleotide sequence, 
   \node at(2.75,1.5)(n5){G};
   \node at(3.25,1.5)(n5){A};
   \node at(3.75,1.5)(n5){C};
-  \node at(4.5,1.5)(n5){...};
+  \node at(4.5,1.5)(n5){$...$};
   % base pair bonds 
   \draw (.75,.5) -- (.75,1);
   \draw (1.25,.5) -- (1.25,1);
@@ -45,7 +45,7 @@ This is because with knowledge of just one of the strands' nucleotide sequence, 
 \end{tikzpicture}
 }
 \caption{A conceptual representation of a DNA molecule made up of two strands. The strands are composed of nucleotides forming base pairs where A (adenine) and T (thymine), and C (cytosine) and G (guanine) are complements of each other.}
-\label{background:biology:dna_and_chromosomes:figures:dna_strands}
+\label{background:dna_and_chromosomes:figures:dna_strands}
 \end{center}
 \end{figure}
 

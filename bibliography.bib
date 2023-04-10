@@ -26,6 +26,23 @@ howpublished = {\url{https://www.genome.gov/genetics-glossary/genotype}},
 note={Accessed: 2023-03-31}
 }
 
+@misc{vcf,
+author = {The International Genome Sample Resource},
+title = {Encoding Structural Variants in VCF (Variant Call Format) version 4.0},
+year = {2023},
+publisher = {The International Genome Sample Resource},
+howpublished = {\url{https://www.internationalgenome.org/wiki/Analysis/Variant\%20Call\%20Format/VCF\%20(Variant\%20Call\%20Format)\%20version\%204.0/encoding-structural-variants}},
+note={Accessed: 2023-04-7}
+}
+
+@misc{illumina_read_length,
+author = {Illumina},
+title = {Read length recommendations},
+year = {2023},
+howpublished = {\url{https://www.illumina.com/science/technology/next-generation-sequencing/plan-experiments/read-length.html}},
+note={Accessed: 2023-04-9}
+}
+
 @ARTICLE{variant_calling,
 title    = "Variant calling: Considerations, practices, and developments",
 author   = "Zverinova, Stepanka and Guryev, Victor",
@@ -223,6 +240,42 @@ author = {Luca Denti and Marco Previtali and Giulia Bernardini and Alexander Sch
 keywords = {Biological Sciences, Genetics, Genomics, Bioinformatics},
 abstract = {Summary
 The amount of genetic variation discovered in human populations is growing rapidly leading to challenging computational tasks, such as variant calling. Standard methods for addressing this problem include read mapping, a computationally expensive procedure; thus, mapping-free tools have been proposed in recent years. These tools focus on isolated, biallelic SNPs, providing limited support for multi-allelic SNPs and short insertions and deletions of nucleotides (indels). Here we introduce MALVA, a mapping-free method to genotype an individual from a sample of reads. MALVA is the first mapping-free tool able to genotype multi-allelic SNPs and indels, even in high-density genomic regions, and to effectively handle a huge number of variants. MALVA requires one order of magnitude less time to genotype a donor than alignment-based pipelines, providing similar accuracy. Remarkably, on indels, MALVA provides even better results than the most widely adopted variant discovery tools.}
+}
+
+@ARTICLE{hts,
+title    = "High-throughput sequencing technologies",
+author   = "Reuter, Jason A and Spacek, Damek V and Snyder, Michael P",
+abstract = "The human genome sequence has profoundly altered our
+            understanding of biology, human diversity, and disease. The path
+            from the first draft sequence to our nascent era of personal
+            genomes and genomic medicine has been made possible only because
+            of the extraordinary advancements in DNA sequencing technologies
+            over the past 10 years. Here, we discuss commonly used
+            high-throughput sequencing platforms, the growing array of
+            sequencing assays developed around them, as well as the
+            challenges facing current sequencing platforms and their clinical
+            application.",
+journal  = "Mol Cell",
+volume   =  58,
+number   =  4,
+pages    = "586--597",
+month    =  may,
+year     =  2015,
+address  = "United States",
+language = "en"
+}
+
+@article {hts2,
+author = {M. Mahmoud and Y. Huang and K. Garimella and P. A. Audano and W. Wan and N. Prasad and R. E. Handsaker and S. Hall and A. Pionzio and M. C. Schatz and M. E. Talkowski and E. E. Eichler and S. E. Levy and F. J. Sedlazeck},
+title = {Utility of long-read sequencing for All of Us},
+elocation-id = {2023.01.23.525236},
+year = {2023},
+doi = {10.1101/2023.01.23.525236},
+publisher = {Cold Spring Harbor Laboratory},
+abstract = {The All of Us (AoU) initiative aims to sequence the genomes of over one million Americans from diverse ethnic backgrounds to improve personalized medical care. In a recent technical pilot, we compared the performance of traditional short-read sequencing with long-read sequencing in a small cohort of samples from the HapMap project and two AoU control samples representing eight datasets. Our analysis revealed substantial differences in the ability of these technologies to accurately sequence complex medically relevant genes, particularly in terms of gene coverage and pathogenic variant identification. We also considered the advantages and challenges of using low coverage sequencing to increase sample numbers in large cohort analysis. Our results show that HiFi reads produced the most accurate results for both small and large variants. Further, we present a cloud-based pipeline to optimize SNV, indel and SV calling at scale for long-reads analysis. These results will lead to widespread improvements across AoU.Competing Interest StatementFS received support from Illumina, PacBio, Oxford Nanopore Technologies, and Genentech. SH received support from Hudson Alpha Institute for Biotechnology and Owens Cross Roads.},
+URL = {https://www.biorxiv.org/content/early/2023/01/24/2023.01.23.525236},
+eprint = {https://www.biorxiv.org/content/early/2023/01/24/2023.01.23.525236.full.pdf},
+journal = {bioRxiv}
 }
 
 @misc{npstructures,

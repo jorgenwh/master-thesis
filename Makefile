@@ -13,4 +13,4 @@ clean:
 	$(RM) *.xml
 	$(RM) *.gz
 	$(RM) *.bbl
-	$(RM) *.pdf
+	$(RM) main.pdf

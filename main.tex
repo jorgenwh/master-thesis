@@ -1,4 +1,5 @@
-\documentclass[12pt,letterpaper]{article}
+%\documentclass[12pt,letterpaper]{article}
+\documentclass[12pt,a4paper]{article}
 
 % packages
 \usepackage[utf8]{inputenc}
@@ -29,6 +30,7 @@
 \usepackage{abstract}
 \usepackage{float}
 \usepackage{xcolor}
+\usepackage[UKenglish]{uiomasterfp}
 
 % --- stuff from google ---
 \edef\origparind{\the\parindent}
@@ -84,10 +86,12 @@
 \author{\Large{Master's Thesis}\\\\Jørgen Wictor Henriksen}
 
 \begin{document}
+% UiO front page
+\uiomasterfp[author={Jørgen Wictor Henriksen},date={Spring 2023},dept={Department of Bioinformatics},color=blue,long,supervisors={Ivar Grytten \and Knut Rand \and Geir Kjetil Sandve},program={Programming and System Architecture},title={Speeding up Genotyping through GPU Acceleration},subtitle={}]
 
 % title
-\maketitle
-\newpage
+%\maketitle
+%\newpage
 
 % abstract
 \input{sections/abstract/include.tex}
@@ -106,8 +110,8 @@
 %\newpage
 \input{sections/methods/include.tex}
 \newpage
-%\input{sections/results/include.tex}
-%\newpage
+\input{sections/results/include.tex}
+\newpage
 %\input{sections/discussions/include.tex}
 %\newpage
 %\input{sections/conclusion/include.tex}

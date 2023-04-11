@@ -1,0 +1,117 @@
+@Book{molecularbiology,
+  TITLE = {Molecular Biology},
+  SUBTITLE = {Academic Cell Update},
+  AUTHOR = {David Clark},
+  YEAR = {2005},
+  PUBLISHER = {Elsevier},
+}
+
+@Article{numpy,
+ title         = {Array programming with {NumPy}},
+ author        = {Charles R. Harris and K. Jarrod Millman and St{\'{e}}fan J.
+                 van der Walt and Ralf Gommers and Pauli Virtanen and David
+                 Cournapeau and Eric Wieser and Julian Taylor and Sebastian
+                 Berg and Nathaniel J. Smith and Robert Kern and Matti Picus
+                 and Stephan Hoyer and Marten H. van Kerkwijk and Matthew
+                 Brett and Allan Haldane and Jaime Fern{\'{a}}ndez del
+                 R{\'{i}}o and Mark Wiebe and Pearu Peterson and Pierre
+                 G{\'{e}}rard-Marchant and Kevin Sheppard and Tyler Reddy and
+                 Warren Weckesser and Hameer Abbasi and Christoph Gohlke and
+                 Travis E. Oliphant},
+ year          = {2020},
+ month         = sep,
+ journal       = {Nature},
+ volume        = {585},
+ number        = {7825},
+ pages         = {357--362},
+ doi           = {10.1038/s41586-020-2649-2},
+ publisher     = {Springer Science and Business Media {LLC}},
+ url           = {https://doi.org/10.1038/s41586-020-2649-2}
+}
+
+@inproceedings{cupy,
+  author       = "Okuta, Ryosuke and Unno, Yuya and Nishino, Daisuke and Hido, Shohei and Loomis, Crissman",
+  title        = "CuPy: A NumPy-Compatible Library for NVIDIA GPU Calculations",
+  booktitle    = "Proceedings of Workshop on Machine Learning Systems (LearningSys) in The Thirty-first Annual Conference on Neural Information Processing Systems (NIPS)",
+  year         = "2017",
+  url          = "http://learningsys.org/nips17/assets/papers/paper_16.pdf"
+}
+
+@misc{pybind11,
+author = {Wenzel Jakob and Jason Rhinelander and Dean Moldovan},
+year = {2017},
+note = {https://github.com/pybind/pybind11},
+title = {pybind11 -- Seamless operability between C++11 and Python}
+}
+
+@ARTICLE{scipy,
+author  = {Virtanen, Pauli and Gommers, Ralf and Oliphant, Travis E. and
+          Haberland, Matt and Reddy, Tyler and Cournapeau, David and
+          Burovski, Evgeni and Peterson, Pearu and Weckesser, Warren and
+          Bright, Jonathan and {van der Walt}, St{\'e}fan J. and
+          Brett, Matthew and Wilson, Joshua and Millman, K. Jarrod and
+          Mayorov, Nikolay and Nelson, Andrew R. J. and Jones, Eric and
+          Kern, Robert and Larson, Eric and Carey, C J and
+          Polat, {\.I}lhan and Feng, Yu and Moore, Eric W. and
+          {VanderPlas}, Jake and Laxalde, Denis and Perktold, Josef and
+          Cimrman, Robert and Henriksen, Ian and Quintero, E. A. and
+          Harris, Charles R. and Archibald, Anne M. and
+          Ribeiro, Ant{\^o}nio H. and Pedregosa, Fabian and
+          {van Mulbregt}, Paul and {SciPy 1.0 Contributors}},
+title   = {{{SciPy} 1.0: Fundamental Algorithms for Scientific
+          Computing in Python}},
+journal = {Nature Methods},
+year    = {2020},
+volume  = {17},
+pages   = {261--272},
+adsurl  = {https://rdcu.be/b08Wh},
+doi     = {10.1038/s41592-019-0686-2},
+}
+
+@inproceedings{bght,
+  title = {Analyzing and Implementing {GPU} Hash Tables},
+  author = {Muhammad A. Awad and Saman Ashkiani and Serban D.
+                  Porumbescu and Mart{\'{i}}n Farach-Colton and John
+                  D. Owens},
+  booktitle = {SIAM Symposium on Algorithmic Principles of Computer
+                  Systems},
+  series = {APOCS23},
+  year = 2023,
+  month = jan,
+  archiveprefix_ = {arXiv},
+  eprint_ = {2108.07232},
+  url = {https://escholarship.org/uc/item/6cb1q6rz}
+}
+
+@article {kage,
+	author = {Grytten, Ivar and Rand, Knut Dagestad and Sandve, Geir Kjetil},
+	title = {KAGE: Fast alignment-free graph-based genotyping of SNPs and short indels},
+	elocation-id = {2021.12.03.471074},
+	year = {2021},
+	doi = {10.1101/2021.12.03.471074},
+	publisher = {Cold Spring Harbor Laboratory},
+	abstract = {Genotyping is a core application of high-throughput sequencing. We present KAGE, a genotyper for SNPs and short indels that is inspired by recent developments within graph-based genome representations and alignment-free methods. KAGE uses a pan-genome representation of the population to efficiently and accurately predict genotypes. Two novel ideas improve both the speed and accuracy: a Bayesian model incorporates genotypes from thousands of individuals to improve prediction accuracy, and a computationally efficient method leverages correlation between variants. We show that the accuracy of KAGE is at par with the best existing alignment-free genotypers, while being an order of magnitude faster.Competing Interest StatementThe authors have declared no competing interest.},
+	URL = {https://www.biorxiv.org/content/early/2021/12/20/2021.12.03.471074},
+	eprint = {https://www.biorxiv.org/content/early/2021/12/20/2021.12.03.471074.full.pdf},
+	journal = {bioRxiv}
+}
+
+@misc{npstructures,
+  author = {Knut Dagestad Rand, and Ivar Grytten},
+  title = {npstructures},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/bionumpy/npstructures}},
+  commit = {6883d6c3b872bbab71c3beb76b2e46f379b32811}
+}
+
+@misc{bionumpy,
+  author = {Knut Dagestad Rand, and Ivar Grytten},
+  title = {bionumpy},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/bionumpy/bionumpy}},
+  commit = {52ed446d9f6b52430a50a122ae84614e8f7e058a}
+}

@@ -79,6 +79,66 @@
 \DeclareFieldFormat{url}{\bibstring{url}\space\mkbiblege{\url{#1}}}
 % --- stuff from google END ---
 
+% --- lstlisting START ---
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstdefinestyle{cppcode}{
+  frame=tb,
+  aboveskip=3mm,
+  belowskip=-0.8mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+  morekeywords={int8_t, int16_t, int32_t, int64_t,
+                uint8_t, uint16_t, uint32_t, uint64_t}
+}
+
+\lstdefinestyle{pseudocode}{
+  frame=tb,
+  aboveskip=3mm,
+  belowskip=-0.8mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+  mathescape=true,
+  literate=
+       {=}{$\leftarrow{}$}{1}
+       {==}{$={}$}{1}
+       {<=}{$\leq{}$}{1}
+       {>=}{$\geq{}$}{1}
+       {!=}{$\neq{}$}{1}
+       {&&}{$\wedge{}$ }{1}
+       {||}{$\vee{}$ }{1},
+  morekeywords={function,procedure,end,then,do,if,while,return,min,max}
+}
+
+\lstdefinestyle{vcf}{
+  frame=tb,
+  framerule=.75pt,
+  language=,
+  basicstyle={\small\ttfamily},
+  breaklines=true,
+}
+% --- lstlisting END ---
+
 \addbibresource{bibliography.bib}
 
 \title{\textbf{Speeding up Genotyping through GPU Acceleration}}
@@ -87,19 +147,19 @@
 
 \begin{document}
 % UiO front page
-\uiomasterfp[author={Jørgen Wictor Henriksen},date={Spring 2023},dept={Department of Bioinformatics},color=blue,long,supervisors={Ivar Grytten \and Knut Rand \and Geir Kjetil Sandve},program={Programming and System Architecture},title={Speeding up Genotyping through GPU Acceleration},subtitle={}]
+%\uiomasterfp[author={Jørgen Wictor Henriksen},date={Spring 2023},dept={Department of Bioinformatics},color=blue,long,supervisors={Ivar Grytten \and Knut Rand \and Geir Kjetil Sandve},program={Programming and System Architecture},title={Speeding up Genotyping through GPU Acceleration},subtitle={}]
 
 % title
 %\maketitle
 %\newpage
 
 % abstract
-\input{sections/abstract/include.tex}
-\newpage
+%\input{sections/abstract/include.tex}
+%\newpage
 
 % table of contents
-\tableofcontents
-\newpage
+%\tableofcontents
+%\newpage
 
 % sections
 %\input{sections/introduction/include.tex}
@@ -110,8 +170,8 @@
 %\newpage
 \input{sections/methods/include.tex}
 \newpage
-\input{sections/results/include.tex}
-\newpage
+%\input{sections/results/include.tex}
+%\newpage
 %\input{sections/discussions/include.tex}
 %\newpage
 %\input{sections/conclusion/include.tex}

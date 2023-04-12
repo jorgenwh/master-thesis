@@ -24,65 +24,97 @@ The VCF file format encodes a single variant per line, and each line contains a 
 \end{compactenum}
 While more columns are usually present, this encapsulated the necessary knowledge about variants and their representation needed for this thesis.
 
-\definecolor{variantcolor}{RGB}{235,235,235}
+\definecolor{variantcolor}{RGB}{230,230,230}
 
 \begin{figure}[H]
 \begin{center}
 \scalebox{1}{
 \begin{tikzpicture}
   % texts
-  \node at(2.75,2)(title){\small{\textit{observed variant}}};
-  \node at(-3.525,-1)(title){\textit{reference sequence index}};
-  \node at(-3,0)(title){\textit{reference sequence}};
-  \node at(-2.715,1)(title){\textit{sequenced read}};
-  % color boxes
-  \node at(2.75,0.5)[rounded corners,minimum width=0.5cm,minimum height=1.65cm, fill=variantcolor](variant){};
+  \node at(-4.87,0)(){\smaller\textit{reference genome sequence (GRCh38)}};
+  \node at(-4,1)(){\smaller\textit{reads aligned to reference}};
+  % variant color box
+  \node at(2.85,.76)[rounded corners,minimum width=0.4cm,minimum height=2cm, fill=variantcolor](variant){};
   % indices
-  \node at(0,-1)(n1){$...$};
-  \node at(.75,-1)(n2){\small{3}};
-  \node at(1.25,-1)(n3){\small{4}};
-  \node at(1.75,-1)(n4){\small{5}};
-  \node at(2.25,-1)(n5){\small{6}};
-  \node at(2.75,-1)(n5){\small{7}};
-  \node at(3.25,-1)(n5){\small{8}};
-  \node at(3.75,-1)(n5){\small{9}};
-  \node at(4.5,-1)(n5){$...$};
+  \node at(-.5,-.65)(){...};
+  \node at(.05,-.65)(){\scalebox{.6}{4}};
+  \node at(.40,-.65)(){\scalebox{.6}{5}};
+  \node at(.75,-.65)(){\scalebox{.6}{6}};
+  \node at(1.1,-.65)(){\scalebox{.6}{7}};
+  \node at(1.45,-.65)(){\scalebox{.6}{8}};
+  \node at(1.8,-.65)(){\scalebox{.6}{9}};
+  \node at(2.15,-.65)(){\scalebox{.6}{10}};
+  \node at(2.5,-.65)(){\scalebox{.6}{11}};
+  \node at(2.85,-.65)(){\scalebox{.6}{12}};
+  \node at(3.2,-.65)(){\scalebox{.6}{13}};
+  \node at(3.55,-.65)(){\scalebox{.6}{14}};
+  \node at(3.9,-.65)(){\scalebox{.6}{15}};
+  \node at(4.25,-.65)(){\scalebox{.6}{16}};
+  \node at(4.6,-.65)(){\scalebox{.6}{17}};
+  \node at(4.95,-.65)(){\scalebox{.6}{18}};
+  \node at(5.5,-.65)(){...};
   % lower nodes
-  \node at(0,0)(n1){$...$};
-  \node at(.75,0)(n2){T};
-  \node at(1.25,0)(n3){A};
-  \node at(1.75,0)(n4){C};
-  \node at(2.25,0)(n5){C};
-  \node at(2.75,0)(n5){T};
-  \node at(3.25,0)(n5){A};
-  \node at(3.75,0)(n5){C};
-  \node at(4.5,0)(n5){$...$};
-  % upper nodes
-  \node at(.75,1)(n2){T};
-  \node at(1.25,1)(n3){A};
-  \node at(1.75,1)(n4){C};
-  \node at(2.25,1)(n5){C};
-  \node at(2.75,1)(n5){G};
-  \node at(3.25,1)(n5){A};
-  \node at(3.75,1)(n5){C};
+  \node at(-.5,0)(){...};
+  \node at(.05,0)(){C};
+  \node at(.40,0)(){A};
+  \node at(.75,0)(){T};
+  \node at(1.1,0)(){A};
+  \node at(1.45,0)(){G};
+  \node at(1.8,0)(){G};
+  \node at(2.15,0)(){T};
+  \node at(2.5,0)(){A};
+  \node at(2.85,0)(){C};
+  \node at(3.2,0)(){C};
+  \node at(3.55,0)(){G};
+  \node at(3.9,0)(){C};
+  \node at(4.25,0)(){G};
+  \node at(4.6,0)(){C};
+  \node at(4.95,0)(){T};
+  \node at(5.5,0)(){...};
+  % read 1
+  \node at(1.1,.5)(){A};
+  \node at(1.45,.5)(){G};
+  \node at(1.8,.5)(){G};
+  \node at(2.15,.5)(){T};
+  \node at(2.5,.5)(){A};
+  \node at(2.85,.5)(){T};
+  \node at(3.2,.5)(){C};
+  \node at(3.55,.5)(){G};
+  % read 2
+  \node at(2.85,1)(){T};
+  \node at(3.2,1)(){C};
+  \node at(3.55,1)(){G};
+  \node at(3.9,1)(){C};
+  \node at(4.25,1)(){G};
+  \node at(4.6,1)(){C};
+  \node at(4.95,1)(){T};
+  \node at(5.5,1)(){...};
+  % read 3
+  \node at(.40,1.5)(){A};
+  \node at(.75,1.5)(){T};
+  \node at(1.1,1.5)(){A};
+  \node at(1.45,1.5)(){G};
+  \node at(1.8,1.5)(){G};
+  \node at(2.15,1.5)(){T};
+  \node at(2.5,1.5)(){A};
+  \node at(2.85,1.5)(){T};
   % down arrow
-  \draw [-stealth](0,-1.75) -- (0,-2.5);
-  % POS 
-  \node at(-1,-3.25)(vcf_pos){\small{POS}};
-  \node at(0,-3.25)(vcf_pos){\small{:}};
-  \node at(0.55,-3.25)(vcf_pos){\small{7}};
-  % REF
-  \node at(-1,-3.75)(vcf_ref){\small{REF}};
-  \node at(0,-3.75)(vcf_ref){\small{:}};
-  \node at(0.55,-3.75)(vcf_ref){\small{T}};
-  % ALT
-  \node at(-1,-4.25)(vcf_alt){\small{ALT}};
-  \node at(0,-4.25)(vcf_alt){\small{:}};
-  \node at(0.55,-4.25)(vcf_alt){\small{G}};
+  \draw [-stealth](-1.05,-1.75) -- (-1.05,-2.5);
 \end{tikzpicture}
 }
-\caption{An illustration of how a sequenced read can be aligned to a reference sequence and the variant present in the sequenced read is determined and encoded in (a simplified) VCF format, where several of the common columns are omitted.}
-\label{background:variant_and_variant_calling:figures:variants}
+
+\vspace{1em}
+\smaller{example.vcf}
+\begin{lstlisting}[style=vcf]
+##fileformat=VCFv4.2
+##reference=GRCh38
+#CHROM POS     ID  REF  ALT  QUAL FILTER INFO
+1      12      .   C    T    30   PASS   NS=3;DP=3
+...
+\end{lstlisting}
+\caption{
+An illustration of how sequenced reads can be aligned against a reference genome sequence in order to call variants present in the genome of the sequenced individual. The called variant in the illustration is then stored in a variant call format (VCF) file where the chromosome identifier, 1-indexed position along the chromosome reference sequence, an identifier for the variant, the allele or alleles present in the reference sequence, the alternative variant allele or alleles, along with a number of other parameters are used to represent each variant.
+}
+\label{background:variant_and_variant_calling:figures:variant_calling}
 \end{center}
 \end{figure}
-

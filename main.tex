@@ -31,6 +31,7 @@
 \usepackage{float}
 \usepackage{xcolor}
 \usepackage[UKenglish]{uiomasterfp}
+\usepackage{dirtree}
 
 % --- stuff from google ---
 \edef\origparind{\the\parindent}
@@ -83,6 +84,7 @@
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
 \definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{pycomment}{rgb}{.3,.3,.3}
 
 \lstdefinestyle{cppcode}{
   frame=tb,
@@ -101,6 +103,24 @@
   tabsize=3,
   morekeywords={int8_t, int16_t, int32_t, int64_t,
                 uint8_t, uint16_t, uint32_t, uint64_t}
+}
+
+\lstdefinestyle{pycode}{
+  frame=tb,
+  framerule=.75pt,
+  aboveskip=3mm,
+  belowskip=-0.8mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  %numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{pycomment},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
 }
 
 \lstdefinestyle{pseudocode}{

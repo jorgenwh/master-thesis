@@ -1,0 +1,9 @@
+\subsection{Determining which Components to GPU Accelerate}
+
+When developing GKAGE, we started with KAGE as a baseline and analysed the pipeline to find the most pronounced bottlenecks in terms of runtime.
+We then examined whether these bottlenecks could benefit from GPU acceleration by taking into consideration the type of computations that were performed and whether they would be suitable for the GPU architecture as well as how much of the overall runtime the component constituted. 
+We would then intuit whether the component in question would be worthwhile trying to GPU accelerate given the project's time constraints and estimated difficulty.
+
+The baseline KAGE pipeline is split into two distinct processes: 1) counting the \textit{k}mer frequencies observed in the DNA reads of the individual being genotyped, and 2) genotyping the individual using a statistical model based on the observed and expected \textit{k}mer frequencies.
+Initial benchmarking on a consumer desktop revealed that the \textit{k}mer counting step constituted more than 96\% of the total KAGE runtime, with \textit{k}mer counting taking 2080 seconds and the genotyping step taking 70 seconds for a total of 2150 seconds (35 minutes and 50 seconds) to genotype a full human genome.
+Thus, the \textit{k}mer counting step, having such a clear margin for runtime improvement over the genotyping step, was the initial focus for GPU acceleration for potential runtime speedup.

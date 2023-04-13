@@ -97,23 +97,31 @@ In the interest of brevity, we will refer to the typical \textit{k}mer counting 
 \end{center}
 \end{figure}
 
-\subsubsection{Hash Table Counter based on CuPy}
-The Python package npstructures \cite{npstructures} contained a counter object designed to count a static set of \textit{k}mer's frequencies.
-This counter object was written in NumPy and implemented a hash table that effectively utilized NumPy's fast array operations to count \textit{k}mers in chunks.
-The underlying hash table was based on npstructure's ragged array implementation, which is an effective, NumPy based, two-dimensional array structure where the column lengths can vary.
-The array column lengths (bucket sizes) were determined during initialization based on how many of the \textit{k}mers from the unique \textit{k}mer set hashed to that particular bucket.
-Because this counter object was implemented using NumPy's array functionality, it served as a good candidate for GPU acceleration where NumPy's CPU vectorization could potentially be manyfold improved by the massively parallel GPU.
+We here present three methods of implementing GPU accelerated \textit{k}mer counting for Python, one of which is the method used in GKAGE.
 
-In order to GPU accelerate npstructure's counter object we utilized the fact that CuPy's interface is remarkably similar (by design) to that of NumPy.
-In fact, CuPy could be described as a GPU accelerated subset of NumPy.
-This, in addition to the fact that npstructure's counter object was implemented almost entirely using NumPy, allowed for swift GPU acceleration in a way where we hardly had to write any new code and without having to leave Python at all.
+\subsubsection{Method 1: Hash Table Counter based on CuPy}
+Our first attempt at GPU accelerating the \textit{k}mer counting process was to utilize CuPy, which was introduced in section \ref{background:cupy}.
+A short reminder: CuPy is a Python package providing a GPU accelerated array library that supports most of the functionality found in NumPy \ref{background:numpy}.
+In fact, CuPy can in effect be viewed as a GPU accelerated substep of NumPy, with great existing interoperability to work with both libraries in the same projects.
 
-\dirtree{%
-  1./.
-  2.bin.
-}
+Another Python library, npstructures \cite{npstructures}, provides different data structures that are built on top of NumPy to provide efficient and optimized solutions.
+Among others, some of the data structures provided by npstructures are a \textit{ragged} two-dimensional array object, providing an efficient two-dimensional array structure where the column lengths can vary, and a static hash table object.
+The static hash table object achieves great memory efficiency by utilizing the ragged arrays to create a bucket paradigm where the size of the hash table is equal to the number of rows in the ragged array, and the bucket sizes (the columns of the ragged array) can vary.
+The bucket sizes are determined by pre-computing how many of the unique keys hash to the same rows in the ragged array.
+This hash table had already been utilized to count a predefined set of \textit{k}mer's frequencies, albeit on the CPU.
 
-(explain how to replace numpy with cupy)
+\textbf{(Figure illustrating how input keys hashing to the same row determines the column length (bucket size))}
+
+To reiterate: both the ragged array and the static hash table data structures are built on top of NumPy.
+As a result, their implementations are heavily reliant on NumPy's array routines that are designed to be efficient for array operations where CPU vectorization matters. 
+For large array operations where data parallelism matters, the GPU is a great candidate since it can perform significantly more parallelism this way.
+In addition, we know that most, if not all of the functionality used from NumPy will be supported with GPU acceleration by CuPy, through an nearly identical interface.
+Thus, by replacing the NumPy functionality used with CuPy's equivalent GPU accelerated functionality, we would have a GPU accelerated hash table object in Python that could be used to count a predefined set of \textit{k}mer's frequencies.
+
+Rather than creating a standalone package version of npstructures with GPU acceleration, we rather opted to add the possibility for GPU acceleration to the already existing package.
+This meant that we needed a way to redirect NumPy function calls to their equivalent CuPy functions, preferably without having to rewrite the implementations and without making the CuPy package a dependancy for npstructures since this would in turn require users to have a GPU even to use npstructures' NumPy implementations for the CPU.
+We achieved this by exploiting Python's module system.
+Consider the following Python package example where our package contains two modules, both relying on NumPy for their implementations:
 \begin{center}
 mypackage.my\_funcs.py
 \end{center}
@@ -121,7 +129,7 @@ mypackage.my\_funcs.py
 import numpy as np
 
 def some_func_using_numpy():
-  return np.zeros(1000)
+  return np.zeros(10)
 \end{lstlisting}
 
 \begin{center}
@@ -132,18 +140,21 @@ import numpy as np
 
 class SomeClassUsingNumPy:
   def __init__(self):
-    self.data = np.zeros(1000)
+    self.data = np.zeros(10)
 
   def get_data(self):
     return self.data
 \end{lstlisting}
 
+Our package's initialization file imports our function and our class from their respective modules, and all functionality is usable without needing to import CuPy in either module or initialization file.
+Pay attention to the \textit{set\_backend} function which takes a library as a parameter and redirects the np variable in both package modules from NumPy to this provided library.
+
 \begin{center}
 mypackage.\_\_init\_\_.py
 \end{center}
 \begin{lstlisting}[language=Python,style=pycode]
-from my_funcs import some_func_using_numpy
-from my_classes import SomeClassUsingNumPy 
+from .my_funcs import some_func_using_numpy
+from .my_classes import SomeClassUsingNumPy 
 
 # Swaps NumPy with lib (presumably CuPy)
 def set_backend(lib):
@@ -153,6 +164,8 @@ def set_backend(lib):
   from . import my_classes
   my_classes.np = lib
 \end{lstlisting}
+
+Now in our own program, where we will import our package \textit{mypackage}, we can either directly use our package's implementation with NumPy, or we can do as the following example shows and import CuPy and set the backend in the entire package to use CuPy functionality instead of NumPy.
 
 \begin{center}
 program.py
@@ -167,19 +180,16 @@ array = mypackage.some_func_using_numpy()
 type(array) # cupy.ndarray
 \end{lstlisting}
 
+Exploiting Python's module system this way has the benefits of not making CuPy a dependancy for npstructures, and it also allows for gradual GPU support by way of only updating the backend in modules where the existing implementations are ready to be ported as is to CuPy.
+Drawbacks of GPU accelerating this way is that certain NumPy implementations may not be suitable for the GPU architecture, either because the implementations are in fact not entirely suited for NumPy or for array routines at all, or because the arrays are not sufficiently large to get enough benefit from the massively parallel GPU to mask the memory transfer overhead of copying data to and from the GPU.
 
-\subsubsection{Parallel GPU Hash Table implemented in native CUDA}
+By utilizing this method, we achieved GPU support for the static hash table, allowing us to use it for \textit{k}mer counting.
+
+\subsubsection{Method 2: Parallel GPU Hash Table implemented in native CUDA}
 ...
 
-\subsubsection{Parallel GPU Hash Table without C++}
+\subsubsection{Method 3: Parallel GPU Hash Table without CUDA or C++}
 ...
 
 \subsection{GPU Accelerating \textit{k}mer Hashing}
 
-
-%While one previously developed \textit{k}mer counting tool, Gerbil, supports GPU accelerated \textit{k}mer counting, this tool is designed to solve the full \textit{k}mer counting problem.
-%It is not straight-forward to repurpose Gerbil to work with the KAGE genotyping pipeline, for example by first solving the full \textit{k}mer counting problem and then filtering out only the relevant \textit{k}mers.
-%This is because Gerbil relies on slow disk operations to store temporary results, and more than that, simply solved a more demanding problem.
-%Thus, we decided on implementing our own GPU accelerated \textit{k}mer counting solution. 
-
-%To solve the partial \textit{k}mer counting problem, we implemented a GPU accelerated parallel static hash table to store unique \textit{k}mers as keys and their respective counts as associated values.

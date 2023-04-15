@@ -227,8 +227,109 @@ In the above example, we leave the constructor as is in the parent class, and we
 Now, our two different \textit{pad\_with\_ones} implementations will behave equivalently, although our custom implementation will leverage CuPy to be GPU accelerated.
 
 \subsubsection{Method 2: Parallel GPU Hash Table implemented in CUDA}
-Our next attempt at GPU accelerating \textit{k}mer counting was to implement our own GPU accelerated hash table in native CUDA, Nvidia's programming platform.
-This would grant us much granular control over our implementation compared to the method described in section \ref{methods:gpu_accelerating_kmer_counting:method1} where we were not only constrained to using CuPy's , but also 
+Our next attempt at GPU accelerating \textit{k}mer counting was to implement our own GPU accelerated hash table in native CUDA, which is Nvidia's programming platform \ref{background:graphical_processing_units:programming_model_and_cuda}.
+This would grant us much granular control over our implementation compared to the method described in section \ref{methods:gpu_accelerating_kmer_counting:method1} where we constrained ourself to using CuPy's function interface.
+
+\textbf{\large{Implementation}}
+
+Unlike the hash table used in the previous method, this hash table uses a simpler open addressing with linear probing scheme for insertions, updates and queries.
+The hash table data structure is thus a simple structure of arrays, with one array constituting the hash table keys and another the associated values (counts).
+It is implemented in CUDA as a C++ class and supports the following functionalities:
+\begin{compactitem}
+  \item key insertion: only performed once upon initialization.
+  \item key counting: for each key, if it exists in the hash table, increment the associated hash table value by one.
+  \item key querying: for each key, if it exists in the hash table, fetch the associated hash table value.
+\end{compactitem}
+
+Each of these methods are implemented using custom CUDA kernels, allowing for each operation to happen for a large number of \textit{k}mers in parallel on the GPU.
+Thus, the insertion, counting and query implementations all expect arrays of \textit{k}mers where a single CUDA thread is assigned to each \textit{k}mer to fulfill the insertion, count update or query.
+
+\textbf{Hashing and Probing Scheme}
+
+All of the kernels implemented for this hash table solution share the same linear probing scheme to resolve collisions.
+Thus, when a CUDA thread is assigned a \textit{k}mer $k$ from the input array (either for insertion, count updating or querying), it will perform a murmur hash (cite murmur) to find the initial probe position $p_0$ in the hash table.
+
+\definecolor{misscolor}{RGB}{255,215,215}
+\definecolor{hitcolor}{RGB}{215,255,215}
+\definecolor{countcolor}{RGB}{240,240,240}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % in kmers
+  \node at(-2.7,0)(){\textit{\smaller{in kmers}}};
+  \node at(-1.3,0)[draw,minimum width=0.65cm,minimum height=0.65cm](k0){\smaller{$k_0$}};
+  \node at(-.65,0)[draw,minimum width=0.65cm,minimum height=0.65cm](k1){\smaller{$k_1$}};
+  \node at(0,0)[draw,minimum width=0.65cm,minimum height=0.65cm](k2){\smaller{$k_2$}};
+  \node at(.65,0)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(1.3,0)[draw,minimum width=0.65cm,minimum height=0.65cm](kn){\smaller{$k_n$}};
+  % CUDA threads
+  % k0
+  \draw [](k0) -- (-1.3,-1);
+  \draw [](-1.3,-1) -- (-5,-1);
+  \draw [-stealth](-5,-1) -- (-5,-2);
+  \node at(-3.25,-.75)(){\textit{\smaller{thread$_0$}}};
+  \node at(-5,-2.5)(){...};
+  % k1
+  \draw [-stealth](k1) -- (-.65,-2);
+  \node at(-.65,-2.5)(){...};
+  % kn
+  \draw [](kn) -- (1.3,-1);
+  \draw [](1.3,-1) -- (5,-1);
+  \draw [-stealth](5,-1) -- (5,-2);
+  \node at(3.25,-.75)(){\textit{\smaller{thread$_n$}}};
+  \node at(5,-2.5)(){...};
+  % k2
+  \draw [-stealth](k2) -- (0,-4);
+  \node at(.75,-2.5)(){\textit{\smaller{thread$_2$}}};
+  % hash
+  \node at(0,-4.5)(){\smaller{\textit{$p_0=h=hash(k_2) \bmod c$}}};
+  \draw [-stealth](0,-5) -- (0,-5.75);
+
+  % probe 1
+  \node at(3.75,-5)[fill=misscolor,rounded corners](miss){\textit{\smaller{miss}}};
+  % titles
+  \node at(-1.3,-6)(){\textit{\smaller{indices}}};
+  \node at(-1.3,-6.85)(){\textit{\smaller{keys}}};
+  \node at(-1.3,-7.7)(){\textit{\smaller{values}}};
+  % indices
+  \node at(0,-6)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(.65,-6)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$1$}};
+  \node at(1.3,-6)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$p_0$}};
+  \node at(1.95,-6)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$3$}};
+  \node at(2.6,-6)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$4$}};
+  \node at(3.25,-6)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$5$}};
+  \node at(3.9,-6)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % keys
+  \node at(0,-6.85)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(.65,-6.85)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(1.3,-6.85)[draw,minimum width=0.65cm,minimum height=0.65cm,fill=misscolor](){\smaller{$...$}};
+  \node at(1.95,-6.85)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$k$}};
+  \node at(2.6,-6.85)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(3.25,-6.85)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(3.9,-6.85)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % values
+  \node at(0,-7.7)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(.65,-7.7)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(1.3,-7.7)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(1.95,-7.7)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(2.6,-7.7)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(3.25,-7.7)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(3.9,-7.7)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  
+\end{tikzpicture}
+}
+\caption{
+  ...
+}
+\label{methods:gpu_accelerating_kmer_counting:method2:figures:probing_scheme}
+\end{center}
+\end{figure}
+
+\textbf{Insertions}
+
+...
 
 \subsubsection{Method 3: Parallel GPU Hash Table without CUDA or C++}
 ...

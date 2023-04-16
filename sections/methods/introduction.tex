@@ -1,4 +1,4 @@
 In this section we describe how GPU acceleration support was provided for the KAGE genotyping pipeline, resulting in GKAGE - a version of KAGE where parts of the pipeline is GPU accelerated.
-We will go over different methods of GPU accelerating some of the NumPy based components present in KAGE, some of which require no CUDA or C++ code whatsoever.
-
+We will give an account of how we determined which parts to focus on GPU accelerating, and describe a testing strategy that we deployed that allowed us to GPU accelerate existing NumPy code directly in Python to see whether significant runtime speedup was plausible.
+Then, we will describe how we implemented the solutions that were introduced into KAGE, resulting in GKAGE.
 

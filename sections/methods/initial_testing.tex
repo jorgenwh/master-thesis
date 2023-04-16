@@ -1,0 +1,126 @@
+\subsection{Initial Testing} \label{methods:initial_testing}
+Our first attempt at GPU accelerating the \textit{k}mer counting process was to utilize CuPy, which was introduced in section \ref{background:cupy}.
+A short reminder: CuPy is a Python package providing a GPU accelerated array library that supports most of the functionality found in NumPy \ref{background:numpy}.
+In fact, CuPy can in effect be viewed as a GPU accelerated substep of NumPy, with great existing interoperability to work with both libraries in the same projects.
+
+Another Python library, npstructures \cite{npstructures}, provides different data structures that are built on top of NumPy to provide efficient and optimized solutions.
+Among others, some of the data structures provided by npstructures are a \textit{ragged} two-dimensional array object, providing an efficient two-dimensional array structure where the column lengths can vary, and a static hash table object.
+The static hash table object achieves great memory efficiency by utilizing the ragged arrays to create a bucket paradigm where the size of the hash table is equal to the number of rows in the ragged array, and the bucket sizes (the columns of the ragged array) can vary.
+The bucket sizes are determined by pre-computing how many of the unique keys hash to the same rows in the ragged array.
+This hash table had already been utilized to count a predefined set of \textit{k}mer's frequencies, albeit on the CPU.
+
+\textbf{(Figure illustrating how input keys hashing to the same row determines the column length (bucket size))}
+
+To reiterate: both the ragged array and the static hash table data structures are built on top of NumPy.
+As a result, their implementations are heavily reliant on NumPy's array routines that are designed to be efficient for array operations where CPU vectorization matters. 
+For large array operations where data parallelism matters, the GPU is a great candidate since it can perform significantly more parallelism this way.
+In addition, we know that most, if not all of the functionality used from NumPy will be supported with GPU acceleration by CuPy, through an nearly identical interface.
+Thus, by replacing the NumPy functionality used with CuPy's equivalent GPU accelerated functionality, we would have a GPU accelerated hash table object in Python that could be used to count a predefined set of \textit{k}mer's frequencies.
+
+Rather than creating a standalone package version of npstructures with GPU acceleration, we rather opted to add the possibility for GPU acceleration to the already existing package.
+This meant that we needed a way to redirect NumPy function calls to their equivalent CuPy functions, preferably without having to rewrite the implementations and without making the CuPy package a dependancy for npstructures since this would in turn require users to have a GPU even to use npstructures' NumPy implementations for the CPU.
+We achieved this by exploiting Python's module system.
+Consider the following Python package example where our package contains two modules, both relying on NumPy for their implementations:
+\begin{center}
+mypackage.my\_funcs.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+
+def some_func_using_numpy():
+  return np.zeros(10)
+\end{lstlisting}
+
+\begin{center}
+mypackage.my\_classes.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+
+class SomeClassUsingNumPy:
+  def __init__(self):
+    self.data = np.zeros(10)
+
+  def get_data(self):
+    return self.data
+\end{lstlisting}
+
+Our package's initialization file imports our function and our class from their respective modules, and all functionality is usable without needing to import CuPy in either module or initialization file.
+Pay attention to the \textit{set\_backend} function which takes a library as a parameter and redirects the np variable in both package modules from NumPy to this provided library.
+
+\begin{center}
+mypackage.\_\_init\_\_.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+from .my_funcs import some_func_using_numpy
+from .my_classes import SomeClassUsingNumPy 
+
+# Swaps NumPy with lib (presumably CuPy)
+def set_backend(lib):
+  from . import my_funcs
+  my_funcs.np = lib
+
+  from . import my_classes
+  my_classes.np = lib
+\end{lstlisting}
+
+Now in our own program, where we will import our package \textit{mypackage}, we can either directly use our package's implementation with NumPy, or we can do as the following example shows and import CuPy and set the backend in the entire package to use CuPy functionality instead of NumPy.
+
+\begin{center}
+program.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import cupy as cp
+
+import mypackage
+mypackage.set_backend(cp)
+
+array = mypackage.some_func_using_numpy()
+type(array) # cupy.ndarray
+\end{lstlisting}
+
+Exploiting Python's module system this way has the benefits of not making CuPy a dependancy for npstructures, and it also allows for gradual GPU support by way of only updating the backend in modules where the existing implementations are ready to be ported as is to CuPy.
+By utilizing this method, we achieved GPU support for the static hash table, allowing us to use it for \textit{k}mer counting.
+
+Drawbacks of GPU accelerating this way is that certain NumPy implementations may not be suitable for the GPU architecture, either because the implementations are in fact not entirely suited for NumPy or for array routines at all, or because the arrays are not sufficiently large to get enough benefit from the massively parallel GPU to mask the memory transfer overhead of copying data to and from the GPU.
+Furthermore, some functions found in NumPy are not implemented in CuPy.
+While we did not have frequent encounters with this issue, some NumPy functions that were used in npstructures were not supported in CuPy.
+In these cases, this was resolved by creating custom implementations where we had the freedom to use different CuPy functionality to reproduce the wanted functionality provided by NumPy.
+For classes, this can be achieved by subclassing and overriding methods where we wish to create our new custom implementations.
+This method of creating custom implementations can also be deployed in cases where an implementation may be efficient and optimized in NumPy for the CPU, but inefficient for CuPy and the GPU architecture.
+
+Consider if our package's class definition had instead been the following:
+\begin{center}
+mypackage.my\_classes.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+
+class SomeClassUsingNumPy:
+  def __init__(self):
+    self.data = np.zeros(10)
+
+  def pad_with_ones(self):
+    arr = self.data
+    self.data = np.insert(arr, [0, len(arr)], 1)
+\end{lstlisting}
+
+In the code above, we use NumPy's insert function.
+This function is, as of April 2023, not implemented in CuPy.
+To circumvent this issue, we can subclass our class and create our own custom implementation, enjoying the freedom of only having to re-implementing the methods we choose.
+We will create a subclass with the prefix CP:
+\begin{center}
+mypackage.cp\_my\_classes.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+import cupy as cp
+
+class CPSomeClassUsingNumPy(SomeClassUsingNumPy):
+  def pad_with_ones(self):
+    arr = self.data
+    self.data = cp.pad(arr, (1, 1), 'constant', constant_values=1)
+\end{lstlisting}
+
+In the above example, we leave the constructor as is in the parent class, and we override the \textit{pad\_with\_ones} method using a different function that is implemented in CuPy: the pad function.
+Now, our two different \textit{pad\_with\_ones} implementations will behave equivalently, although our custom implementation will leverage CuPy to be GPU accelerated.

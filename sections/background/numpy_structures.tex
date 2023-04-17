@@ -1,0 +1,27 @@
+\subsection{NumPy Structures} \label{background:npstructures}
+NumPy Structures (npstructures) is a Python package built on top of NumPy that provides data structures with NumPy-like features to augment the NumPy library \cite{npstructures}.
+
+A central feature in NumPy Structures is its ragged array data structure, a two-dimensional array with differing column lengths that provides NumPy-like behaviour and performance.
+\begin{figure}[H]
+\begin{lstlisting}[language=Python,style=console]
+>>> from npstructures import RaggedArray
+>>> data = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+>>> column_lengths = [4, 2, 3]
+>>> ra = RaggedArray(data, column_lengths)
+>>> ra
+ragged_array([0, 1, 2, 3]
+[4, 5]
+[6, 7, 8])
+>>> ra.ravel()
+array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+>>> type(ra.ravel())
+<class 'numpy.ndarray'>
+\end{lstlisting}
+\caption{
+  A simple illustration of how NumPy Structures' data structures can be used directly in Python as drop-in augmentations to the NumPy library.
+}
+\label{background:npstructures:figure}
+\end{figure}
+
+NumPy Structures also provides a hash table built on top of the ragged array data structure.
+This hash table is designed to give dictionary-like behaviour for NumPy-arrays, meaning chunks of key-value pairs can be operated on at once using fast NumPy array routines.

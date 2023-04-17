@@ -1,7 +1,5 @@
 \subsection{Initial Testing} \label{methods:initial_testing}
-Our first attempt at GPU accelerating the \textit{k}mer counting process was to utilize CuPy, which was introduced in section \ref{background:cupy}.
-A short reminder: CuPy is a Python package providing a GPU accelerated array library that supports most of the functionality found in NumPy \ref{background:numpy}.
-In fact, CuPy can in effect be viewed as a GPU accelerated substep of NumPy, with great existing interoperability to work with both libraries in the same projects.
+Our first attempt at GPU accelerating the \textit{k}mer counting process was to utilize CuPy to GPU accelerate existing NumPy code in NumPy Structures.
 
 Another Python library, npstructures \cite{npstructures}, provides different data structures that are built on top of NumPy to provide efficient and optimized solutions.
 Among others, some of the data structures provided by npstructures are a \textit{ragged} two-dimensional array object, providing an efficient two-dimensional array structure where the column lengths can vary, and a static hash table object.

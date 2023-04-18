@@ -1,107 +1,12 @@
 \subsection{GPU Accelerating \textit{k}mer Counting}
-While different GPU accelerated \textit{k}mer counting solutions such as Gerbil \cite{gerbil} have been developed in previous work, we opted to develop our own \textit{k}mer counting method because the \textit{k}mer counting problem solved in KAGE is slightly different than the typical \textit{k}mer counting problem described in section \ref{background:kmers_and_kmer_counting}.
-Rather than counting the frequency of every observed \textit{k}mer in the input reads, or even the frequency of every observed \textit{k}mer where the frequency is larger than some threshold, KAGE is only interested in counting the observed frequencies for a predetermined set of \textit{k}mers.
-This revised problem is easier to solve in practice because the memory constraints are significantly less.
-In the interest of brevity, we will refer to the typical \textit{k}mer counting problem described section \ref{background:kmers_and_kmer_counting} as \textit{full kmer counting}, and the simpler problem where we only count the frequencies of a predetermined set of \textit{k}mers as \textit{partial kmer counting} \ref{methods:gpu_accelerating_kmer_counting:partial_kmer_counting}.
+While several \textit{k}mer counting solutions have been developed in previous work, with at least one having support for GPU acceleration, we opted to develop our own \textit{k}mer counting method.
+We deemed this necessary because KAGE solves a slightly different \textit{k}mer counting problem than most other \textit{k}mer counting tools do, as described in section \ref{background:kmers_and_kmer_counting}.
+A idsAIDSAIDS
 
-\definecolor{kmer1}{RGB}{40,40,215}
-\definecolor{kmer2}{RGB}{0,150,0}
-\definecolor{kmer3}{RGB}{225,30,30}
-\definecolor{kmer4}{RGB}{20,150,150}
-
-\begin{figure}[H]
-\begin{center}
-\scalebox{1}{
-\begin{tikzpicture}
-  % titles
-  \node at(-0.55,3)(){\textit{input reads}};
-  % read 1
-  \node at(-1.85,2){G};
-  \node at(-1.5,2){C};
-  \node at(-1.15,2){\textcolor{kmer2}{A}};
-  \node at(-.8,2){\textcolor{kmer2}{G}};
-  \node at(-.45,2){\textcolor{kmer2}{T}};
-  \node at(-.1,2){G};
-  \node at(.25,2){C};
-  \node at(.6,2){G};
-  % read 2 
-  \node at(-1.85,1.4){T};
-  \node at(-1.5,1.4){C};
-  \node at(-1.15,1.4){C};
-  \node at(-.8,1.4){G};
-  \node at(-.45,1.4){\textcolor{kmer3}{G}};
-  \node at(-.1,1.4){\textcolor{kmer3}{T}};
-  \node at(.25,1.4){\textcolor{kmer3}{C}};
-  \node at(.6,1.4){T};
-  % read 3 
-  \node at(-1.85,.8){T};
-  \node at(-1.5,.8){\textcolor{kmer2}{A}};
-  \node at(-1.15,.8){\textcolor{kmer2}{G}};
-  \node at(-.8,.8){\textcolor{kmer2}{T}};
-  \node at(-.4,.8){T};
-  \node at(-.1,.8){G};
-  \node at(.25,.8){A};
-  \node at(.6,.8){G};
-  % read 4 
-  \node at(-1.85,.2){C};
-  \node at(-1.5,.2){\textcolor{kmer2}{A}};
-  \node at(-1.15,.2){\textcolor{kmer2}{G}};
-  \node at(-.8,.2){\textcolor{kmer2}{T}};
-  \node at(-.4,.2){\textcolor{kmer4}{G}};
-  \node at(-.1,.2){\textcolor{kmer4}{A}};
-  \node at(.25,.2){\textcolor{kmer4}{C}};
-  \node at(.6,.2){A};
-  % read 5 
-  \node at(-1.85,-.4){A};
-  \node at(-1.5,-.4){\textcolor{kmer4}{G}};
-  \node at(-1.15,-.4){\textcolor{kmer4}{A}};
-  \node at(-.8,-.4){\textcolor{kmer4}{C}};
-  \node at(-.4,-.4){C};
-  \node at(-.1,-.4){\textcolor{kmer3}{G}};
-  \node at(.25,-.4){\textcolor{kmer3}{T}};
-  \node at(.6,-.4){\textcolor{kmer3}{C}};
-  % Arrow
-  \draw [-stealth](2.75,.8) -- (3.4,.8);
-  % k-mer counts
-  \node at(6.5,3)(){\textit{kmer counts}};
-  % k-mer 1
-  \node at(5.8,1.7){\textcolor{kmer1}{A}};
-  \node at(6.15,1.7){\textcolor{kmer1}{T}};
-  \node at(6.5,1.7){\textcolor{kmer1}{T}};
-  \node at(6.85,1.7){:};
-  \node at(7.2,1.7){0};
-  % k-mer 2 
-  \node at(5.8,1.1){\textcolor{kmer2}{A}};
-  \node at(6.15,1.1){\textcolor{kmer2}{G}};
-  \node at(6.5,1.1){\textcolor{kmer2}{T}};
-  \node at(6.85,1.1){:};
-  \node at(7.2,1.1){3};
-  % k-mer 3 
-  \node at(5.8,.5){\textcolor{kmer3}{G}};
-  \node at(6.15,.5){\textcolor{kmer3}{T}};
-  \node at(6.5,.5){\textcolor{kmer3}{C}};
-  \node at(6.85,.5){:};
-  \node at(7.2,.5){2};
-  % k-mer 4 
-  \node at(5.8,-.1){\textcolor{kmer4}{G}};
-  \node at(6.15,-.1){\textcolor{kmer4}{A}};
-  \node at(6.5,-.1){\textcolor{kmer4}{C}};
-  \node at(6.85,-.1){:};
-  \node at(7.2,-.1){2};
-\end{tikzpicture}
-}
-\caption{
-  In KAGE, we are only interested in counting the observed frequencies of a predefined set of \textit{k}mers, as opposed to every observed \textit{k}mer in the sequenced reads.
-}
-\label{methods:gpu_accelerating_kmer_counting:partial_kmer_counting}
-\end{center}
-\end{figure}
-
-\subsubsection{Method 2: Parallel GPU Hash Table implemented in CUDA}
-Our next attempt at GPU accelerating \textit{k}mer counting was to implement our own GPU accelerated hash table in native CUDA, which is Nvidia's programming platform \ref{background:graphical_processing_units:programming_model_and_cuda}.
+In order to GPU accelerate \textit{k}mer counting, was to implement our own GPU accelerated hash table in native CUDA, Nvidia's programming platform \ref{background:graphical_processing_units:programming_model_and_cuda}.
 This would grant us much granular control over our implementation compared to the method described in section \ref{methods:initial_testing} where we constrained ourself to using CuPy's function interface.
 
-\textbf{\large{Implementation}}
+\subsubsection{Implementation}
 
 Unlike the hash table used in the previous method, this hash table uses a simpler open addressing with linear probing scheme for insertions, updates and queries.
 The hash table data structure is thus a simple structure of arrays, with one array constituting the hash table keys and another the associated values (counts).
@@ -115,7 +20,7 @@ It is implemented in CUDA as a C++ class and supports the following functionalit
 Each of these methods are implemented using custom CUDA kernels, allowing for each operation to happen for a large number of \textit{k}mers in parallel on the GPU.
 Thus, the insertion, counting and query implementations all expect arrays of \textit{k}mers where a single CUDA thread is assigned to each \textit{k}mer to fulfill the insertion, count update or query.
 
-\textbf{Hashing and Probing Scheme}
+\paragraph{Hashing and Probing Scheme}
 
 All of the kernels implemented for this hash table solution share the same linear probing scheme to resolve collisions.
 Thus, when a CUDA thread is assigned a \textit{k}mer $k$ from the input array (either for insertion, count updating or querying), it will perform a murmur hash (cite murmur) to find the initial probe position $p_0$ in the hash table.
@@ -265,12 +170,6 @@ Thus, when a CUDA thread is assigned a \textit{k}mer $k$ from the input array (e
 \end{center}
 \end{figure}
 
-\textbf{Insertions}
-
-...
-
-\subsubsection{Method 3: Parallel GPU Hash Table without CUDA or C++}
-...
-
 \subsection{GPU Accelerating \textit{k}mer Hashing}
+...
 

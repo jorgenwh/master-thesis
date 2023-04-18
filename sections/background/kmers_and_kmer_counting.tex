@@ -96,9 +96,9 @@ This problem is commonly refered to as \textit{k}mer counting.
 \end{figure}
 
 The genotyping software tool KAGE, detailed in section \ref{background:kage}, contains \textit{k}mer counting as one of its core steps in its genotyping pipeline.
-However, the \textit{k}mer counting process in KAGE is slightly different from the process explained earlier in this section.
-Rather than counting the observed frequency of every valid \textit{k}mer in a set of input reads, KAGE only counts the observed frequencies of every \textit{k}mer in a predetermined set.
-Given how many valid \textit{k}mers one can observe in a set of (hundreds of?) millions of reads (\textbf{cite?}), which is typical when genotyping a human genome, not having to store each of these with an associated count value makes this new \textit{k}mer counting variant significantly less memory and time consuming.
+However, the \textit{k}mer counting process in KAGE is slightly different from the process commonly refered to by the term \textit{k}mer counting.
+Rather than counting the observed frequency of every valid \textit{k}mer in a set of input reads, KAGE only counts the observed frequencies of every \textit{k}mer in a predefined set.
+Given how many valid \textit{k}mers one can observe in a set of (hundreds of?) millions of reads (\textbf{cite?}), which is typical when sequencing and genotyping a human genome, not needing to store each of these with an associated count value makes this new \textit{k}mer counting variant significantly less memory and time consuming.
 
 \begin{figure}[H]
 \begin{center}
@@ -182,12 +182,12 @@ Given how many valid \textit{k}mers one can observe in a set of (hundreds of?) m
 \end{tikzpicture}
 }
 \caption{
-  \textit{Partial} \textit{k}mer counting where we only count the observed frequencies of \textit{k}mers present in a predetermined set. In this example, our set of predetermined \textit{k}mers is \{ATT, AGT, GTC, GAC\}. During counting, \textit{k}mers not present in this set are skipped.
+  \textit{Partial} \textit{k}mer counting where we only count the observed frequencies of \textit{k}mers present in a predefined set. In this example, our set of predefined \textit{k}mers is \{ATT, AGT, GTC, GAC\}. During counting, \textit{k}mers not present in this set are skipped.
 }
 \label{background:kmers_and_kmer_counting:partial_kmer_counting:figure}
 \end{center}
 \end{figure}
 
-Henceforth in this thesis, we will in the favour of brevity refer to the former \textit{k}mer counting process where we count every valid \textit{k}mer's occurence as \textit{full} \textit{k}mer counting, and to the latter process where we only count the occurences of \textit{k}mers in a predetermined set as \textit{partial} \textit{k}mer counting.
+Henceforth in this thesis, we will in the favour of brevity refer to the former \textit{k}mer counting process where we count every valid \textit{k}mer's occurence as \textit{full} \textit{k}mer counting, and to the latter process where we only count the occurences of \textit{k}mers in a predefined set as \textit{partial} \textit{k}mer counting.
 
 While several \textit{k}mer counting software tools have been developed in previous work, with at least one, Gerbil \cite{gerbil}, having support for GPU acceleration \cite{kmer_counting_tools}, these tools are designed to solve the \textit{full} \textit{k}mer counting problem (\textbf{haven't checked this, would probably take a while}).

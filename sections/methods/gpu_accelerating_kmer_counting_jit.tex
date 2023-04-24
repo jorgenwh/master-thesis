@@ -1,0 +1,12 @@
+\subsubsection{Re-Implementing the Hash Table Directly in Python}
+While the CUDA hash table we implemented in the previous section yielded significant speedup when \textit{k}mer counting and much better results than the GPU accelerated version of NumPy Structures' hash table, it required us to dvelve into C++, using CUDA's programming framework and leaving the comforts of Python behind in order to implement.
+We therefore explored another possible avenue for implementing such a hash table, this time directly in Python.
+CuPy offers more than just a GPU accelerated subset of NumPy's array interface.
+Additionally, CuPy allows for custom kernels written directly in Python, to be \textit{jit} (just-in-time) compiled.
+By exploiting this, we were able to re-implement our parallel hash table directly in Python using CuPy's jit functionality.
+This implementation can be found online at \url{https://github.com/jorgenwh/cupycounter}.
+
+\subsubsection{Assessment}
+...
+
+...

@@ -1,13 +1,13 @@
 %\documentclass[12pt,letterpaper]{article}
-\documentclass[12pt,a4paper]{article}
+\documentclass[12pt,a4paper]{article} % NEW
 
 % packages
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage[margin=1in]{geometry} % ORIGINAL
 \usepackage[skip=0.5cm]{parskip} % ORIGINAL
 %\usepackage[skip=10pt plus1pt, indent=20pt]{parskip} % NEW
 \usepackage{setspace}
-\usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{times}
 \usepackage{graphicx}
@@ -192,8 +192,8 @@
 \uiomasterfp[author={Jørgen Wictor Henriksen},date={Spring 2023},dept={Department of Bioinformatics},color=blue,long,supervisors={Ivar Grytten \and Knut Rand \and Geir Kjetil Sandve},program={Programming and System Architecture},title={Speeding up Genotyping through GPU Acceleration},subtitle={}]
 
 % title
-\maketitle
-\newpage
+%\maketitle
+%\newpage
 
 % abstract
 \input{sections/abstract/include.tex}

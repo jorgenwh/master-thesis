@@ -1,9 +1,12 @@
-\subsection{GKAGE vs KAGE} \label{results:gkage_vs_kage}
+\subsection{GKAGE} \label{results:gkage}
+After having explored several possible methods for GPU accelerating the existing NumPy-based Python code in KAGE, we integrated the GPU accelerated functionality into KAGE.
+We called the resulting program GKAGE (GPU KAGE).
+While it can seem like GKAGE and KAGE are two separate programs, GKAGE is ran today by using a -g flag to utilize the GPU accelerated functionality of GKAGE.
 
 \begin{table}[H]
 \begin{tabular}{lllll}
 \cline{1-4}
-\multicolumn{1}{|l|}{System} & \multicolumn{1}{l|}{Description}               & \multicolumn{1}{l|}{CPU}                  & \multicolumn{1}{l|}{GPU}                   &  \\ \cline{1-4}
+\multicolumn{1}{|l|}{\textbf{System}} & \multicolumn{1}{l|}{\textbf{Description}}               & \multicolumn{1}{l|}{\textbf{CPU}}                  & \multicolumn{1}{l|}{\textbf{GPU}}                   &  \\ \cline{1-4}
 \multicolumn{1}{|l|}{1}      & \multicolumn{1}{l|}{High-end compute server}   & \multicolumn{1}{l|}{AMD EPYC 7742}        & \multicolumn{1}{l|}{Nvidia Tesla V100}     &  \\ \cline{1-4}
 \multicolumn{1}{|l|}{2}      & \multicolumn{1}{l|}{Consumer desktop} & \multicolumn{1}{l|}{Intel Core i5-11400F} & \multicolumn{1}{l|}{Nvidia GTX 1660 SUPER} &  \\ \cline{1-4}
 \end{tabular}
@@ -12,5 +15,5 @@
   \textbf{System 1} is a high-end compute server with top-of-the-line hardware.
   \textbf{System 2} is a consumer grade desktop gaming computer.
 }
-\label{results:gkage_vs_kage:tables:systems}
+\label{results:gkage:tables:systems}
 \end{table}

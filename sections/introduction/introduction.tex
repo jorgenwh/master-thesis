@@ -17,7 +17,7 @@ In recent years, with the introduction of the \textit{general purpose graphical 
 Common for all traditional genotyping tools is that they are implemented to run on the \textit{central processing unit} (CPU).
 This likely stems from the fact that memory usage commonly reaches tens, and sometimes hundreds of gigabytes when running these tools \cite{kage}, and that not all problems are fit to run on the GPU architecture.
 However, the currently fastest known genotyping tool, KAGE, requires significantly less memory compared to its competitors.
-Additionally, KAGE is implemented in Python, and performs a significant amount of large array operations using the Python library NumPy \cite{numpy}.
+Additionally, KAGE is implemented in Python, and performs a significant amount of large array operations - a type of operation well suited for the GPU architecture - using the Python library NumPy \cite{numpy}.
 Because of this, KAGE seemingly stood to benefit from GPU acceleration.
 
 In this thesis, we will explore whether we can speed up (alignment-free) genotyping in any significant way by utilizing the GPU.

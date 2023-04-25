@@ -1,15 +1,16 @@
 \subsection{GKAGE vs KAGE} \label{results:gkage_vs_kage}
-...
 
-\begin{figure}[H]
-\begin{center}
-  \begin{tabular}{lll}
-    \hline
-      System                       & CPU                  & GPU                    \\
-    \hline
-      \textit{1}: High-end compute server   & AMD EPYC 7742        & NVIDIA Tesla V100      \\
-      \textit{2}: Consumer desktop computer   & Intel Core i5-11400F & NVIDIA GTX 1660 SUPER  \\
-    \hline
-  \end{tabular}
-\end{center}
-\end{figure}
+\begin{table}[H]
+\begin{tabular}{lllll}
+\cline{1-4}
+\multicolumn{1}{|l|}{System} & \multicolumn{1}{l|}{Description}               & \multicolumn{1}{l|}{CPU}                  & \multicolumn{1}{l|}{GPU}                   &  \\ \cline{1-4}
+\multicolumn{1}{|l|}{1}      & \multicolumn{1}{l|}{High-end compute server}   & \multicolumn{1}{l|}{AMD EPYC 7742}        & \multicolumn{1}{l|}{Nvidia Tesla V100}     &  \\ \cline{1-4}
+\multicolumn{1}{|l|}{2}      & \multicolumn{1}{l|}{Consumer desktop} & \multicolumn{1}{l|}{Intel Core i5-11400F} & \multicolumn{1}{l|}{Nvidia GTX 1660 SUPER} &  \\ \cline{1-4}
+\end{tabular}
+\caption{
+  The two systems used to benchmark GKAGE against KAGE to account for the speedup achieved through GPU acceleration.
+  \textbf{System 1} is a high-end compute server with top-of-the-line hardware.
+  \textbf{System 2} is a consumer grade desktop gaming computer.
+}
+\label{results:gkage_vs_kage:tables:systems}
+\end{table}

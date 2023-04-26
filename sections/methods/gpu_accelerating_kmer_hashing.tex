@@ -1,4 +1,4 @@
-\subsection{GPU Accelerating \textit{k}mer Hashing}
+\subsection{GPU Accelerating \textit{k}mer Hashing} \label{methods:gpu_accelerating_kmer_hashing}
 The \textit{k}mer hashing component of KAGE is responsible for reading genomic reads from FASTA, FASTQ or other file types, encoding the reads as 2-bit encoded data and finally extracting (or hashing) all valid \textit{k}mers from the 2-bit encoded genomic reads data.
 In KAGE, the final product yielded by this component is a 64-bit unsigned integer array where each element is a 2-bit encoded 31-mer represented in the right-most 62 bits of the integer.
 Since the number of valid \textit{k}mers in a typical FASTA or FASTQ from sequencing a human genome is extremely vast, the file is usually read, encoded and hashes in chunks to alleviate memory consumption.

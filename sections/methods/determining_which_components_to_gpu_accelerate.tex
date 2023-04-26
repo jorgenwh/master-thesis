@@ -4,60 +4,6 @@ When developing GKAGE, we started with KAGE as a baseline and analysed the pipel
 We then examined whether these bottlenecks could benefit from GPU acceleration by taking into consideration the type of computations that were performed, whether they would be suitable for the GPU's architecture and how much of the overall runtime the component constituted. 
 We would then intuit whether the component in question would be worthwhile trying to GPU accelerate given the project's time constraints and estimated difficulty.
 
-The baseline KAGE pipeline is split into two distinct processes (or programs): 1) counting the \textit{k}mer frequencies observed in the DNA reads of the individual being genotyped, and 2) genotyping the individual using a bayesian model based on the observed and expected \textit{k}mer frequencies.
-
-\begin{figure}[H]
-\begin{center}
-\scalebox{1}{
-\begin{tikzpicture}
-  % kmer hashing 
-  \node at(-.25,1.25)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{\textit{k}mer hashing}};
-  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{FASTA}};
-  \draw [thick,-stealth](1.25,0) -- (2,0);
-  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{k}mer hashing}};
-  \draw [thick,-stealth](4.65,0) -- (5.4,0);
-  \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners]{};
-  \node at(6.65,.25)[]{\smaller{encoded}};
-  \node at(6.65,-.25)[]{\smaller{\textit{k}mers}};
-  \node at(3.3,0)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
-  % arrows
-  \draw [thick](6.65,-.8) -- (6.65,-1.5);
-  \draw [thick](6.65,-1.5) -- (1.25,-1.5);
-  \draw [thick,-stealth](1.25,-1.5) -- (1.25,-2.2);
-  % kmer counting 
-  \node at(-.185,-1.75)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{\textit{k}mer counting}};
-  \node at(3.3,-3)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
-  \node at(1.25,-3)[draw,minimum width=2cm,minimum height=1.2cm]{};
-  \node at(1.25,-2.75)[]{\smaller{\textit{k}mer}};
-  \node at(1.25,-3.25)[]{\smaller{counting}};
-  \draw [thick,-stealth](2.5,-3) -- (4.15,-3);
-  \node at(5.375,-3)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners]{};
-  \node at(5.375,-2.75)[]{\smaller{\textit{k}mer}};
-  \node at(5.375,-3.25)[]{\smaller{counts}};
-  % arrows
-  \draw [thick](5.375,-3.8) -- (5.375,-4.5);
-  \draw [thick](5.375,-4.5) -- (1.25,-4.5);
-  \draw [thick,-stealth](1.25,-4.5) -- (1.25,-5.2);
-  % genotyping
-  \node at(-.465,-4.75)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{genotyping}};
-  \node at(3.3,-6)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
-  \node at(1.25,-6)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{genotyping}};
-  \draw [thick,-stealth](2.5,-6) -- (4.15,-6);
-  \node at(5.375,-6)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{genotypes}};
-  % KAGE
-  \node at(3.3,2.05)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{KAGE}};
-  \node at(3.3,-3)[draw,minimum width=10.5cm,minimum height=9.5cm,rounded corners](){};
-\end{tikzpicture}
-}
-\caption{
-  A simplified illustration of how the KAGE genotyping pipeline works.
-  The two top most rows, going from an input FASTA file to \textit{k}mer counts, is implemented as an individual piece of software.
-  Initial benchmarking revealed that the two top most rows constituted more than 96\% of the total runtime when running KAGE on a human genome.
-  Particularly, the \textit{k}mer counting step, is significantly more compute, memory and time consuming than the rest of the pipeline.
-}
-\label{methods:determining_which_components_to_gpu_accelerate:figure}
-\end{center}
-\end{figure}
-
+The KAGE genotyping pipeline \ref{background:kage:figures:pipeline} is split into two distinct processes (or programs): 1) counting the \textit{k}mer frequencies observed in the DNA reads of the individual being genotyped, and 2) genotyping the individual using a bayesian model based on the observed and expected \textit{k}mer frequencies.
 Initial benchmarking on a consumer desktop revealed that the \textit{k}mer counting step constituted more than 96\% of KAGE's total runtime, with \textit{k}mer counting step taking 2080 seconds and the genotyping step taking 70 seconds for a total of 2150 seconds (35 minutes and 50 seconds) to genotype a full human genome.
 Thus, the \textit{k}mer counting step, having such a clear margin for runtime improvement over the genotyping step, was the main focus for GPU acceleration for potential runtime speedup.

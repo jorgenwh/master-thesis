@@ -1,4 +1,4 @@
-\subsection{GPU Accelerating \textit{k}mer Counting}
+\subsection{GPU Accelerating \textit{k}mer Counting} \label{methods:gpu_accelerating_kmer_counting}
 While several \textit{k}mer counting solutions have been developed in previous work, with at least one having support for GPU acceleration \cite{kmer_counting_tools}, most such tools are designed to solve the \textit{full} \textit{k}mer counting problem, which we described in section \ref{background:kmers_and_kmer_counting}.
 Additionally in section \ref{background:kmers_and_kmer_counting}, we described how KAGE's \textit{k}mer counting step is a less compute and memory demanding problem which we defined as \textit{partial} \textit{k}mer counting.
 As a reminder: we defined \textit{partial} \textit{k}mer counting as the process of only counting the observed occurences of a predefined set of \textit{k}mers in a sample.
@@ -52,7 +52,7 @@ begin
 end
 \end{lstlisting}
 \caption{
-  The algorithm used for querying keys (\textit{k}mers) in a hash table. 
+  The algorithm used for querying keys (\textit{k}mers) in the parallel GPU hash table implemented in C++ using CUDA. 
   When querying an array of $N$ \textit{k}mers, $N$ CUDA threads are launched and each thread is assigned a \textit{k}mer. 
   The threads then perform this algorithm in a parallel fashion to query many \textit{k}mers in parallel.
   The probing scheme used in this algorithm is the same used in both insertions and updating of values.
@@ -118,7 +118,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
   \node at(-1.3,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(-.65,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(0,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm,fill=misscolor](){\smaller{$...$}};
-  \node at(.65,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$k$}};
+  \node at(.65,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$k_2$}};
   \node at(1.3,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(1.95,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(2.6,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
@@ -152,7 +152,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
   \node at(-1.3,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(-.65,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(0,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
-  \node at(.65,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm,fill=hitcolor](){\smaller{$k$}};
+  \node at(.65,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm,fill=hitcolor](){\smaller{$k_2$}};
   \node at(1.3,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(1.95,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(2.6,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
@@ -182,7 +182,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
   \node at(-1.3,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(-.65,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(0,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
-  \node at(.65,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$k$}};
+  \node at(.65,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$k_2$}};
   \node at(1.3,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(1.95,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
   \node at(2.6,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
@@ -209,7 +209,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
 \end{figure}
 
 \paragraph{Integration to Python}
-In order to integrate the hash table implemented in C++ using CUDA to Python so that it would be compatible with KAGE, we used pybind11 (described in section \ref{background:pybind11}) to create Python bindings for the C++ class and then wrap the implementation in a Python class.
+In order to integrate the hash table implemented in C++ using CUDA to Python so that it would be compatible with KAGE, we used pybind11 (introduced in section \ref{background:pybind11}) to create Python bindings for the C++ class and then wrap the implementation in a Python class.
 pybind11 provides easy-to-use macros for this, allowing us to add bindings by simply creating a bindings C++ file and then compiling a module where our C++ functionality is contained.
 
 \begin{figure}[H]

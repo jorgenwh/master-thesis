@@ -1,19 +1,50 @@
 \subsection{GKAGE} \label{results:gkage}
-After having explored several possible methods for GPU accelerating the existing NumPy-based Python code in KAGE, we integrated the GPU accelerated functionality into KAGE.
-We called the resulting program GKAGE (GPU KAGE).
-While it can seem like GKAGE and KAGE are two separate programs, GKAGE is ran today by using a -g flag to utilize the GPU accelerated functionality of GKAGE.
+In the previous section we explored three different methods for GPU accelerating existing NumPy-based code in Python: 
+1) using CuPy as a drop-in replacement for NumPy,
+2) implementing our own GPU accelerated solutions in C++ using CUDA and using pybind11 to create Python bindings for said solutions, 
+and 3) using CuPy's custom jit (just-in-time) compiled kernel support to implement kernels directly in Python, achieving similar control and granularity as with method 2.
 
-\begin{table}[H]
-\begin{tabular}{lllll}
-\cline{1-4}
-\multicolumn{1}{|l|}{\textbf{System}} & \multicolumn{1}{l|}{\textbf{Description}}               & \multicolumn{1}{l|}{\textbf{CPU}}                  & \multicolumn{1}{l|}{\textbf{GPU}}                   &  \\ \cline{1-4}
-\multicolumn{1}{|l|}{1}      & \multicolumn{1}{l|}{High-end compute server}   & \multicolumn{1}{l|}{AMD EPYC 7742}        & \multicolumn{1}{l|}{Nvidia Tesla V100}     &  \\ \cline{1-4}
-\multicolumn{1}{|l|}{2}      & \multicolumn{1}{l|}{Consumer desktop} & \multicolumn{1}{l|}{Intel Core i5-11400F} & \multicolumn{1}{l|}{Nvidia GTX 1660 SUPER} &  \\ \cline{1-4}
-\end{tabular}
-\caption{
-  The two systems used to benchmark GKAGE against KAGE to account for the speedup achieved through GPU acceleration.
-  \textbf{System 1} is a high-end compute server with top-of-the-line hardware.
-  \textbf{System 2} is a consumer grade desktop gaming computer.
+We chose to integrate the following GPU accelerated functionalities into KAGE:
+1) our custom GPU accelerated hash table implemented in C++ using CUDA with pybind11 Python bindings (described in section \ref{methods:gpu_accelerating_kmer_counting}),
+2) the CuPy drop-in solution for \textit{k}mer encoding and hashing (described in section \ref{methods:gpu_accelerating_kmer_hashing}).
+The GPU accelerated poisson logpmf implementation used for the genotyping step was not included, as it did not result in faster runtimes.
+We integrated the solutions into KAGE in such a way that the same piece of software could be ran on both the CPU and the GPU.
+In fact, running GKAGE is achieved by running KAGE, using the -g flag to enable GPU acceleration.
+KAGE (and GKAGE) can be found at \url{https://github.com/kage-genotyper}.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % Hints 
+  \node at(-1.5,2.5)[draw,minimum width=.75cm,minimum height=.5cm,rounded corners](){};
+  \node at(.5,2.5)[](){data or result};
+  \node at(-1.5,1.75)[draw,minimum width=.75cm,minimum height=.5cm](){};
+  \node at(.6635,1.75)[](){step or process};
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{FASTA}};
+  \node at(-2.5,-1)[](){\smaller{without -g}};
+  \node at(2.5,-1)[](){\smaller{with -g}};
+  \draw [thick,-stealth](.25,-.85) -- (2.5,-1.9);
+  \draw [thick,-stealth](-.25,-.85) -- (-2.5,-1.9);
+  \node at(-2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} hashing (CPU)}};
+  \node at(2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} hashing (GPU)}};
+  \draw [thick,-stealth](2.5,-3.6) -- (2.5,-4.25);
+  \draw [thick,-stealth](-2.5,-3.6) -- (-2.5,-4.25);
+  \node at(-2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} counting (CPU)}};
+  \node at(2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} counting (GPU)}};
+  \draw [thick,-stealth](2.5,-5.95) -- (.25,-7);
+  \draw [thick,-stealth](-2.5,-5.95) -- (-.25,-7);
+  \node at(0,-7.875)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{genotyping (CPU)}};
+  \draw [thick,-stealth](0,-8.75) -- (0,-9.4);
+  \node at(0,-10.225)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{genotypes}};
+\end{tikzpicture}
 }
-\label{results:gkage:tables:systems}
-\end{table}
+\caption{
+  To run GKAGE, you simply run KAGE with the -g flag to indicate that you want to use the GPU to accelerate the processing.
+  Out of the three components that we explored to GPU accelerate, only two made it into GKAGE.
+  Thus, only \textit{k}mer (encoding and) hashing and \textit{k}mer counting is GPU accelerated when running KGAKE.
+  The genotyping step, which constitutes a small portion of the runtime even on the CPU, is identical and runs on the CPU in both KAGE and GKAGE.
+}
+\label{results:gkage:figures:gkage}
+\end{center}
+\end{figure}

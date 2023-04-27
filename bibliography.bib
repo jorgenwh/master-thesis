@@ -279,6 +279,19 @@ eprint = {https://www.biorxiv.org/content/early/2021/12/20/2021.12.03.471074.ful
 journal = {bioRxiv}
 }
 
+@article{preprint,
+author = {J{\o}rgen Wictor Henriksen and Knut Dagestad Rand and Geir Kjetil Sandve and Ivar Grytten},
+title = {Ultra-fast genotyping of SNPs and short indels using GPU acceleration},
+elocation-id = {2023.04.14.534526},
+year = {2023},
+doi = {10.1101/2023.04.14.534526},
+publisher = {Cold Spring Harbor Laboratory},
+abstract = {As decreasing DNA sequencing costs leads to a steadily increasing rate of generated data, the development of efficient algorithms for processing of the sequence data is increasingly important to reduce costs and energy consumption. Recent work have shown that genotyping can be done efficiently and accurately using alignment-free methods that are based on analyzing kmers from sequenced reads. In particular, we have recently presented the KAGE genotyper, which uses an efficient pangenome representation of known individuals in a population to further increase accuracy and efficiency. While existing genotypers like KAGE use the Central Processing Unit (CPU) to count and analyze kmers, the Graphical Processing Unit (GPU) has shown promising for reducing runtime for similar problems.We here present GKAGE, a new and improved version of KAGE that utilizes the GPU to further increase the computational efficiency. This is done by counting and analyzing large amounts of kmers in the many parallel cores of a GPU. We show that GKAGE is, on hardware of comparable cost, able to genotype an individual up to an order of magnitude faster than KAGE while producing the same output, which makes it by far the fastest genotyper available today. GKAGE can run on consumer-grade GPUs, and enables genotyping of a human sample in only a matter of minutes without the need for expensive high-performance computers. GKAGE is open source and available at https://github.com/kage-genotyper/kage.Competing Interest StatementThe authors have declared no competing interest.},
+URL = {https://www.biorxiv.org/content/early/2023/04/14/2023.04.14.534526},
+eprint = {https://www.biorxiv.org/content/early/2023/04/14/2023.04.14.534526.full.pdf},
+journal = {bioRxiv}
+}
+
 @article{malva,
 title = {MALVA: Genotyping by Mapping-free ALlele Detection of Known VAriants},
 journal = {iScience},

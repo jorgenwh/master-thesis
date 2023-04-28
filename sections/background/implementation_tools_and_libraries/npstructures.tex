@@ -1,12 +1,12 @@
-\subsection{NumPy Structures} \label{background:numpy_structures}
-NumPy Structures (npstructures) is a Python package built on top of NumPy that provides data structures with NumPy-like features to augment the NumPy library \cite{npstructures}.
+\subsubsection{npstructures} \label{background:implementation_tools_and_libraries:npstructures}
+npstructures (NumPy Structures) is a Python package built on top of NumPy that provides data structures with NumPy-like features to augment the NumPy library \cite{npstructures}.
 This is achieved by building these new data structures using NumPy's underlying multi-dimensional array object and fast array routines.
 
-Some of NumPy Structures' data structures have been central in work done in this thesis.
+Some of npstructures' data structures have been central in work done in this thesis.
 Those data structures will therefore be detailed in this section.
 
-\subsubsection{Ragged Array}
-A central feature in NumPy Structures is its ragged array object, a two-dimensional array data structure with differing column lengths that provides NumPy-like behaviour and performance.
+\paragraph{Ragged Array}
+A central feature in npstructures is its ragged array object, a two-dimensional array data structure with differing column lengths that provides NumPy-like behaviour and performance.
 The ragged array object works as a drop in alternative to NumPy's multi-dimensional array object where one needs an array structure where the column lengths can vary, supporting many of the common NumPy functionalities such as multi-dimensional indexing, slicing, ufuncs and a subset of the function interface.
 \begin{figure}[H]
 \begin{lstlisting}[language=Python,style=console]
@@ -27,13 +27,13 @@ array([0, 1, 2, 3, 4, 5, 6, 7, 8])
 36
 \end{lstlisting}
 \caption{
-  A simple illustration of how NumPy Structures' data structures can be used directly in Python as drop-in augmentations to the NumPy library.
+  A simple illustration of how npstructures' data structures can be used directly in Python as drop-in augmentations to the NumPy library.
 }
-\label{background:numpy_structures:ragged_array:figure}
+\label{background:implementation_tools_and_libraries:npstructures:figure:ragged_array_example}
 \end{figure}
 
-\subsubsection{Hash Table and Counter}
-NumPy Structures also provides a memory efficient hash table built on top of the ragged array data structure.
+\paragraph{Hash Table and Counter}
+npstructures also provides a memory efficient hash table built on top of the ragged array data structure.
 This hash table is designed to give dictionary-like behaviour for NumPy-arrays, meaning chunks of key-value pairs can be operated on at once using fast NumPy array routines.
 This hash table object is in turn the base for a counter object that allows for counting of occurences of a predefined set of keys.
 

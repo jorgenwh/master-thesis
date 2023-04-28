@@ -1,10 +1,10 @@
-\subsection{Variants and Variant Calling} \label{background:variants_and_variant_calling}
+\subsubsection{Variants and Variant Calling} \label{background:biology:variants_and_variant_calling}
 When examining the genome of several individuals within the same species, one will find locations along the genome where the nucleotides differ for the different individuals.
 These distinct nucleotide manifestations are commonly referred to as \textit{variants}.
 The term \textit{variant calling} is used to refer to the process of determining which variants an individual has.
 In other words, given a reference genome sequence, where and how does the genome sequence of the individual of interest differ from the reference sequence.
 This process can abstractly be described in three steps: 
-1) sequence the genome of interest to get DNA reads (described in section \ref{background:high_throughput_dna_sequencing}), 
+1) sequence the genome of interest to get DNA reads (described in section \ref{background:biology:high_throughput_dna_sequencing}), 
 2) align the reads to the reference genome by finding where along the reference genome sequence each read fits best, usually using a heuristic determining which location the read originates from, and 
 3) examine the alignments and note where and how the reference and the individual's sequences differ to determine the variants present in the individual's genome \cite{variant_calling}.
 
@@ -104,7 +104,7 @@ While more columns are usually present, this encapsulated the necessary knowledg
 }
 
 \vspace{1em}
-\smaller{example.vcf}
+\small{example.vcf}
 \begin{lstlisting}[style=vcf]
 ##fileformat=VCFv4.2
 ##reference=GRCh38

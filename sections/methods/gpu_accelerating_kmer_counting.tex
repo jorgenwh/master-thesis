@@ -5,7 +5,7 @@ As a reminder: we defined \textit{partial} \textit{k}mer counting as the process
 Repurposing \textit{k}mer counting tools that are designed to solve the \textit{full} \textit{k}mer counting problem is futile if the goal is speedup.
 Thus, we opted to implement our own GPU accelerated \textit{k}mer counting tool where its design is considered in the context of the \textit{partial} \textit{k}mer counting problem.
 
-Although we had success in GPU accelerating a hash table in NumPy Structures using CuPy, we decided to also attempt to implement a hash table directly in C++ using CUDA, Nvidia's programming platform.
+Although we had success in GPU accelerating a hash table in npstructures using CuPy, we decided to also attempt to implement a hash table directly in C++ using CUDA, Nvidia's programming platform.
 This would allow for a more granular implementation as we would no longer be constrained to a solution originally designed for NumPy array functions.
 
 \subsubsection{Implementation}
@@ -209,7 +209,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
 \end{figure}
 
 \paragraph{Integration to Python}
-In order to integrate the hash table implemented in C++ using CUDA to Python so that it would be compatible with KAGE, we used pybind11 (introduced in section \ref{background:pybind11}) to create Python bindings for the C++ class and then wrap the implementation in a Python class.
+In order to integrate the hash table implemented in C++ using CUDA to Python so that it would be compatible with KAGE, we used pybind11 (introduced in section \ref{background:implementation_tools_and_libraries:pybind11}) to create Python bindings for the C++ class and then wrap the implementation in a Python class.
 pybind11 provides easy-to-use macros for this, allowing us to add bindings by simply creating a bindings C++ file and then compiling a module where our C++ functionality is contained.
 
 \begin{figure}[H]
@@ -257,6 +257,4 @@ The produced module is finally wrapped around a Python class that takes care of 
 The final implementation of this CUDA accelerated hash table can be found and installed at \url{https://github.com/kage-genotyper/cucounter}.
 
 \subsubsection{Assessment}
-...
-
-...
+Include runtime data from the \textit{k}mer counting benchmark test, comparing the CUDA hash table against KAGE's multithreaded CPU version and the GPU hash table from Initial Testing \ref{methods:initial_testing}.

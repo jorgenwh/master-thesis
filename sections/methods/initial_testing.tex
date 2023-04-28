@@ -2,19 +2,19 @@
 Before delving into the GPU accelerated methods used to produce the final GKAGE product, we will here describe an initial test we performed in order to assess two things. Firstly, whether we could effectively GPU accelerate existing NumPy solutions using CuPy, all while staying within the comfort of Python, and secondly, whether such an implementation would result in significant speedup over a CPU solution or at least provide insight into how plausible getting significant speedup by utilizing the GPU was.
 For this, we decided on focusing on the \textit{partial} \textit{k}mer counting problem, detailed in section \ref{background:kmers_and_kmer_counting}.
 
-As detailed in section \ref{background:numpy_structures}, NumPy Structures is a Python library that enhances the NumPy library by providing additional data structures with NumPy-like behaviour and performance, built on top of NumPy.
-Additionally in section \ref{background:numpy_structures}, we detailed a subset of NumPy Structures' data structures, one of which was a counter object that efficiently counts occurences of a predefined keys-set in a sample.
+As detailed in section \ref{background:implementation_tools_and_libraries:npstructures}, npstructures is a Python library that enhances the NumPy library by providing additional data structures with NumPy-like behaviour and performance, built on top of NumPy.
+Additionally in section \ref{background:implementation_tools_and_libraries:npstructures}, we detailed a subset of npstructures' data structures, one of which was a counter object that efficiently counts occurences of a predefined keys-set in a sample.
 This counter object had previously been utilized to count a predefined set of \textit{k}mer's frequencies, albeit on the CPU.
 
-Since NumPy Structures' data structures are all heavily reliant upon NumPy's array routines for fast performance, they are designed around utilizing the CPU's vectorization and data parallelism.
+Since npstructures' data structures are all heavily reliant upon NumPy's array routines for fast performance, they are designed around utilizing the CPU's vectorization and data parallelism.
 Large array operations where data parallelism matters are ideal for the GPU architecture, which often can provide orders of magnitude more parallelism this way.
 In addition, we know that most, if not all of the functionality used from NumPy, will be supported with GPU acceleration by CuPy through an nearly identical interface.
-Thus, by replacing the NumPy functionality used in NumPy Structures' data structures with CuPy's equivalent GPU accelerated functionality, we can GPU accelerate the necessary data structures in NumPy Structures without having to leave Python.
-With this strategy we GPU accelerated NumPy Structures' counter object using CuPy.
+Thus, by replacing the NumPy functionality used in npstructures' data structures with CuPy's equivalent GPU accelerated functionality, we can GPU accelerate the necessary data structures in npstructures without having to leave Python.
+With this strategy we GPU accelerated npstructures' counter object using CuPy.
 
 \subsubsection{Implementation}
-Rather than creating a standalone package version of NumPy Structures with GPU acceleration, we instead opted to add the possibility for GPU acceleration to the already existing package.
-This added a new self imposed requirement; we did not want CuPy to be a NumPy Structures dependancy since many users may wish to use it simply for the NumPy implementations.
+Rather than creating a standalone package version of npstructures with GPU acceleration, we instead opted to add the possibility for GPU acceleration to the already existing package.
+This added a new self imposed requirement; we did not want CuPy to be a npstructures dependancy since many users may wish to use it simply for the NumPy implementations.
 Additionally, we still needed a way to redirect NumPy function calls to their equivalent CuPy functions.
 We fulfilled both of these requirements by exploiting Python's module system.
 
@@ -150,13 +150,9 @@ def set_backend(lib):
   SomeClassUsingNumPy = CPSomeClassUsingNumPy
 \end{lstlisting}
 
-By utilizing this method, we implemented partial GPU support for the NumPy Structures library, including enabling GPU support for the counter object used to count occurences of a predefined key-set in a sample.
+By utilizing this method, we implemented partial GPU support for the npstructures library, including enabling GPU support for the counter object used to count occurences of a predefined key-set in a sample.
 
 \subsubsection{Assessment}
-...
-
 Describe results of this (with graphs) and mention that we have here found a simple way of GPU accelerating existing NumPy code directly in Python without having to dvelve down into C++ and CUDA.
 Perhaps also mention that the results of this initial testing was not used in the final GKAGE because while it was faster, it was not very fast.
 Additionally, the implementation of the counter/hashtable created many large array allocations during both initialization and counting, making the memory usage quite extensive in practice, certainly too extensive for a GPU where memory is more scarce.
-
-...

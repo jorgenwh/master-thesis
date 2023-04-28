@@ -1,11 +1,59 @@
-\subsection{Advantages and Drawbacks of Methods}
-...
+\subsection{Advantages and Drawbacks of Methods} \label{discussion:advantages_and_drawbacks_of_methods}
+In section \ref{methods} we explored three different methods for GPU accelerating existing Python code.
+Each of the methods we explored have a unique set of advantages and drawbacks.
+The dicipline of designing and implementing GPU programs is quite distinct from the more mainstream dicipline of implementing programs meant to run on the CPU.
+Becoming an expert GPU programmer can in many instances take years with all the technologies and tools available today.
+Thus, an interesting metrics when assessing the advantages and drawbacks of the GPU acceleration methods we have explored is how seamless it is to implement the solution, particularly for someone with little or no experience in GPU programming.
+Other metrics we will discuss include how seamless the integration of a solution into Python is, how quickly a solution can be implemented compared to the alternative methods, among other per-method details.
 
-\subsubsection{Using CuPy as a NumPy Drop-in Replacement}
-...
+\subsubsection{Using CuPy as a NumPy Drop-in Replacement} \label{discussion:using_cupy_as_a_numpy_drop_in_replacement}
+The first GPU acceleration method we explored in section \ref{methods:initial_testing}, was to use CuPy, a GPU accelerated array library with an interface designed to closely follow NumPy, as a drop-in replacement for NumPy to GPU accelerate an already existing solution that was based on NumPy for performance.
+
+\paragraph{Advantages}
+This method is ideal in cases where an already existing Python solution based on NumPy exists and it is interesting to see whether porting it to the GPU will likely be beneficial.
+The technique of using CuPy as a drop-in for NumPy is, by a large margin, the fastest way of implementing GPU acceleration.
+This does, however, require an already existing solution based on NumPy.
+If a solution is to be made from scratch, CuPy is still an adequate tool for "quick and dirty" testing with seamless GPU acceleration directly in Python.
+Additionally, this method does not require deep knowledge or understanding of the GPU architecture, although understanding the GPU's hardware is helpful when determining which NumPy solutions are good candidates for GPU acceleration through CuPy.
+
+\paragraph{Drawbacks}
+While an advantage of CuPy is that it allows for seamless "quick and dirty" testing directly in Python, this conversely also introduces a drawback of this method.
+Many solutions implemented using NumPy are designed for fast processing on the CPU.
+While they can often be great candidates for the GPU since they perform array operations that can be well suited for the GPU architecture, this match is not guaranteed. 
+In such cases, the GPU will provide inadequate performance boosts, even if the solution could be redesigned to better fit the GPU architecture.
 
 \subsubsection{Custom C++ Implementations Using CUDA}
-...
+The second GPU acceleration method we explored in section \ref{methods:gpu_accelerating_kmer_counting}, was to implement our own solution directly in C++ using the CUDA framework.
+We then used pybind11 to create Python bindings for our C++ fuctionality to gain access directly inside Python.
+
+\paragraph{Advantages}
+The clearest advantage of this method is the control over hardware and granularity achieved when implementing the solution directly using Nvidia's programming platform: CUDA.
+This provides the possibility of more closely tailoring the implementation to the problem and using all of CUDA's technology to gain the best performance possible.
+Additionally, since such an implementation would be created using C++, this allows access to C++ features that are otherwise out of reach in Python, such as thread parallelization.
+
+\paragraph{Drawbacks}
+For this method too, its main advantage also yields its greatest drawback.
+The CUDA programming platform is vast and provides support that can be extremely useful to solve certain problems effectively, but that also requires deep knowledge and understanding of the GPU hardware- and programming model.
+Additionally, since CUDA features are used in C++, the programmer would need to be, at the very least, comfortable with writing software in C++.
+Since such a solution would be implemented in C++, this makes integration into Python more difficult.
+Bindings using ctypes, pybind11 or some other method would be necessary to gain access to the solution directly in Python.
+C++ is also a significantly more verbose language, largely due to its more fine-grained control.
+The implementation is in many ways forced to be more detailed, which results in more time required to create the implementation.
 
 \subsubsection{Custom JIT-Compiled Kernels in Python}
-...
+The third and final GPU acceleration method we explored in section \ref{methods:gpu_accelerating_kmer_counting_jit}, was to implement our solution using CuPy's support for jit compiled (just-in-time-compiled) custom kernels.
+CuPy, directly in Python through its module interface, provides access to certain CUDA functionality as well as support for creating kernels directly in Python code that are then compiled when the running program first encounters them.
+
+\paragraph{Advantages}
+This method has many of the same advantages as the method discussed in \ref{discussion:using_cupy_as_a_numpy_drop_in_replacement}, and can be viewed as an extension of the CuPy drop-in for NumPy method.
+What it brings in addition to being a drop-in replacement for NumPy is its jit-compiled custom kernel support and, although limited, CUDA functionality support.
+This allows for simple usage, similar to NumPy, where it is suitable, and more detailed usage such as implementing custom kernels in cases where the straight-forward array-interface does not suffice.
+In section \ref{methods:gpu_accelerating_kmer_counting_jit}, we showed that we could, in full, re-implement our CUDA based hash table directly using CuPy's custom kernel support.
+This was all achieved while never leaving Python, meaning a programmer does not need to know C++ in order to implement custom kernels this way.
+More additional functionality not used in our implementation of GKAGE is also supported through CuPy, such as CUDA streams cooperative groups and more \cite{cupy}.
+
+\paragraph{Drawbacks}
+While it is helpful to be able to implement custom kernels directly in Python code, it is uncertain how much simplicity this in effect introduces.
+The kernels implemented using CuPy's custom kernel support still need to adhere to the same programming model as CUDA kernels implemented in C++.
+A programmer with little to no knowledge of how the GPU hardware and programming model works, will not with ease be able to implement effective kernels this way.
+Therefore, we would argue that this advantage does not do much more than alleviate the need to dvelve into C++ and set up proper compiling and Python bindings.

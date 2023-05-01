@@ -39,14 +39,14 @@ For example, in a hash table of capacity $c$, we query a \textit{k}mer $k$ using
 \begin{lstlisting}[style=pseudocode]
 input: uint64[] keys, uint32[] values, int c, uint64 k
 begin
-  h = murmur(k) % c
+  h = murmur(k) mod c
   while true do
     if keys[h] == k then
       return values[h]
     else if keys[h] == empty then
       return 0
     else
-      h = (h + 1) % c
+      h = (h + 1) mod c
     end if
   end while
 end

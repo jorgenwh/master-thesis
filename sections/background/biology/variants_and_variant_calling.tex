@@ -3,10 +3,98 @@ When examining the genome of several individuals within the same species, one wi
 These distinct nucleotide manifestations are commonly referred to as \textit{variants}.
 The term \textit{variant calling} is used to refer to the process of determining which variants an individual has.
 In other words, given a reference genome sequence, where and how does the genome sequence of the individual of interest differ from the reference sequence.
-This process can abstractly be described in three steps: 
+The traditional way of performing variant calling is to use an alignment-based method, which can abstractly be described as the following three steps:
 1) sequence the genome of interest to get DNA reads (described in section \ref{background:biology:high_throughput_dna_sequencing}), 
 2) align the reads to the reference genome by finding where along the reference genome sequence each read fits best, usually using a heuristic determining which location the read originates from, and 
 3) examine the alignments and note where and how the reference and the individual's sequences differ to determine the variants present in the individual's genome \cite{variant_calling}.
+A popular alignment-based tool for performing variant calling is GATK \cite{gatk}.
+
+Variants found in genomes of individuals of the same species can take many different forms.
+Three common types of variants are:
+\begin{compactitem}
+  \item \textit{Single nucleotide polymorphism} (SNP) is a variant in which only a single nucleotide differs in the sequenced genome when compared to a reference genome at a location of interest.
+  \item \textit{Indel} refers to one of two types of variants: \textit{insertion} - a sequence of nucleotides, not present in the reference genome, has been introduced in the sequenced genome, and \textit{deletion} - a sequence of nucleotides, present in the reference genome, are missing in the sequenced genome.
+  \item \textit{Structural variant} is a large-scale genetic variation in which several alterations in the structure have occured, typically affecting more than 1000 bases.
+\end{compactitem}
+
+\definecolor{variantcolor}{RGB}{230,230,230}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % SNP
+  \node at(.7,0)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  % lower
+  \node at(-.55,0)(){...};
+  \node at(0,0)(){C};
+  \node at(.35,0)(){A};
+  \node at(.7,0)(){T};
+  \node at(1.05,0)(){A};
+  \node at(1.4,0)(){C};
+  \node at(1.95,0)(){...};
+  % arrow
+  \draw [-stealth](.7,1) -- (.7,.5);
+  % upper
+  \node at(-.55,1.5)(){...};
+  \node at(0,1.5)(){C};
+  \node at(.35,1.5)(){A};
+  \node at(.7,1.5)(){G};
+  \node at(1.05,1.5)(){A};
+  \node at(1.4,1.5)(){C};
+  \node at(1.95,1.5)(){...};
+  \node at(.7,-.75)(){\smaller{SNP}};
+  % Insertion
+  \node at(.7+4,0)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  \node at(1.05+4,0)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  % lower
+  \node at(-.55+4,0)(){...};
+  \node at(0+4,0)(){C};
+  \node at(.35+4,0)(){A};
+  \node at(.7+4,0)(){G};
+  \node at(1.05+4,0)(){G};
+  \node at(1.4+4,0)(){C};
+  \node at(1.95+4,0)(){...};
+  % arrow
+  \draw [-stealth](.7+4,1) -- (.7+4,.5);
+  % upper
+  \node at(-.55+4,1.5)(){...};
+  \node at(.7+4-.35,1.5)(){C};
+  \node at(.7+4,1.5)(){A};
+  \node at(.7+4+.35,1.5)(){C};
+  \node at(1.95+4,1.5)(){...};
+  \node at(.7+4,-.75)(){\smaller{Insertion}};
+  % Deletion
+  \node at(.7+8,1.5)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  \node at(1.05+8,1.5)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  \node at(.35+8,1.5)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  % lower
+  \node at(-.55+8,0)(){...};
+  \node at(.525+8,0)(){C};
+  \node at(.525+.35+8,0)(){C};
+  \node at(1.95+8,0)(){...};
+  % arrow
+  \draw [-stealth](.7+8,1) -- (.7+8,.5);
+  % upper
+  \node at(-.55+8,1.5)(){...};
+  \node at(0+8,1.5)(){C};
+  \node at(.35+8,1.5)(){A};
+  \node at(.7+8,1.5)(){G};
+  \node at(1.05+8,1.5)(){A};
+  \node at(1.4+8,1.5)(){C};
+  \node at(1.95+8,1.5)(){...};
+  \node at(.7+8,-.75)(){\smaller{Deletion}};
+\end{tikzpicture}
+}
+\caption{
+  An illustration demonstrating how three types of variants can manifest when aligning sequenced reads to a reference genome.
+  From left to right: a single nucleotide polymorphism (SNP), an insertion (indel), and a deletion (indel).
+}
+\label{background:variant_and_variant_calling:figures:variants}
+\end{center}
+\end{figure}
+
+The software tool KAGE, which is described in section \ref{background:kage}, focuses on genotyping SNPs and indels.
 
 A common way to represent genome sequence variations is to encode them according to the \textit{Variant Call Format} (VCF) file format.
 The VCF file format encodes a single variant per line, and each line contains a number of columns where each column encodes a particular piece of information about the associated variant, such as \cite{vcf}:

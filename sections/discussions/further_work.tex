@@ -19,6 +19,7 @@ Currently, GKAGE performs all of these processes sequentially.
 \vspace{.5em}
 \begin{figure}[H]
 \begin{center}
+\scalebox{.95}{
 \begin{tikzpicture}
   % read fasta
   \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm](start){};
@@ -50,6 +51,7 @@ Currently, GKAGE performs all of these processes sequentially.
   \draw [thick,-stealth](0,-1.75) -- (0,-.95);
   \node at(6.825,-2.25)[]{\smaller{repeat}};
 \end{tikzpicture}
+}
 \caption{
   GKAGE's current \textit{k}mer counting pipeline performs several steps in a sequential fashion.
   While these steps are performed on many \textit{k}mers in parallel at once, each chunk (containing many \textit{k}mers) is processed sequentally. 
@@ -62,12 +64,16 @@ By utilizing CUDA streams we can parallelize the copying of data to the GPU and 
 
 \begin{figure}[H]
 \begin{center}
+\scalebox{.95}{
 \begin{tikzpicture}
   % hints
   \draw [thick,<->](5.875,2.45) -- (5.875,1.7);
   \node at(7.1,2.075)[]{\smaller{parallel}};
   \draw [thick,<->](5.5,3.2) -- (6.25,3.2);
   \node at(7.25,3.2)[]{\smaller{sequential}};
+  % large hints
+  \draw [thick,<->](-1.25,.6) -- (-1.25,-2.6);
+  \draw [thick,<->](-1,.875) -- (14.65,.875);
   % read fasta
   \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm](start){};
   \node at(0,.25)[]{\smaller{read}};
@@ -103,6 +109,7 @@ By utilizing CUDA streams we can parallelize the copying of data to the GPU and 
   \node at(10.15,-2.25)[]{\smaller{copy}};
   \draw [thick,-stealth](11.5,-2) -- (12.35,-2);
 \end{tikzpicture}
+}
 \caption{
   An illustration of a more optimal \textit{k}mer counting pipeline.
   By utilizing CUDA's streams, we can parellalize copying of data to the GPU and actual GPU processing.

@@ -90,4 +90,75 @@ Upon completing the 2-bit encoding and \textit{k}mer hashing of the chunk, the r
 Previously, when the 2-bit encoding and \textit{k}mer hashing was performed using only the CPU, the resulting \textit{k}mer array would need to be copied to the GPU for counting when deploying the GPU accelerated \textit{k}mer counting functionality detailed in section \ref{methods:gpu_accelerating_kmer_counting}.
 
 \subsubsection{Assessment}
-Include runtime data from benchmarking the GPU accelerated 2-bit encoding and \textit{k}mer hashing component against the CPU version.
+In order to assess the effects of GPU accelerating \textit{k}mer hashing, we measured the total runtime of reading, 2-bit encoding and hashing every valid \textit{k}mer from a FASTA file containing 20 million reads, each of length 150.
+The FASTA was read in chunks of 10 million bytes.
+We benchmarked this runtime using BioNumPy with the standard NumPy backend, and again using CuPy as the backend to compare.
+The benchmarking yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Backend}} & \multicolumn{1}{l}{\textbf{Hashing time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{62.46} &  \\
+\multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{5.1} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The runtimes found by hashing all valid \textit{k}mers from a set of 20 million DNA reads, each of length 150.
+  The FASTA file containing the reads was read in chunks of 10 million bytes, and the BioNumPy library in Python was used to read, 2-bit encode and hash each chunk.
+  We ran the benchmark both using NumPy as the backend-library for BioNumPy, meaning the hashing was performed entirely on the CPU using a single thread, and using CuPy as the backend-library for BioNumPy, meaning the raw data read from the FASTA file was copied to the GPU and then 2-bit encoded and hashed there.
+}
+\label{methods:gpu_accelerating_kmer_hashing:tables:benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{7em}
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3,7)(){\textbf{\textit{k}mer Hashing}};
+ 
+\begin{axis} [
+  ylabel={runtime (seconds)},
+  xlabel={backend},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=1.25,
+  symbolic x coords={NumPy, CuPy},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 62.46)
+    (CuPy, 5.1)
+};
+\end{axis}
+\end{tikzpicture}
+%\end{center}
+\caption{
+  Elapsed time spent reading, 2-bit encoding and hashing all valid \textit{k}mers from 20 million reads in 10 million byte chunks using both NumPy as CuPy to perform the processing on the CPU and GPU respectively.
+}
+\label{methods:gpu_accelerating_kmer_hashing:figures:benchmark}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_kmer_hashing:tables:benchmark}, GPU accelerating BioNumPy's \textit{k}mer hashing functionality, simply by using CuPy as a drop-in replacement for NumPy, yielded a more than 12X speedup when hashing every valid \textit{k}mer in a set of 20 million reads of length 150.
+This dramatic increase in efficiency is achieved despite having to copy each chunk of raw data read from the FASTA file to the GPU memory before processing can begin.
+Recall that in section \ref{methods:initial_testing:assessment}, we justified only benchmarking the time spent counting \textit{k}mers on the GPU without including the overhead of copying the \textit{k}mer chunks to the GPU memory.
+Combined with the \textit{k}mer hashing component's GPU acceleration, which yields a dramatic increase in efficiency despite including this overhead, \textit{k}mer chunks that are hashed on the GPU will already reside in the GPU's memory for counting.

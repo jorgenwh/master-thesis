@@ -61,7 +61,7 @@ end
 
 Using a a murmur hash function when computing the initial probe position in the hash table results in more uniform placements as opposed to if we only use the \textit{k}mer's integer value instead.
 This in turn results in less clustering when inserting \textit{k}mers, meaning we need to deal with fewer collisions.
-\textbf{(include speedup from using murmur hash compared to no hash?)}
+%\textbf{(include speedup from using murmur hash compared to no hash?)}
 
 \definecolor{misscolor}{RGB}{255,215,215}
 \definecolor{hitcolor}{RGB}{215,255,215}
@@ -70,6 +70,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
 \begin{figure}[H]
 \begin{center}
 \scalebox{1}{
+\hspace*{-1.5em}
 \begin{tikzpicture}
   % in kmers
   \node at(-2.9,0)(){\textit{\smaller{kmers array}}};
@@ -256,5 +257,72 @@ The produced module is finally wrapped around a Python class that takes care of 
 
 The final implementation of this CUDA accelerated hash table can be found and installed at \url{https://github.com/kage-genotyper/cucounter}.
 
-\subsubsection{Assessment}
-Include runtime data from the \textit{k}mer counting benchmark test, comparing the CUDA hash table against KAGE's multithreaded CPU version and the GPU hash table from Initial Testing \ref{methods:initial_testing}.
+\subsubsection{Assessment} \label{methods:gpu_accelerating_kmer_counting:assessment}
+In order to assess this new CUDA hash table implementation, we ran the benchmark described in section \ref{methods:initial_testing:assessment}, but using the CUDA hash table with Python bindings for \textit{k}mer counting instead of npstructures' counter object.
+The benchmark yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Backend}} & \multicolumn{1}{l}{\textbf{Counting time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{234.7} &  \\
+\multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{24.31} &  \\
+\multicolumn{1}{l|}{CUDA} & \multicolumn{1}{l}{2.94} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The total time spent counting \textit{k}mers using the CUDA hash table implemented in C++ with Python bindings.
+  NumPy and CuPy refers to the previously found runtimes using npstructures' counter object with NumPy- and CuPy-backends respectively.
+}
+\label{methods:gpu_accelerating_kmer_counting:tables:benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{7em}
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3,7)(){\textbf{\textit{k}mer Counting}};
+ 
+\begin{axis} [
+  ylabel={runtime (seconds)},
+  xlabel={backend},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=.5,
+  symbolic x coords={NumPy, CuPy, CUDA},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 234.7)
+    (CuPy, 24.31)
+    (CUDA, 2.94)
+};
+\end{axis}
+\end{tikzpicture}
+%\end{center}
+\caption{
+  Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
+}
+\label{methods:gpu_accelerating_kmer_counting:figures:benchmark}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_kmer_counting:tables:benchmark}, the CUDA hash table implemented in C++ with Python bindings provided significantly better counting efficiancy compared to the CuPy-based npstructures counter, with nearly 80X speedup compared to the original NumPy-based counter and more than 8X speedup compared to the CuPy-based counter.

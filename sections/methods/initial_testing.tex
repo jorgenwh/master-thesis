@@ -152,16 +152,90 @@ def set_backend(lib):
 
 By utilizing this method, we implemented partial GPU support for the npstructures library, including enabling GPU support for the counter object used to count occurences of a predefined key-set in a sample.
 
-\subsubsection{Assessment}
-To assess whether our CuPy-based GPU accelerated npstructures hash table resulted in speed up compared to the NumPy-based CPU based version, we set up a \textit{k}mer counting benchmark.
-A predefined set of 50 million unique \textit{k}mers were to have their frequencies counted from a FASTA file of 20 million reads of length 150.
-During benchmarking, the FASTA file was read in chunks of 10 million bytes until completion.
-Each chunk would then be 2-bit encoded and hashed using BioNumPy's functionality (on the CPU), before the chunk of hashed \textit{k}mers were copied from the CPU to GPU memory to be counted using the hash table.
+\subsubsection{Assessment} \label{methods:initial_testing:assessment}
+To assess the effect GPU accelerating npstructures by using CuPy as a drop-in replacement for NumPy, we benchmarked the GPU accelerated npstructures counter object by counting the occurences of a predefined set of 50 million unique \textit{k}mers in a set of 20 million DNA reads, each of length 150.
+This benchmark used BioNumPy to read the FASTA file in chunks of 10 million bytes, 2-bit encode the reads and hash the valid \textit{k}mers before counting.
+The time spent preparing each chunk was not included in the final measured runtime, since we were only interested in seeing the effects of GPU accelerating npstructures' counter object.
+It is important to note that while this benchmark provided a good assessment of the speedup gained from GPU accelerating our counter, it omits the overhead of transferring each chunk of \textit{k}mers to the GPU in order to be counted by our GPU accelerated counter.
+We justified the omission of this overhead because of two reasons.
+Firstly, during our initial testing we were only interested in assessing the runtime differences during processing on the GPU versus the CPU when using CuPy as a drop-in replacement for NumPy.
+Secondly, we only GPU accelerated one component of a much larger pipeline, and in such a case, the true effects of GPU acceleration may be overshadowed.
+Our intention was to GPU accelerate several consecutive components in a way where only a single copy step would need to be performed before several consecutive processing steps could benefit from GPU acceleration, minimizing the effects of the CPU to GPU copy overhead.
 
-We measured the total runtime it took to read the FASTA, 2-bit encode, hash and count the \textit{k}mers for both the original NumPy-based and the new CuPy-based solutions.
-For the CuPy solution, this introduced the overhead of copying the hashed \textit{k}mer chunks to the GPU before counting could begin - an inevitable overhead when utilizing the GPU.
-For the original NumPy solution running on the CPU, only one thread was used.
-The benchmarking was performed on a consumer desktop computer with an Intel Core i5-11400F CPU with 6 cores and a Nvidia GTX 1660 SUPER GPU.
+\definecolor{cpucolor}{RGB}{255,255,225}
+\definecolor{gpucolor}{RGB}{225,255,255}
+
+\begin{figure}[H]
+\begin{center}
+\begin{tikzpicture}
+  \node at(5.35,-1)[]{\smaller{CPU}};
+  \node at(5.35,-2)[]{\smaller{GPU}};
+  \node at(4.4,-1)[draw,minimum width=.75cm,minimum height=.75cm,fill=cpucolor]{};
+  \node at(4.4,-2)[draw,minimum width=.75cm,minimum height=.75cm,fill=gpucolor]{};
+  % -- GPU --
+  \node at(.5,-3.5)[]{\smaller{\textbf{Benchmark pipeline}}};
+  % read fasta
+  \node at(0,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
+  \node at(0,-4.75)[]{\smaller{read}};
+  \node at(0,-5.25)[]{\smaller{FASTA}};
+  \draw [thick,-stealth](1.25,-5) -- (2,-5);
+  % 2-bit encoding
+  \node at(3.3,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
+  \node at(3.3,-4.75)[]{\smaller{prepare}};
+  \node at(3.3,-5.25)[]{\smaller{\textit{k}mer chunk}};
+  \draw [thick,-stealth](4.65,-5) -- (5.4,-5);
+  % kmer hashing
+  \node at(6.65,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
+  \node at(6.65,-4.75)[]{\smaller{cpu2gpu}};
+  \node at(6.65,-5.25)[]{\smaller{copy}};
+  \draw [thick,-stealth](8,-5) -- (8.75,-5);
+  % cpu2gpu copy
+  \node at(10.05,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
+  \node at(10.05,-4.75)[]{\smaller{\textit{k}mer}};
+  \node at(10.05,-5.25)[]{\smaller{counting}};
+  %\draw [thick,-stealth](11.4,-5) -- (12.05,-5);
+  % arrows
+  \draw [thick](10.05,-5.95) -- (10.05,-6.75);
+  \draw [thick](10.05,-6.75) -- (0,-6.75);
+  \draw [thick,-stealth](0,-6.75) -- (0,-5.95);
+  \node at(4.975,-7.25)[]{\smaller{repeat}};
+  % timestamps
+  \draw [thick,-stealth](8.375,-4) -- (8.375,-4.5);
+  \draw [thick,-stealth](11.725,-4) -- (11.725,-4.5);
+  \node at(8.375,-3.5)[]{\smaller{$t_0$}};
+  \node at(11.725,-3.5)[]{\smaller{$t_1$}};
+
+  \node at(4.975,-9)[]{\textit{counting time}$\hspace{.65em}=\displaystyle\sum_{i=1}^{\textit{num chunks}}t_1^i - t_0^i$};
+
+\end{tikzpicture}
+\end{center}
+\caption{
+  The pipeline used to benchmark the CuPy-based against the NumPy-based npstructures counter object.
+  Only the calls made to the counter object to count chunks of \textit{k}mers are timed, and these times are finally summed to get the total runtime spent on counting \textit{k}mers.
+  The difference between the two runtimes are then used to infer the effects of GPU accelerating npstructures' counter object using our initial testing method.
+}
+\label{methods:initial_testing:figures:benchmark_overview}
+\end{figure}
+
+We ran the \textit{k}mer counting pipeline and measured the time spent counting \textit{k}mers for both the NumPy-based CPU version of the counter and the CuPy-based GPU version.
+The total time spent counting \textit{k}mers was measured by timing each call to the counter object and summing these runtimes in order to get the total counting time.
+For the GPU version, we made sure to synchronize the GPU to the CPU between each call, since kernel calls made from the CPU to the GPU are asynchronous otherwise.
+This benchmark yielded the following results: 
+
+%\vspace{1em}
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Backend}} & \multicolumn{1}{l}{\textbf{Counting time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{234.7} &  \\
+\multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{24.31}
+\end{tabular}
+\end{center}
+\caption{
+  The total time spent counting \textit{k}mers using npstructures' counter object, one with NumPy as the backend array-library, running on the CPU using one thread, and the other using CuPy as the backend, running on the GPU.
+}
+\label{methods:initial_testing:tables:benchmark}
+\end{table}
 
 \begin{figure}[H]
 %\begin{center}
@@ -179,8 +253,8 @@ The benchmarking was performed on a consumer desktop computer with an Intel Core
           (0cm,0cm) rectangle (3pt,0.8em);},
      },
   }
-  \node at(3.37,7.5)(){\textbf{Effect of GPU Accelerating npstructures'}};
-  \node at(3,7)(){\textbf{NumPy-based hash table using CuPy}};
+  \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3,7)(){\textbf{\textit{k}mer Counting}};
  
 \begin{axis} [
   ylabel={runtime (seconds)},
@@ -200,8 +274,8 @@ The benchmarking was performed on a consumer desktop computer with an Intel Core
 ]
 
 \addplot[fill=blue] coordinates {
-    (NumPy, 1)
-    (CuPy, 1)
+    (NumPy, 234.7)
+    (CuPy, 24.31)
 };
 \end{axis}
 \end{tikzpicture}
@@ -214,77 +288,4 @@ The benchmarking was performed on a consumer desktop computer with an Intel Core
 \label{methods:initial_testing:figures:benchmark}
 \end{figure}
 
-As can be seen in figure \ref{methods:initial_testing:figures:benchmark}, only GPU accelerating the counter object used for \textit{k}mer counting yielded significant improvement in runtime.
-
-...
-
-%\definecolor{cpucolor}{RGB}{255,255,225}
-%\definecolor{gpucolor}{RGB}{225,255,255}
-
-%\begin{figure}[H]
-%\begin{center}
-%\begin{tikzpicture}
-%  \node at(6.75,3.75)[]{\smaller{CPU}};
-%  \node at(6.75,2.75)[]{\smaller{GPU}};
-%  \node at(5.8,3.75)[draw,minimum width=.75cm,minimum height=.75cm,fill=cpucolor]{};
-%  \node at(5.8,2.75)[draw,minimum width=.75cm,minimum height=.75cm,fill=gpucolor]{};
-%  % -- CPU --
-%  \node at(.85,1.5)[]{\smaller{\textbf{Original NumPy pipeline}}};
-%  % read fasta
-%  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
-%  \node at(0,.25)[]{\smaller{read}};
-%  \node at(0,-.25)[]{\smaller{FASTA}};
-%  \draw [thick,-stealth](1.25,0) -- (2,0);
-%  % 2-bit encoding
-%  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-%  \node at(3.3,.25)[]{\smaller{2-bit}};
-%  \node at(3.3,-.25)[]{\smaller{encoding}};
-%  \draw [thick,-stealth](4.65,0) -- (5.4,0);
-%  % kmer hashing
-%  \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-%  \node at(6.65,.25)[]{\smaller{\textit{k}mer}};
-%  \node at(6.65,-.25)[]{\smaller{hashing}};
-%  \draw [thick,-stealth](8,0) -- (8.75,0);
-%  % kmer counting 
-%  \node at(10.05,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-%  \node at(10.05,.25)[]{\smaller{\textit{k}mer}};
-%  \node at(10.05,-.25)[]{\smaller{counting}};
-%  % arrows
-%  \draw [thick](10.05,-.95) -- (10.05,-1.75);
-%  \draw [thick](10.05,-1.75) -- (0,-1.75);
-%  \draw [thick,-stealth](0,-1.75) -- (0,-.95);
-%  \node at(4.975,-2.25)[]{\smaller{repeat}};
-%  % -- GPU --
-%  \node at(.8,-3.5)[]{\smaller{\textbf{GPU hash table pipeline}}};
-%  % read fasta
-%  \node at(0,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
-%  \node at(0,-4.75)[]{\smaller{read}};
-%  \node at(0,-5.25)[]{\smaller{FASTA}};
-%  \draw [thick,-stealth](1.25,-5) -- (2,-5);
-%  % 2-bit encoding
-%  \node at(3.3,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-%  \node at(3.3,-4.75)[]{\smaller{2-bit}};
-%  \node at(3.3,-5.25)[]{\smaller{encoding}};
-%  \draw [thick,-stealth](4.65,-5) -- (5.4,-5);
-%  % kmer hashing
-%  \node at(6.65,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-%  \node at(6.65,-4.75)[]{\smaller{\textit{k}mer}};
-%  \node at(6.65,-5.25)[]{\smaller{hashing}};
-%  \draw [thick,-stealth](8,-5) -- (8.75,-5);
-%  % cpu2gpu copy
-%  \node at(10.05,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-%  \node at(10.05,-4.75)[]{\smaller{cpu2gpu}};
-%  \node at(10.05,-5.25)[]{\smaller{copy}};
-%  \draw [thick,-stealth](11.4,-5) -- (12.05,-5);
-%  % kmer counting 
-%  \node at(13.35,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
-%  \node at(13.35,-4.75)[]{\smaller{\textit{k}mer}};
-%  \node at(13.35,-5.25)[]{\smaller{counting}};
-%  % arrows
-%  \draw [thick](13.35,-5.95) -- (13.35,-6.75);
-%  \draw [thick](13.35,-6.75) -- (0,-6.75);
-%  \draw [thick,-stealth](0,-6.75) -- (0,-5.95);
-%  \node at(6.65,-7.25)[]{\smaller{repeat}};
-%\end{tikzpicture}
-%\end{center}
-%\end{figure}
+As can be seen in table \ref{methods:initial_testing:tables:benchmark}, simply using CuPy as a drop-in replacement for NumPy in npstructures to GPU accelerate its counter object yielded a nearly 10X speedup in counting efficiancy, without having to otherwise change the implementation or even leave Python.

@@ -5,7 +5,7 @@ Since the number of valid \textit{k}mers in a typical FASTA or FASTQ from sequen
 Functionality for this exists in the BioNumPy Python package.
 BioNumPy implements this using NumPy and some parts of npstructures, resulting in an efficient solution that relies on NumPy's fast array operations for its performance.
 
-\subsubsection{Implementation}
+\subsubsection{Replacing NumPy with CuPy}
 The Python package BioNumPy, which provides an implementation for \textit{k}mer encoding and hashing directly in Python, is built on top of NumPy and npstructures.
 We utilized the method we described in section \ref{methods:initial_testing} and used CuPy as a drop-in replacement for NumPy to add further GPU acceleration support to npstructures, and to add partial GPU support to BioNumPy.
 The resulting pipeline remained the same, but with two notable differences.

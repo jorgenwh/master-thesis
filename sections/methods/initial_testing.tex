@@ -12,7 +12,7 @@ In addition, we know that most, if not all of the functionality used from NumPy,
 Thus, by replacing the NumPy functionality used in npstructures' data structures with CuPy's equivalent GPU accelerated functionality, we can GPU accelerate the necessary data structures in npstructures without having to leave Python.
 With this strategy we GPU accelerated npstructures' counter object using CuPy.
 
-\subsubsection{Implementation}
+\subsubsection{Using CuPy as a Drop-In Replacement for NumPy} \label{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy}
 Rather than creating a standalone package version of npstructures with GPU acceleration, we instead opted to add the possibility for GPU acceleration to the already existing package.
 This added a new self imposed requirement; we did not want CuPy to be a npstructures dependancy since many users may wish to use it simply for the NumPy implementations.
 Additionally, we still needed a way to redirect NumPy function calls to their equivalent CuPy functions.

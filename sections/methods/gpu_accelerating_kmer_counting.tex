@@ -8,7 +8,7 @@ Thus, we opted to implement our own GPU accelerated \textit{k}mer counting tool 
 Although we had success in GPU accelerating a hash table in npstructures using CuPy, we decided to also attempt to implement a hash table directly in C++ using CUDA, Nvidia's programming platform.
 This would allow for a more granular implementation as we would no longer be constrained to a solution originally designed for NumPy array functions.
 
-\subsubsection{Implementation}
+\subsubsection{GPU Hash Table Implemented using CUDA}
 The hash table's interface needed to support three main operations: 1) \textbf{insert} - insert each \textit{k}mer found in an input array of \textit{k}mers (although only once upon initialization), 2) \textbf{count} - increment the value associated with each \textit{k}mer found in an input array of \textit{k}mers, and 3) \textbf{query} - fetch the values associated with each \textit{k}mer found in an input array of \textit{k}mers.
 
 Common for all three operations mentioned above is that they need to adhere to an addressing and probing scheme.

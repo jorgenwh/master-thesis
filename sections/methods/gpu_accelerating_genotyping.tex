@@ -1,8 +1,8 @@
 \subsection{GPU Accelerating Genotyping} \label{methods:gpu_accelerating_genotyping}
 The genotyping step of KAGE (introduced in section \ref{background:kage}) computes genotype-probabilities, supported by the \textit{k}mer counts found during the \textit{k}mer counting portion.
-A central part of this step is computing the \textit{log of the probability mass function} (LOGPMF) a large number of times on large arrays.
+A central part of this step is computing the \textit{logarithm of the probability mass function} (LOGPMF) a large number of times on large arrays.
 
-The log of the probability mass function at $k$ is computed using:
+The logarithm of the probability mass function at $k$ is computed using:
 \begin{equation}
   logpmf = k * \log(\mu) - \mu - \ln(|\Gamma(k + 1)|)
 \end{equation}
@@ -15,7 +15,8 @@ The original implementation utilizes NumPy's efficient array-operations to compu
 \scalebox{.71}{
 \begin{tikzpicture}
   % input
-  \node at(2.9,3.5){\textbf{input}};
+  \node at(2.9,3.8){\textbf{input}};
+  \node at(2.9,3.2){\textbf{arrays}};
   % k
   \draw [-stealth](-1.1,2.5) -- (2.3,2.5);
   \draw [-stealth](-1.4,2.1) -- (-1.4,-.25);
@@ -97,7 +98,8 @@ The original implementation utilizes NumPy's efficient array-operations to compu
   % arrow 2
   \draw [-stealth,thick](16,1.25) -- (16.5,1.25);
   % output
-  \node at(18.25,3.5){\textbf{output}};
+  \node at(18.6,3.8){\textbf{output}};
+  \node at(18.6,3.2){\textbf{array}};
   \draw [-stealth](-1.1+18.15,2.5) -- (2.3+18.15,2.5);
   \draw [-stealth](-1.4+18.15,2.1) -- (-1.4+18.15,-.25);
   % row 0
@@ -137,7 +139,7 @@ The original implementation utilizes NumPy's efficient array-operations to compu
 \end{tikzpicture}
 }
 \caption{
-  The LOGPMF computation in KAGE is performed on large arrays, using NumPy for data-parallelism to run efficiently on the CPU.
+  The LOGPMF computation in KAGE is performed on large arrays, relying on NumPy's efficient and data-parallel solutions to run efficiently on the CPU.
 }
 \label{methods:gpu_accelerating_genotyping:figures:logpmf}
 \end{center}
@@ -172,29 +174,85 @@ def cupy_poisson_logpmf(k, r):
 \end{figure}
 
 \subsubsection{Assessment}
-In order to assess the effects of GPU accelerating KAGE's LOGPMF function by using CuPy, we benchmarked both functions by computing LOGPMF for input arrays containing 40 million elements each.
+In order to assess the effects of GPU accelerating KAGE's LOGPMF function by using CuPy, we benchmarked both functions by computing LOGPMF for input arrays $k$ and $r$.
 The $k$ array was initialized with 40 million 32-bit integers, randomly set to values between 1 and 100.
 $r$ was initialized with 40 million 64-bit floating point numbers, randomly set to values between 1 and 100.
 
 The CuPy-based GPU accelerated function presented in figure \ref{methods:gpu_accelerating_genotyping:figures:logpmf_array_implementations} requires both input arrays, $k$ and $r$, to already be allocated in GPU memory.
 Benchmarking only the function calls as presented therefore ignores the overhead of copying both $k$ and $r$ to GPU memory before the function call can be made.
-%Thus, for completion, we benchmarked the NumPy solution as well as the CuPy solution, but additionally we benchmarked the performance of the CuPy solution when we included copying just $k$, just $r$, or both arrays to GPU memory beforehand and copying the resulting LOGPMF values to back to the CPU RAM
-% WRITE THIS PROPERLY
+Thus, for completion, we did not only benchmark both the NumPy and CuPy solutions. We additionally benchmarked the CuPy solution where $k$ and $r$ start off in CPU RAM and are copied to GPU memory before processing, and the result array is copied back to CPU RAM afterwards. 
+This way, we accounted for the overhead of copying data to and from the GPU.
 
 Our benchmarking yielded the following results:
 \begin{table}[H]
 \begin{center}
 \begin{tabular}{lllll}
-\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Time (seconds)}} &  \\ \cline{1-2}
-\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{234.7} &  \\
-\multicolumn{1}{l|}{CuPy (hh2} & \multicolumn{1}{l}{24.31}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Time (milliseconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{606.94} &  \\
+\multicolumn{1}{l|}{CuPy (with copy)} & \multicolumn{1}{l}{201.9} & \\
+\multicolumn{1}{l|}{CuPy (without copy)} & \multicolumn{1}{l}{82.49}
 \end{tabular}
 \end{center}
 \caption{
-  ...
+  Time spent computing the logarithm of the probability mass function for 40 million elements.
+  \textbf{NumPy} uses the NumPy-based solution with CPU data-parallelism and a single core.
+  \textbf{CuPy (with copy)} uses the CuPy-based solution with GPU acceleration, but $k$ and $r$ are both copied from RAM to GPU memory before processing begins, and finally the result array is copied from GPU memory back to RAM.
+  \textbf{CuPy (without copy)} uses the CuPy-based solution with GPU acceleration, but $k$ and $r$ are both already residing in GPU memory, and the result array is not copied back to RAM. In other words, we only measure the processing time of computing the 40 million LOGPMF values.
+  Runtimes are the mean of 100 runs.
 }
 \label{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark}
 \end{table}
+
+\begin{figure}[H]
+\hspace*{7.25em}
+\scalebox{.85}{
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(4.5,8.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3.5,8)(){\textbf{LOGPMF}};
+ 
+\begin{axis} [
+  ylabel={runtime (milliseconds)},
+  xlabel={method},
+  width=10cm,
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=.25,
+  symbolic x coords={NumPy, CuPy (copy), CuPy (no copy)},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 606.94)
+    (CuPy (copy), 201.9)
+    (CuPy (no copy), 82.49)
+};
+\end{axis}
+\end{tikzpicture}
+}
+\caption{
+  Time (milliseconds) spent computing the LOGPMF for input arrays of 40 million elements.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf_benchmark}
+\end{figure}
 
 \subsubsection{Implementing LOGPMF using CUDA}
 ...

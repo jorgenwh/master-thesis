@@ -222,11 +222,10 @@ The total time spent counting \textit{k}mers was measured by timing each call to
 For the GPU version, we made sure to synchronize the GPU to the CPU between each call, since kernel calls made from the CPU to the GPU are asynchronous otherwise.
 This benchmark yielded the following results: 
 
-%\vspace{1em}
 \begin{table}[H]
 \begin{center}
 \begin{tabular}{lllll}
-\multicolumn{1}{l|}{\textbf{Backend}} & \multicolumn{1}{l}{\textbf{Counting time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Counting time (seconds)}} &  \\ \cline{1-2}
 \multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{234.7} &  \\
 \multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{24.31}
 \end{tabular}
@@ -238,7 +237,6 @@ This benchmark yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-%\begin{center}
 \hspace*{7em}
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
@@ -258,7 +256,7 @@ This benchmark yielded the following results:
  
 \begin{axis} [
   ylabel={runtime (seconds)},
-  xlabel={backend},
+  xlabel={method},
   ybar,
   bar width=20pt,
   ymin=0,
@@ -279,7 +277,6 @@ This benchmark yielded the following results:
 };
 \end{axis}
 \end{tikzpicture}
-%\end{center}
 \caption{
   Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
   Both methods use BioNumPy to read, 2-bit encode and hash chunks of \textit{k}mers, reading 10 million byte chunks from the FASTA at a time.

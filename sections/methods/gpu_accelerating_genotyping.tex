@@ -3,7 +3,7 @@ The genotyping step of KAGE (introduced in section \ref{background:kage}) comput
 A central part of this step is computing the \textit{logarithm of the probability mass function} (LOGPMF) a large number of times on large arrays.
 
 The logarithm of the probability mass function at $k$ is computed using:
-\begin{equation}
+\begin{equation} \label{methods:gpu_accelerating_genotyping:equations:logpmf}
   logpmf = k * \log(\mu) - \mu - \ln(|\Gamma(k + 1)|)
 \end{equation}
 where $\Gamma$ is the gamma function.
@@ -173,7 +173,7 @@ def cupy_poisson_logpmf(k, r):
 \label{methods:gpu_accelerating_genotyping:figures:logpmf_array_implementations}
 \end{figure}
 
-\subsubsection{Assessment}
+\subsubsection{Assessment} \label{methods:gpu_accelerating_genotyping:cupy_logpmf_assessment}
 In order to assess the effects of GPU accelerating KAGE's LOGPMF function by using CuPy, we benchmarked both functions by computing LOGPMF for input arrays $k$ and $r$.
 The $k$ array was initialized with 40 million 32-bit integers, randomly set to values between 1 and 100.
 $r$ was initialized with 40 million 64-bit floating point numbers, randomly set to values between 1 and 100.
@@ -255,6 +255,111 @@ Our benchmarking yielded the following results:
 \end{figure}
 
 \subsubsection{Implementing LOGPMF using CUDA}
+While the method of using CuPy as a drop-in replacement for NumPy provided a significant speedup when computing the LOGPMF, it reveals a problem that arises when using NumPy and CuPy in Python.
+When computing a nested expression, such as when computing the LOGPMF shown in equation \ref{methods:gpu_accelerating_genotyping:equations:logpmf}, the expression will be computed and evaluated following Python's evaluation rules, subsequently creating several temporary arrays.
+This means that array allocations, de-allocations, memory writes and reads are happening needlessly while evaluating the Python expression.
+
+By moving into C++ and using CUDA, we can create our own CUDA kernel to compute the LOGPMF for large arrays, avoiding these redundant operations.
+We implemented a simple kernel where we avoid needlessly storing sub-expressions in temporary arrays.
+\begin{figure}[H] 
+\begin{center}
+logpmf\_kernel.cu
+\end{center}
+\begin{lstlisting}[language=C++,style=cppcode]
+__global__ void logpmf_kernel(
+    const int *k, const double *r, double *out, const int size) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < size) {
+    out[i] = k[i] * logf(r[i]) - r[i] - lgammaf(k[i] + 1);
+  }
+}
+\end{lstlisting}
+\caption{
+  The CUDA kernel implemented for computing the LOGPMF for arrays on the GPU.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf_kernel}
+\end{figure}
+
+\subsubsection{Assessment}
+To benchmark the custom CUDA kernel we used the same benchmark as for the CuPy solution described in section \ref{methods:gpu_accelerating_genotyping:cupy_logpmf_assessment}.
+Our benchmarking yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Time (milliseconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{606.94} &  \\
+\multicolumn{1}{l|}{CuPy (with copy)} & \multicolumn{1}{l}{201.9} & \\
+\multicolumn{1}{l|}{CuPy (without copy)} & \multicolumn{1}{l}{82.49} & \\
+\multicolumn{1}{l|}{CUDA (with copy)} & \multicolumn{1}{l}{68.33} & \\
+\multicolumn{1}{l|}{CUDA (without copy)} & \multicolumn{1}{l}{4.88}
+\end{tabular}
+\end{center}
+\caption{
+  Time spent computing the logarithm of the probability mass function for 40 million elements.
+  \textbf{NumPy}, \textbf{CuPy (with copy)} and \textbf{CuPy (without copy)} are the benchmark results from table \ref{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark}.
+  \textbf{CUDA (with copy)} uses the custom CUDA kernel implementation, but $k$ and $r$ are both copied from RAM to GPU memory before the kernel is launched, and the result array is copied from GPU memory back to RAM.
+  \textbf{CUDA (without copy)} uses the custom CUDA kernel implementation, but $k$ and $r$ are both already residing in GPU memory and the result array is not copied from GPU memory to RAM.
+  Runtimes are the mean of 100 runs.
+}
+\label{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark_2}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{2.75cm}
+  \begin{tikzpicture}[font=\small]
+    \pgfplotsset{
+      compat=newest,
+      xlabel near ticks,
+      ylabel near ticks
+    }
+    \pgfplotsset{compat=1.11,
+        /pgfplots/ybar legend/.style={
+        /pgfplots/legend image code/.code={%
+           \draw[##1,/tikz/.cd,yshift=-0.25em]
+            (0cm,0cm) rectangle (3pt,0.8em);},
+       },
+    }
+    \node at(3.375,7.5)(){\small{\textbf{CuPy as NumPy drop-in}}};
+    \node at(3.45,7)(){\small{\textbf{versus custom CUDA implementation}}};
+ 
+\begin{axis} [
+  ylabel={runtime (milliseconds)},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=0.75,
+  symbolic x coords={with copy, without copy},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  every y tick scale label/.style={at={(yticklabel cs:1.1)},anchor=north},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (with copy, 201.9)
+    (without copy, 68.33)
+};
+
+\addplot[fill=red] coordinates {
+    (with copy, 82.49)
+    (without copy, 4.88)
+};
+\legend{CuPy, CUDA}
+\end{axis}
+\end{tikzpicture}
+\caption{
+  Time (milliseconds) spent computing the LOGPMF for input arrays of 40 million elements.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf_benchmark_2}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark_2}, implementing our own CUDA solution, alleviating the wasteful array allocations and memory reads and writes, resulted in a significant speedup.
+
+\subsubsection{Extending the LOGPMF Implementation}
 ...
 
 \subsubsection{Assessment}

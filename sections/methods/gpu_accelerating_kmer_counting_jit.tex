@@ -1,5 +1,5 @@
 \subsubsection{Re-Implementing the Hash Table Directly in Python} \label{methods:gpu_accelerating_kmer_counting_jit}
-While the CUDA hash table we implemented in the previous section yielded significant speedup when \textit{k}mer counting and much better results than the GPU accelerated version of npstructures' hash table, it required us to dvelve into C++, using CUDA's programming framework and leaving the comforts of Python behind in order to implement.
+While the CUDA hash table we implemented in the previous section yielded significant speedup when \textit{k}mer counting and much better results than the GPU accelerated version of npstructures' hash table, it required us to delve into C++, using CUDA's programming framework and leaving the comforts of Python behind in order to implement.
 We therefore explored another possible avenue for implementing such a hash table, this time directly in Python.
 CuPy offers more than just a GPU accelerated subset of NumPy's array interface.
 Additionally, CuPy allows for custom kernels written directly in Python, to be \textit{jit} (just-in-time) compiled.
@@ -70,10 +70,10 @@ The benchmark yielded the following results:
 \end{axis}
 \end{tikzpicture}
 \caption{
-  Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
+  Elapsed time counting the occurrences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
 }
 \label{methods:gpu_accelerating_kmer_counting_jit:figures:benchmark}
 \end{figure}
 
 As can be seen in table \ref{methods:gpu_accelerating_kmer_counting_jit:tables:benchmark}, the CuPy just-in-time compiled method of GPU accelerating \textit{k}mer counting resulted in (close to) identical performance as the CUDA hash table implementation, all in spite of being implemented directly in Python using CuPy's custom kernel support.
-The memory usage using the CuPy just-in-time compiled solution was also practically identical to the CUDA hash table's.
+The memory usage using the CuPy just-in-time compiled solution was also practically identical to that of the CUDA hash table.

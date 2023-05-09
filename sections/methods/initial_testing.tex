@@ -3,18 +3,18 @@ Before delving into the GPU accelerated methods used to produce the final GKAGE 
 For this, we decided on focusing on the \textit{partial} \textit{k}mer counting problem, detailed in section \ref{background:kmers_and_kmer_counting}.
 
 As detailed in section \ref{background:implementation_tools_and_libraries:npstructures}, npstructures is a Python library that enhances the NumPy library by providing additional data structures with NumPy-like behaviour and performance, built on top of NumPy.
-Additionally in section \ref{background:implementation_tools_and_libraries:npstructures}, we detailed a subset of npstructures' data structures, one of which was a counter object that efficiently counts occurences of a predefined keys-set in a sample.
+Additionally in section \ref{background:implementation_tools_and_libraries:npstructures}, we detailed a subset of npstructures' data structures, one of which was a counter object that efficiently counts occurrences of a predefined keys-set in a sample.
 This counter object had previously been utilized to count a predefined set of \textit{k}mer's frequencies, albeit on the CPU.
 
 Since npstructures' data structures are all heavily reliant upon NumPy's array routines for fast performance, they are designed around utilizing the CPU's vectorization and data parallelism.
 Large array operations where data parallelism matters are ideal for the GPU architecture, which often can provide orders of magnitude more parallelism this way.
-In addition, we know that most, if not all of the functionality used from NumPy, will be supported with GPU acceleration by CuPy through an nearly identical interface.
+In addition, we know that most, if not all of the functionality used from NumPy, will be supported with GPU acceleration by CuPy through a nearly identical interface.
 Thus, by replacing the NumPy functionality used in npstructures' data structures with CuPy's equivalent GPU accelerated functionality, we can GPU accelerate the necessary data structures in npstructures without having to leave Python.
 With this strategy we GPU accelerated npstructures' counter object using CuPy.
 
 \subsubsection{Using CuPy as a Drop-In Replacement for NumPy} \label{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy}
 Rather than creating a standalone package version of npstructures with GPU acceleration, we instead opted to add the possibility for GPU acceleration to the already existing package.
-This added a new self imposed requirement; we did not want CuPy to be a npstructures dependancy since many users may wish to use it simply for the NumPy implementations.
+This added a new self imposed requirement; we did not want CuPy to be a npstructures dependency since many users may wish to use it simply for the NumPy implementations.
 Additionally, we still needed a way to redirect NumPy function calls to their equivalent CuPy functions.
 We fulfilled both of these requirements by exploiting Python's module system.
 
@@ -78,16 +78,16 @@ array = mypackage.some_func_using_numpy()
 type(array) # cupy.ndarray
 \end{lstlisting}
 
-Exploiting Python's module system this way has the benefits of not making CuPy a dependancy for npstructures, and it also allows for gradual GPU support by way of only updating the backend in modules where the existing implementations are ready to be ported as is to CuPy.
+Exploiting Python's module system this way has the benefits of not making CuPy a dependency for npstructures, and it also allows for gradual GPU support by way of only updating the backend in modules where the existing implementations are ready to be ported as is to CuPy.
 
 \subsubsection{Resolving Unsupported or Poorly Performing Functionality}
 Two issues can arise when utilizing this method of GPU accelerating NumPy code.
 Firstly, some NumPy solutions may be effective on the CPU's architecture but ineffective on the GPU's, resulting in poor performance.
 This will often be the case when significant portions of the code needs to be ran in a serial fashion, as opposed to parallel, or when array sizes are too small to mask the overhead of copying data to and from the GPU memory.
 Secondly, certain NumPy functions are simply not supported by CuPy.
-In case of the former issue, one might want to create an alternative solution that better utilizes the GPU's strengths, such as its massive parallelism.
+In the case of the former issue, one might want to create an alternative solution that better utilizes the GPU's strengths, such as its massive parallelism.
 For the latter issue, there is no other practical option than to create a custom solution that achieves the desired behaviour by using what CuPy functionality is available.
-We circumvented both of these issues by creating custom implementations where we had the freedom to use the full extend of CuPy's functionality to reproduce the desired behaviour.
+We circumvented both of these issues by creating custom implementations where we had the freedom to use the full extent of CuPy's functionality to reproduce the desired behaviour.
 For classes, this can be achieved by subclassing and overriding methods where we wish to create our new custom implementations.
 To demonstrate this, we will have to slightly edit our example package, \textit{mypackage}.
 
@@ -150,10 +150,10 @@ def set_backend(lib):
   SomeClassUsingNumPy = CPSomeClassUsingNumPy
 \end{lstlisting}
 
-By utilizing this method, we implemented partial GPU support for the npstructures library, including enabling GPU support for the counter object used to count occurences of a predefined key-set in a sample.
+By utilizing this method, we implemented partial GPU support for the npstructures library, including enabling GPU support for the counter object used to count occurrences of a predefined key-set in a sample.
 
 \subsubsection{Assessment} \label{methods:initial_testing:assessment}
-To assess the effect GPU accelerating npstructures by using CuPy as a drop-in replacement for NumPy, we benchmarked the GPU accelerated npstructures counter object by counting the occurences of a predefined set of 50 million unique \textit{k}mers in a set of 20 million DNA reads, each of length 150.
+To assess the effect GPU accelerating npstructures by using CuPy as a drop-in replacement for NumPy, we benchmarked the GPU accelerated npstructures counter object by counting the occurrences of a predefined set of 50 million unique \textit{k}mers in a set of 20 million DNA reads, each of length 150.
 This benchmark used BioNumPy to read the FASTA file in chunks of 10 million bytes, 2-bit encode the reads and hash the valid \textit{k}mers before counting.
 The time spent preparing each chunk was not included in the final measured runtime, since we were only interested in seeing the effects of GPU accelerating npstructures' counter object.
 It is important to note that while this benchmark provided a good assessment of the speedup gained from GPU accelerating our counter, it omits the overhead of transferring each chunk of \textit{k}mers to the GPU in order to be counted by our GPU accelerated counter.
@@ -278,11 +278,11 @@ This benchmark yielded the following results:
 \end{axis}
 \end{tikzpicture}
 \caption{
-  Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
+  Elapsed time counting the occurrences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
   Both methods use BioNumPy to read, 2-bit encode and hash chunks of \textit{k}mers, reading 10 million byte chunks from the FASTA at a time.
   Both methods also use npstructures' NumPy-based counter object to count the \textit{k}mer frequencies, although the CuPy-based version replaces NumPy with CuPy to achieve GPU acceleration.
 }
 \label{methods:initial_testing:figures:benchmark}
 \end{figure}
 
-As can be seen in table \ref{methods:initial_testing:tables:benchmark}, simply using CuPy as a drop-in replacement for NumPy in npstructures to GPU accelerate its counter object yielded a nearly 10X speedup in counting efficiancy, without having to otherwise change the implementation or even leave Python.
+As can be seen in table \ref{methods:initial_testing:tables:benchmark}, simply using CuPy as a drop-in replacement for NumPy in npstructures to GPU accelerate its counter object yielded a nearly 10X speedup in counting efficiency, without having to otherwise change the implementation or even leave Python.

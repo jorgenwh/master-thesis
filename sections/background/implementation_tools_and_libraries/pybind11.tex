@@ -1,8 +1,8 @@
 \subsubsection{pybind11} \label{background:implementation_tools_and_libraries:pybind11}
 pybind11 \cite{pybind11} is a C++ library that provides easy-to-use macros and tools for creating bindings between Python and C++. 
 Its main use case is to create Python bindings for existing C++ code.
-Using pybind11, this can be achieved seamslessly by using C++ macros to expose C++ functions, classes and their methods to Python.
+Using pybind11, this can be achieved seamlessly by using C++ macros to expose C++ functions, classes and their methods to Python.
 In addition, pybind11 also allows for direct use of certain Python types such as lists, tuples and dicts in C++, supporting both receiving and returning references to such Python objects in C++.
 NumPy is also supported, making it easy to send NumPy array references to C++ functions where the C++ function is allowed the freedom to both read and write to the array's data.
-While the work in this thesis evolves aroud GPU accelerating parts of a software tool written in Python, some of the solution implementations presented in this thesis were written partly in C++ for fast performance.
-pybind11 were in these cases crucial in order to create the bindings from these C++ implementations, making them usable directly in Python.
+While the work in this thesis revolves around GPU accelerating parts of a software tool written in Python, some of the solution implementations presented in this thesis were written partly in C++ for fast performance.
+pybind11 was, in these cases, crucial in order to create the bindings from these C++ implementations, making them usable directly in Python.

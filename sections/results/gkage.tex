@@ -8,7 +8,7 @@ We chose to integrate the two following GPU accelerated functionalities into KAG
 1) our custom GPU accelerated hash table implemented in C++ using CUDA with pybind11 Python bindings (described in section \ref{methods:gpu_accelerating_kmer_counting}), and
 2) the CuPy drop-in solution for \textit{k}mer encoding and hashing (described in section \ref{methods:gpu_accelerating_kmer_hashing}).
 The GPU accelerated functionality implemented for the genotyping step in KAGE was not included, as it did not result in faster runtimes.
-We integrated the solutions into KAGE in such a way that the same piece of software could be ran on both the CPU and the GPU.
+We integrated the solutions into KAGE in such a way that the same piece of software could be run on both the CPU and the GPU.
 In fact, running GKAGE is achieved by running KAGE, using the -g flag to enable GPU acceleration.
 KAGE (and GKAGE) can be found at \url{https://github.com/kage-genotyper}.
 

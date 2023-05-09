@@ -1,8 +1,8 @@
-This thesis has a two main goals.
+This thesis has two main goals.
 One of the goals is to explore whether state-of-the-art genotyping can be sped up in any significant way by utilizing GPUs.
 More specifically, this thesis will investigate whether alignment-free genotyping, which presently is significantly faster compared to alignment-based genotyping, can be sped up by utilizing the GPU.
 In order to investigate this, we will attempt to integrate GPU accelerated functionality into a base alignment-free genotyper, KAGE, which is presently the fastest known genotyper that also yields competitive results.
 The base genotyper, KAGE, is implemented in Python.
 This leads to several possible avenues for integrating GPU support, either by low level implementations in C++ using CUDA or using existing Python packages providing GPU accelerated functionality.
-This leads to the second goal of this thesis - to investigate and experiment with different ways of GPU accelerating exiting Python code (that relies on array-programming libraries such as NumPy), and to discuss the advantages and drawbacks of using the different methods.
+This leads to the second goal of this thesis - to investigate and experiment with different ways of GPU accelerating existing Python code (that relies on array-programming libraries such as NumPy), and to discuss the advantages and drawbacks of using the different methods.
 Finally, GPU accelerated functionality will be integrated into KAGE, resulting in GKAGE (GPU KAGE), and GKAGE will be benchmarked against KAGE to account for any potential speedup.

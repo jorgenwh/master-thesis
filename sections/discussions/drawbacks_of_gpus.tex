@@ -1,5 +1,12 @@
 \subsection{Drawbacks of Graphical Processing Units}
+While GPUs can provide excellent acceleration for many problems in scientific computing, they do come with some notable caveats.
 
-While GPUs can be excellent for accelerating many problems in scientific computing, they do come with some notable caveats.
+The reason why GPUs are so powerful when it comes to accelerating certain parallel programs, is because they are designed for such problems.
+GPUs are highly specialized compute accelerators that perform poorly when applied to any problem that does not fit its compute architecture.
+Additionally, today's GPUs are expensive and less accessible than traditional CPUs.
+Because of the CPU's flexibility in regards to the problems it can be used to solve, CPUs exist in most - if not all - existing computers today.
+GPUs however, are less common, particularly serious GPUs fitting for scientific computing.
 
-Expensive; power hungry; have experienced significant fluctuation in price and ease of access in the last couple of years (although seemingly mostly because of mining?); can be difficult to make effective solutions for someone inexperienced with the GPU compute models and frameworks; not suitable for every problem, only problems that are possible to rephrase as massively parallel, and it can be difficult to judge whether a problem is suitable before trying
+Furthermore, GPU programming is by many considered to be its own discipline, as the programming models and paradigms used when developing GPU programs are quite different from the typical sequential programs written for the CPU.
+This leads to a higher bar for entry when it comes to developing effective GPU programs for difficult problems, as fewer expert programmers have the knowledge and training to understand such systems.
+

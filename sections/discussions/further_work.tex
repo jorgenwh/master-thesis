@@ -4,8 +4,8 @@ We will here identify some possible avenues where the current implementation can
 
 \subsubsection{Better GPU Hash Table}
 While the GPU hash table used in GKAGE for \textit{k}mer counting is plenty effective for our purpose of demonstrating the effectiveness of GPU acceleration in alignment-free genotyping, alternative hash tables exist that, with correct integration, should perform better.
-Since optimizing GPU hash tables is all but a dicipline in and of itself and beyond the scope of this thesis, our GPU hash table implements a naive solution for collision handling and probing.
-An interesting future avenue would be to integrate a version a bucketed static cuckoo hash table from BGHT \cite{bght} to evaluate how a state-of-the-art hash table would perform compared to our own.
+Since optimizing GPU hash tables is all but a discipline in and of itself and beyond the scope of this thesis, our GPU hash table implements a naive solution for collision handling and probing.
+An interesting future avenue would be to integrate a version of a bucketed static cuckoo hash table from BGHT \cite{bght} to evaluate how a state-of-the-art hash table would perform compared to our own.
 Although faster, we doubt the effect would be dramatic in our case.
 
 \subsubsection{Parallelization of \textit{k}mer Chunk Preparation}
@@ -54,7 +54,7 @@ Currently, GKAGE performs all of these processes sequentially.
 }
 \caption{
   GKAGE's current \textit{k}mer counting pipeline performs several steps in a sequential fashion.
-  While these steps are performed on many \textit{k}mers in parallel at once, each chunk (containing many \textit{k}mers) is processed sequentally. 
+  While these steps are performed on many \textit{k}mers in parallel at once, each chunk (containing many \textit{k}mers) is processed sequentially. 
 }
 \label{discussion:parallelization_of_kmer_chunk_preparation:figures:pipeline}
 \end{center}
@@ -112,7 +112,7 @@ By utilizing CUDA streams we can parallelize the copying of data to the GPU and 
 }
 \caption{
   An illustration of a more optimal \textit{k}mer counting pipeline.
-  By utilizing CUDA's streams, we can parellalize copying of data to the GPU and actual GPU processing.
+  By utilizing CUDA's streams, we can parallelize copying of data to the GPU and actual GPU processing.
 }
 \label{discussion:parallelization_of_kmer_chunk_preparation:figures:parallel_pipeline}
 \end{center}

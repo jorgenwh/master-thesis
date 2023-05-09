@@ -1,5 +1,11 @@
 \subsection{KAGE} \label{background:kage}
-KAGE \cite{kage} ...
+KAGE \cite{kage} is an alignment-free genotyping tool for SNPs and short indels.
+As opposed to alignment-based genotyping tools, KAGE relies on an alignment-free method where genotype-probabilities are computed using a statistical model.
+These genotype-probabilities are supported by \textit{k}mer frequencies found in the input reads and previous knowledge of genetic variation and genotype information from thousands of individuals, produced by studies such as the 1000 Genomes Project \cite{1000_genomes_project}.
+KAGE recently showed (2022) that its accuracy was on par with the best existing alignment-free genotyping tools while being an order of magnitude faster \cite{kage}.
+
+KAGE is implemented in Python and relies heavily on the NumPy library for performance.
+Its genotyping pipeline is split into two distinct programs: \textit{kmer\_mapper}, solving the \textit{partial} \textit{k}mer counting problem of counting \textit{k}mer frequencies for a predefined set of \textit{k}mers in the input reads, and \textit{kage}, which finally computes the genotype-probabilities using a statistical model.
 
 \begin{figure}[H]
 \begin{center}
@@ -51,10 +57,13 @@ KAGE \cite{kage} ...
 }
 \caption{
   A simplified illustration of how the KAGE genotyping pipeline works.
-  The two top most rows, going from an input FASTA file to \textit{k}mer counts, is implemented as an individual piece of software.
-  Initial benchmarking revealed that the two top most rows constituted more than 96\% of the total runtime when running KAGE on a human genome.
-  Particularly, the \textit{k}mer counting step, is significantly more compute, memory and time consuming than the rest of the pipeline.
+  The two top most rows, going from an input FASTA file to \textit{k}mer counts, are implemented as an individual piece of software.
+  Three important parts of the pipeline are shown as distinct processes in the illustration: 
+  1) \textbf{\textit{k}mer hashing}, which refers to the process of 2-bit encoding input reads from the fasta file and extracting - \textit{hashing} - all valid \textit{k}mers from those reads, 
+  2) \textbf{\textit{k}mer counting}, which refers to the process of \textit{partial k}mer counting - counting the observed frequencies of a predefined set of \textit{k}mers in the input reads, and 
+  3) \textbf{genotyping}, which refers to the process of computing the final genotype-probabilities.
 }
 \label{background:kage:figures:pipeline}
 \end{center}
 \end{figure}
+

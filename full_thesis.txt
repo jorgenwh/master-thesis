@@ -1,0 +1,3095 @@
+\subsection{Determining which Components to GPU Accelerate} \label{methods:determining_which_components_to_gpu_accelerate}
+
+When developing GKAGE, we started with KAGE as a baseline and analysed the pipeline to find the most pronounced bottlenecks in terms of runtime.
+We then examined whether these bottlenecks could benefit from GPU acceleration by taking into consideration the type of computations that were performed, whether they would be suitable for the GPU's architecture and how much of the overall runtime the component constituted. 
+We would then intuit whether the component in question would be worthwhile trying to GPU accelerate given the project's time constraints and estimated difficulty.
+
+The KAGE genotyping pipeline \ref{background:kage:figures:pipeline} is split into two distinct processes (or programs): 1) counting the \textit{k}mer frequencies observed in the DNA reads of the individual being genotyped, and 2) genotyping the individual using a bayesian model based on the observed and expected \textit{k}mer frequencies.
+Initial benchmarking on a consumer desktop revealed that the \textit{k}mer counting step constituted more than 96\% of KAGE's total runtime, with \textit{k}mer counting step taking 2080 seconds and the genotyping step taking 70 seconds for a total of 2150 seconds (35 minutes and 50 seconds) to genotype a full human genome.
+Thus, the \textit{k}mer counting step, having such a clear margin for runtime improvement over the genotyping step, was the main focus for GPU acceleration for potential runtime speedup.
+\subsection{GPU Accelerating Genotyping} \label{methods:gpu_accelerating_genotyping}
+The genotyping step of KAGE (introduced in section \ref{background:kage}) computes genotype-probabilities, supported by the \textit{k}mer counts found during the \textit{k}mer counting portion.
+A central part of this step is computing the \textit{logarithm of the probability mass function} (LOGPMF) a large number of times on large arrays.
+Because the LOGPMF computations took up most of the runtime in KAGE's genotyping step and its implementation relied on computing many parallel mathematical expressions for large arrays, we chose to focus on LOGPMF to GPU accelerate the genotyping step.
+
+The logarithm of the probability mass function at $k$ is computed using:
+\begin{equation} \label{methods:gpu_accelerating_genotyping:equations:logpmf}
+  logpmf = k * \log(\mu) - \mu - \ln(|\Gamma(k + 1)|)
+\end{equation}
+where $\Gamma$ is the gamma function.
+In KAGE, this formula is computed for every element at every index in two equal-sized arrays $k$ and $\mu$.
+The original implementation utilizes NumPy's efficient array-operations to compute LOGPMF efficiently using data-parallelism on the CPU.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{.71}{
+\begin{tikzpicture}
+  % input
+  \node at(2.9,3.8){\textbf{input}};
+  \node at(2.9,3.2){\textbf{arrays}};
+  % k
+  \draw [-stealth](-1.1,2.5) -- (2.3,2.5);
+  \draw [-stealth](-1.4,2.1) -- (-1.4,-.25);
+  % row 0
+  \node at(-.75,2){$k_{0,0}$};
+  \node at(.1,2){$k_{1,0}$};
+  \node at(.7,2){.};
+  \node at(.95,2){.};
+  \node at(1.2,2){.};
+  \node at(1.9,2){$k_{n,0}$};
+  % row 1
+  \node at(-.75,1.35){$k_{0,1}$};
+  \node at(.1,1.35){$k_{1,1}$};
+  \node at(.7,1.35){.};
+  \node at(.95,1.35){.};
+  \node at(1.2,1.35){.};
+  \node at(1.9,1.35){$k_{n,1}$};
+  % dots
+  % left
+  \node at(-.325,.45){.};
+  \node at(-.325,.7){.};
+  \node at(-.325,.95){.};
+  % middle 
+  \node at(.95,.45){.};
+  \node at(.95,.7){.};
+  \node at(.95,.95){.};
+  % right 
+  \node at(1.9,.45){.};
+  \node at(1.9,.7){.};
+  \node at(1.9,.95){.};
+  % row m
+  \node at(-.75,.05){$k_{0,m}$};
+  \node at(.1,.05){$k_{1,m}$};
+  \node at(.7,.05){.};
+  \node at(.95,.05){.};
+  \node at(1.2,.05){.};
+  \node at(1.9,.05){$k_{n,m}$};
+  % mu
+  \draw [-stealth](-1.1+4.5,2.5) -- (2.3+4.5,2.5);
+  \draw [-stealth](-1.4+4.5,2.1) -- (-1.4+4.5,-.25);
+  % row 0
+  \node at(-.75+4.5,2){$\mu_{0,0}$};
+  \node at(.1+4.5,2){$\mu_{1,0}$};
+  \node at(.7+4.5,2){.};
+  \node at(.95+4.5,2){.};
+  \node at(1.2+4.5,2){.};
+  \node at(1.9+4.5,2){$\mu_{n,0}$};
+  % row 1
+  \node at(-.75+4.5,1.35){$\mu_{0,1}$};
+  \node at(.1+4.5,1.35){$\mu_{1,1}$};
+  \node at(.7+4.5,1.35){.};
+  \node at(.95+4.5,1.35){.};
+  \node at(1.2+4.5,1.35){.};
+  \node at(1.9+4.5,1.35){$\mu_{n,1}$};
+  % dots
+  % left
+  \node at(-.325+4.5,.45){.};
+  \node at(-.325+4.5,.7){.};
+  \node at(-.325+4.5,.95){.};
+  % middle 
+  \node at(.95+4.5,.45){.};
+  \node at(.95+4.5,.7){.};
+  \node at(.95+4.5,.95){.};
+  % right 
+  \node at(1.9+4.5,.45){.};
+  \node at(1.9+4.5,.7){.};
+  \node at(1.9+4.5,.95){.};
+  % row m
+  \node at(-.75+4.5,.05){$\mu_{0,m}$};
+  \node at(.1+4.5,.05){$\mu_{1,m}$};
+  \node at(.7+4.5,.05){.};
+  \node at(.95+4.5,.05){.};
+  \node at(1.2+4.5,.05){.};
+  \node at(1.9+4.5,.05){$\mu_{n,m}$};
+  % arrow 1
+  \draw [-stealth,thick](7.2,1.25) -- (7.7,1.25);
+  % equation
+  \node at(11.85,1.25){$o_{i,j}=k_{i,j}*\log(\mu_{i,j})-\mu_{i,j}-\ln(|\Gamma(k_{i,j}+1)|)$};
+  % arrow 2
+  \draw [-stealth,thick](16,1.25) -- (16.5,1.25);
+  % output
+  \node at(18.6,3.8){\textbf{output}};
+  \node at(18.6,3.2){\textbf{array}};
+  \draw [-stealth](-1.1+18.15,2.5) -- (2.3+18.15,2.5);
+  \draw [-stealth](-1.4+18.15,2.1) -- (-1.4+18.15,-.25);
+  % row 0
+  \node at(-.75+18.15,2){$o_{0,0}$};
+  \node at(.1+18.15,2){$o_{1,0}$};
+  \node at(.7+18.15,2){.};
+  \node at(.95+18.15,2){.};
+  \node at(1.2+18.15,2){.};
+  \node at(1.9+18.15,2){$o_{n,0}$};
+  % row 1
+  \node at(-.75+18.15,1.35){$o_{0,1}$};
+  \node at(.1+18.15,1.35){$o_{1,1}$};
+  \node at(.7+18.15,1.35){.};
+  \node at(.95+18.15,1.35){.};
+  \node at(1.2+18.15,1.35){.};
+  \node at(1.9+18.15,1.35){$o_{n,1}$};
+  % dots
+  % left
+  \node at(-.325+18.15,.45){.};
+  \node at(-.325+18.15,.7){.};
+  \node at(-.325+18.15,.95){.};
+  % middle 
+  \node at(.95+18.15,.45){.};
+  \node at(.95+18.15,.7){.};
+  \node at(.95+18.15,.95){.};
+  % right 
+  \node at(1.9+18.15,.45){.};
+  \node at(1.9+18.15,.7){.};
+  \node at(1.9+18.15,.95){.};
+  % row m
+  \node at(-.75+18.15,.05){$o_{0,m}$};
+  \node at(.1+18.15,.05){$o_{1,m}$};
+  \node at(.7+18.15,.05){.};
+  \node at(.95+18.15,.05){.};
+  \node at(1.2+18.15,.05){.};
+  \node at(1.9+18.15,.05){$o_{n,m}$};
+\end{tikzpicture}
+}
+\caption{
+  The LOGPMF computation in KAGE is performed on large arrays, relying on NumPy's efficient and data-parallel solutions to run efficiently on the CPU.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf}
+\end{center}
+\end{figure}
+
+\subsubsection{Replacing NumPy with CuPy}
+Since the original KAGE solution for computing LOGPMF was implemented using NumPy, our first GPU acceleration was to use the method described in section \ref{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy} where we used CuPy as a drop-in replacement for NumPy to GPU accelerate existing NumPy-based code.
+The NumPy solution from KAGE relies on SciPy \cite{scipy} to compute the natural logarithm of the gamma function: $\ln(|\Gamma(x)|)$.
+For our CuPy solution, we instead used CuPy's cupyx.scipy's implementation.
+
+\begin{figure}[H] 
+\begin{center}
+logpmf.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+import cupy as cp
+
+# Original function used in KAGE. Assumes k and r are NumPy arrays
+def numpy_poisson_logpmf(k, r):
+  return k * np.log(r) - r - scipy.special.gammaln(k+1) 
+
+# Assumes k and r are CuPy arrays
+def cupy_poisson_logpmf(k, r):
+  return k * cp.log(r) - r - cupyx.scipy.special.gammaln(k+1) 
+\end{lstlisting}
+\caption{
+  The original NumPy-based solution used in KAGE for computing LOGPMF, and a CuPy-based version for GPU acceleration.
+  The CuPy-based GPU accelerated version assumes both input arrays, k and r, are residing in GPU memory.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf_array_implementations}
+\end{figure}
+
+\subsubsection{Assessment} \label{methods:gpu_accelerating_genotyping:cupy_logpmf_assessment}
+In order to assess the effects of GPU accelerating KAGE's LOGPMF function by using CuPy, we benchmarked both functions by computing LOGPMF for input arrays $k$ and $r$.
+The $k$ array was initialized with 40 million 32-bit integers, randomly set to values between 1 and 100.
+$r$ was initialized with 40 million 64-bit floating point numbers, randomly set to values between 1 and 100.
+
+The CuPy-based GPU accelerated function presented in figure \ref{methods:gpu_accelerating_genotyping:figures:logpmf_array_implementations} requires both input arrays, $k$ and $r$, to already be allocated in GPU memory.
+Benchmarking only the function calls as presented therefore ignores the overhead of copying both $k$ and $r$ to GPU memory before the function call can be made.
+Thus, for completion, we did not only benchmark both the NumPy and CuPy solutions. We additionally benchmarked the CuPy solution where $k$ and $r$ start off in CPU RAM and are copied to GPU memory before processing, and the result array is copied back to CPU RAM afterwards. 
+This way, we accounted for the overhead of copying data to and from the GPU.
+
+Our benchmarking yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Time (milliseconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{606.94} &  \\
+\multicolumn{1}{l|}{CuPy (with copy)} & \multicolumn{1}{l}{201.9} & \\
+\multicolumn{1}{l|}{CuPy (without copy)} & \multicolumn{1}{l}{82.49}
+\end{tabular}
+\end{center}
+\caption{
+  Time spent computing the logarithm of the probability mass function for 40 million elements.
+  \textbf{NumPy} uses the NumPy-based solution with CPU data-parallelism and a single core.
+  \textbf{CuPy (with copy)} uses the CuPy-based solution with GPU acceleration, but $k$ and $r$ are both copied from RAM to GPU memory before processing begins, and finally the result array is copied from GPU memory back to RAM.
+  \textbf{CuPy (without copy)} uses the CuPy-based solution with GPU acceleration, but $k$ and $r$ are both already residing in GPU memory, and the result array is not copied back to RAM. In other words, we only measure the processing time of computing the 40 million LOGPMF values.
+  Runtimes are the mean of 100 runs.
+}
+\label{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{7.25em}
+\scalebox{.85}{
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(4.5,8.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3.5,8)(){\textbf{LOGPMF}};
+ 
+\begin{axis} [
+  ylabel={runtime (milliseconds)},
+  xlabel={method},
+  width=10cm,
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=.25,
+  symbolic x coords={NumPy, CuPy (copy), CuPy (no copy)},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 606.94)
+    (CuPy (copy), 201.9)
+    (CuPy (no copy), 82.49)
+};
+\end{axis}
+\end{tikzpicture}
+}
+\caption{
+  Time (milliseconds) spent computing the LOGPMF for input arrays of 40 million elements.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf_benchmark}
+\end{figure}
+
+\subsubsection{Implementing LOGPMF using CUDA}
+While the method of using CuPy as a drop-in replacement for NumPy provided a significant speedup when computing the LOGPMF, it reveals a problem that arises when using NumPy and CuPy in Python.
+When computing a nested expression, such as when computing the LOGPMF shown in equation \ref{methods:gpu_accelerating_genotyping:equations:logpmf}, the expression will be computed and evaluated following Python's evaluation rules, subsequently creating several temporary arrays.
+This means that array allocations, de-allocations, memory writes and reads are happening needlessly while evaluating the Python expression.
+
+By moving into C++ and using CUDA, we can create our own CUDA kernel to compute the LOGPMF for large arrays, avoiding these redundant operations.
+We implemented a simple kernel where we avoid needlessly storing sub-expressions in temporary arrays.
+\begin{figure}[H] 
+\begin{center}
+logpmf\_kernel.cu
+\end{center}
+\begin{lstlisting}[language=C++,style=cppcode]
+__global__ void logpmf_kernel(
+    const int *k, const double *r, double *out, const int size) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < size) {
+    out[i] = k[i] * logf(r[i]) - r[i] - lgammaf(k[i] + 1);
+  }
+}
+\end{lstlisting}
+\caption{
+  The CUDA kernel implemented for computing the LOGPMF for arrays on the GPU.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf_kernel}
+\end{figure}
+
+\subsubsection{Assessment}
+To benchmark the custom CUDA kernel we used the same benchmark as for the CuPy solution described in section \ref{methods:gpu_accelerating_genotyping:cupy_logpmf_assessment}.
+Our benchmarking yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Time (milliseconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{606.94} &  \\
+\multicolumn{1}{l|}{CuPy (with copy)} & \multicolumn{1}{l}{201.9} & \\
+\multicolumn{1}{l|}{CuPy (without copy)} & \multicolumn{1}{l}{82.49} & \\
+\multicolumn{1}{l|}{CUDA (with copy)} & \multicolumn{1}{l}{68.33} & \\
+\multicolumn{1}{l|}{CUDA (without copy)} & \multicolumn{1}{l}{4.88}
+\end{tabular}
+\end{center}
+\caption{
+  Time spent computing the logarithm of the probability mass function for 40 million elements.
+  \textbf{NumPy}, \textbf{CuPy (with copy)} and \textbf{CuPy (without copy)} are the benchmark results from table \ref{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark}.
+  \textbf{CUDA (with copy)} uses the custom CUDA kernel implementation, but $k$ and $r$ are both copied from RAM to GPU memory before the kernel is launched, and the result array is copied from GPU memory back to RAM.
+  \textbf{CUDA (without copy)} uses the custom CUDA kernel implementation, but $k$ and $r$ are both already residing in GPU memory and the result array is not copied from GPU memory to RAM.
+  Runtimes are the mean of 100 runs.
+}
+\label{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark_2}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{2.75cm}
+  \begin{tikzpicture}[font=\small]
+    \pgfplotsset{
+      compat=newest,
+      xlabel near ticks,
+      ylabel near ticks
+    }
+    \pgfplotsset{compat=1.11,
+        /pgfplots/ybar legend/.style={
+        /pgfplots/legend image code/.code={%
+           \draw[##1,/tikz/.cd,yshift=-0.25em]
+            (0cm,0cm) rectangle (3pt,0.8em);},
+       },
+    }
+    \node at(3.375,7.5)(){\small{\textbf{CuPy as NumPy drop-in}}};
+    \node at(3.45,7)(){\small{\textbf{versus custom CUDA implementation}}};
+ 
+\begin{axis} [
+  ylabel={runtime (milliseconds)},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=0.75,
+  symbolic x coords={with copy, without copy},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\smaller\pgfmathprintnumber{\pgfplotspointmeta}},
+  every y tick scale label/.style={at={(yticklabel cs:1.1)},anchor=north},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (with copy, 201.9)
+    (without copy, 68.33)
+};
+
+\addplot[fill=red] coordinates {
+    (with copy, 82.49)
+    (without copy, 4.88)
+};
+\legend{CuPy, CUDA}
+\end{axis}
+\end{tikzpicture}
+\caption{
+  Time (milliseconds) spent computing the LOGPMF for input arrays of 40 million elements.
+}
+\label{methods:gpu_accelerating_genotyping:figures:logpmf_benchmark_2}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark_2}, implementing our own CUDA solution, alleviating the wasteful array allocations and memory reads and writes, resulted in a significant speedup.
+
+\subsubsection{Extending the LOGPMF Implementation}
+Despite already having achieved significant speedup using both CuPy and CUDA to GPU accelerate LOGPMF, further examination of KAGE revealed that more of the context around the LOGPMF function call was eligible to be GPU accelerated.
+The original part of KAGE that made calls to the LOGPMF function is presented below:
+\begin{figure}[H] 
+\begin{center}
+kage/sampling\_combo\_model.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+def extended_logpmf(observed_counts, counts):
+    sums = np.sum(counts, axis=-1)[:, None]
+    frequencies = np.log(counts / sums)
+    poisson_lambda = (np.arange(counts.shape[1])[None, :] + ERROR_RATE) * BASE_LAMBDA 
+    prob = logpmf(observed_counts[:, None], poisson_lambda) # LOGPMF call is made here
+    prob = logsumexp(frequencies + prob, axis=-1)
+    return prob
+\end{lstlisting}
+\caption{
+  The function inside the KAGE genotyper implementation that uses the LOGPMF function.
+  The outer function also relies on NumPy array operations for performance.
+}
+\label{methods:gpu_accelerating_genotyping:figures:extended_logpmf_context}
+\end{figure}
+
+We used two previously described methods to implement the outer function from figure \ref{methods:gpu_accelerating_genotyping:figures:extended_logpmf_context} with GPU acceleration: we used CuPy as a drop-in replacement for NumPy, and we implemented a custom CUDA kernel in C++ where we again were able to optimize away unnecessary array allocations and de-allocations, as well as RAM writes and reads.
+The implementations can be found (along with the GPU accelerated LOGPMF function) online at \url{}https://github.com/jorgenwh/custats.
+
+\subsubsection{Assessment}
+To assess the extended LOGPMF implementation, we benchmarked the NumPy-based version found in KAGE, the CuPy drop-in replacement for NumPy version, and the custom CUDA kernel implementation.
+For both GPU accelerated methods, namely the CuPy and CUDA methods, we additionally benchmarked their performances when inputs are copied from RAM to GPU memory beforehand and results are copied from GPU memory to RAM.
+
+To benchmark, we initialized the input arrays \textit{observed\_counts} and \textit{counts} (the model counts) to be randomly generated numbers.
+\textit{observed\_counts}, a one-dimensional array, contained 5 million 32-bit integers. 
+\textit{counts}, a two-dimensional array, contained 5 million rows of length 15, totalling 75 million 16-bit floating point numbers, except when running the CUDA version since we did not implement support for half-precision.
+
+Our benchmarking yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Time (milliseconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{2242.9} &  \\
+\multicolumn{1}{l|}{CuPy (with copy)} & \multicolumn{1}{l}{328.44} & \\
+\multicolumn{1}{l|}{CuPy (without copy)} & \multicolumn{1}{l}{293.24} & \\
+\multicolumn{1}{l|}{CUDA (with copy)} & \multicolumn{1}{l}{56.59} & \\
+\multicolumn{1}{l|}{CUDA (without copy)} & \multicolumn{1}{l}{5.92}
+\end{tabular}
+\end{center}
+\caption{
+  Benchmarking results for the extended LOGPMF function.
+  The results were determined from averaging the runtime of the NumPy implementation in KAGE, the same implementation with CuPy as backend array-library, both with and without including the time spent copying input arrays to the GPU and the result array from the GPU back to RAM, and the CUDA solution we implemented, both with and without copy times.
+  The NumPy solution running on the CPU does not need to account for copying data to and from the GPU. 
+  Thus, no value is present for the 'with copy' bar for NumPy.
+}
+\label{methods:gpu_accelerating_genotyping:tables:extended_logpmf_benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{2.75cm}
+  \begin{tikzpicture}[font=\small]
+    \pgfplotsset{
+      compat=newest,
+      xlabel near ticks,
+      ylabel near ticks
+    }
+    \pgfplotsset{compat=1.11,
+        /pgfplots/ybar legend/.style={
+        /pgfplots/legend image code/.code={%
+           \draw[##1,/tikz/.cd,yshift=-0.25em]
+            (0cm,0cm) rectangle (3pt,0.8em);},
+       },
+    }
+    \node at(3.375,7.5)(){\small{\textbf{Effects of GPU accelerating}}};
+    \node at(3.45,7)(){\small{\textbf{the extended LOGPMF function from KAGE}}};
+ 
+\begin{axis} [
+  ylabel={runtime (milliseconds)},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=.5,
+  symbolic x coords={with copy, without copy},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\smaller\pgfmathprintnumber{\pgfplotspointmeta}},
+  every y tick scale label/.style={at={(yticklabel cs:1.1)},anchor=north},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (with copy, 2242.9)
+    (without copy, 2242.9)
+};
+
+\addplot[fill=red] coordinates {
+    (with copy, 328.44)
+    (without copy, 293.24)
+};
+
+\addplot[fill=cyan] coordinates {
+    (with copy, 56.59)
+    (without copy, 5.92)
+};
+\legend{NumPy, CuPy, CUDA}
+\end{axis}
+\end{tikzpicture}
+\caption{
+  Benchmarking results for the extended LOGPMF function.
+  The NumPy solution running on the CPU does not need to account for copying data to and from the GPU, thus, their runtimes are identical.
+}
+\label{methods:gpu_accelerating_genotyping:figures:extended_logpmf_benchmark}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_genotyping:tables:extended_logpmf_benchmark}, both the methods we tried for GPU accelerating the extended LOGPMF function found in KAGE yielded significant runtime speedup.
+Clearly, our custom CUDA implementation performs significantly better than simply using CuPy as a drop-in replacement for NumPy.
+In this section we describe how GPU acceleration support was provided for the KAGE genotyping pipeline, resulting in GKAGE - a version of KAGE where parts of the pipeline is GPU accelerated.
+We will give an account of how we determined which parts to focus on GPU accelerating and describe a testing strategy that we deployed that allowed us to GPU accelerate existing NumPy code directly in Python to see whether significant runtime speedup was plausible.
+Then, we will describe how we implemented the GPU accelerated solutions that were introduced into KAGE, resulting in GKAGE.
+For each GPU acceleration method, we include an assessment showing the effects of GPU acceleration and how they compare to previous CPU runtimes.
+
+\subsection{GPU Accelerating \textit{k}mer Counting} \label{methods:gpu_accelerating_kmer_counting}
+While several \textit{k}mer counting solutions have been developed in previous work, with at least one having support for GPU acceleration \cite{kmer_counting_tools}, most such tools are designed to solve the \textit{full} \textit{k}mer counting problem, which we described in section \ref{background:kmers_and_kmer_counting}.
+Additionally in section \ref{background:kmers_and_kmer_counting}, we described how KAGE's \textit{k}mer counting step is a less compute and memory demanding problem which we defined as \textit{partial} \textit{k}mer counting.
+As a reminder: we defined \textit{partial} \textit{k}mer counting as the process of only counting the observed occurences of a predefined set of \textit{k}mers in a sample.
+Repurposing \textit{k}mer counting tools that are designed to solve the \textit{full} \textit{k}mer counting problem is futile if the goal is speedup.
+Thus, we opted to implement our own GPU accelerated \textit{k}mer counting tool where its design is considered in the context of the \textit{partial} \textit{k}mer counting problem.
+
+Although we had success in GPU accelerating a hash table in npstructures using CuPy, we decided to also attempt to implement a hash table directly in C++ using CUDA, Nvidia's programming platform.
+This would allow for a more granular implementation as we would no longer be constrained to a solution originally designed for NumPy array functions.
+
+\subsubsection{GPU Hash Table Implemented using CUDA}
+The hash table's interface needed to support three main operations: 1) \textbf{insert} - insert each \textit{k}mer found in an input array of \textit{k}mers (although only once upon initialization), 2) \textbf{count} - increment the value associated with each \textit{k}mer found in an input array of \textit{k}mers, and 3) \textbf{query} - fetch the values associated with each \textit{k}mer found in an input array of \textit{k}mers.
+
+Common for all three operations mentioned above is that they need to adhere to an addressing and probing scheme.
+Since our hash table resides on the GPU, certain common paradigms such as open hashing - where each address in the table contains a pointer to a linked-list or tree-type data structure for placing values - are immediately disqualified.
+This is because GPUs, which architectures are designed for massive data parallelism, performs poorly when needing to de-reference pointers and make many strided memory accesses.
+Thus, we went with a simple open addressing with linear probing scheme. 
+
+Two arrays of equal size makes up the data structure where one array stores the table's keys (\textit{k}mers) and the other array stores its values (counts).
+The keys array is an array of 64-bit unsigned integers.
+The choice of using 64 bits for the keys, as opposed to \textit{i}.\textit{e}. 32, was to accomidate for larger \textit{k}mer values since 32 bits would only allow for \textit{k} up to $(32/2)-1=15$.
+Using 64-bit keys increases our maximum \textit{k} size to 31, which is the default value for KAGE.
+This choice also reveals a limitation of our hash table, which is that it can not support \textit{k}mers where $k>31$ in its current form.
+The reason why 64 bits does not allow for \textit{k} up to 32, considering a 2-bit encoded 64-mer can be stored in a single 64-bit integer, is that the max 64-bit integer value is used as an indicator that a slot is empty in the hash table.
+The values array is an array of 32-bit unsigned integers.
+While 16-bit unsigned integers would suffice for our purpose of counting \textit{k}mers, the choice of using 32-bit unsigned integers instead was made because the CUDA framework does not have a readily usable implementation of the atomicAdd function for 16-bit integers.
+
+The probing scheme we used - linear probing - describes how we solve collisions in the hash table. 
+This scheme is shared for all three operations supported by the hash table: insert, count and query.
+A murmur hash \cite{murmur} is used to hash and compute the first search index for a \textit{k}mer.
+The initial probe index $p_0$ and every consecutive probe index $p_i$ for a \textit{k}mer $k$ can be found using:
+\begin{equation}
+  p_0=hash(k) \bmod c \hspace{7em} p_{i}=(p_{i-1}+1) \bmod c
+\end{equation}
+where $hash$ is the murmur hash function and $c$ is the capacity of the hash table (the length of the arrays).
+
+For example, in a hash table of capacity $c$, we query a \textit{k}mer $k$ using the following algorithm:
+\begin{figure}[H]
+\begin{lstlisting}[style=pseudocode]
+input: uint64[] keys, uint32[] values, int c, uint64 k
+begin
+  h = murmur(k) mod c
+  while true do
+    if keys[h] == k then
+      return values[h]
+    else if keys[h] == empty then
+      return 0
+    else
+      h = (h + 1) mod c
+    end if
+  end while
+end
+\end{lstlisting}
+\caption{
+  The algorithm used for querying keys (\textit{k}mers) in the parallel GPU hash table implemented in C++ using CUDA. 
+  When querying an array of $N$ \textit{k}mers, $N$ CUDA threads are launched and each thread is assigned a \textit{k}mer. 
+  The threads then perform this algorithm in a parallel fashion to query many \textit{k}mers in parallel.
+  The probing scheme used in this algorithm is the same used in both insertions and updating of values.
+}
+\end{figure}
+
+Using a a murmur hash function when computing the initial probe position in the hash table results in more uniform placements as opposed to if we only use the \textit{k}mer's integer value instead.
+This in turn results in less clustering when inserting \textit{k}mers, meaning we need to deal with fewer collisions.
+%\textbf{(include speedup from using murmur hash compared to no hash?)}
+
+\definecolor{misscolor}{RGB}{255,215,215}
+\definecolor{hitcolor}{RGB}{215,255,215}
+\definecolor{countcolor}{RGB}{240,240,240}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\hspace*{-1.5em}
+\begin{tikzpicture}
+  % in kmers
+  \node at(-2.9,0)(){\textit{\smaller{kmers array}}};
+  \node at(-1.5,0)[draw,minimum width=0.75cm,minimum height=0.75cm](k0){\smaller{$k_0$}};
+  \node at(-.75,0)[draw,minimum width=0.75cm,minimum height=0.75cm](k1){\smaller{$k_1$}};
+  \node at(0,0)[draw,minimum width=0.75cm,minimum height=0.75cm](k2){\smaller{$k_2$}};
+  \node at(.75,0)[draw,minimum width=0.75cm,minimum height=0.75cm](gap){\smaller{$...$}};
+  \node at(1.5,0)[draw,minimum width=0.75cm,minimum height=0.75cm](kn){\smaller{$k_N$}};
+  % CUDA threads
+  % k0
+  \draw [](k0) -- (-1.5,-1);
+  \draw [](-1.5,-1) -- (-5,-1);
+  \draw [-stealth](-5,-1) -- (-5,-2);
+  \node at(-3.25,-.75)(){\textit{\smaller{thread$_0$}}};
+  \node at(-5,-2.5)(){...};
+  % k1
+  \draw [-stealth](k1) -- (-.75,-2);
+  \node at(-.75,-2.5)(){...};
+  % kn
+  \draw [](kn) -- (1.5,-1);
+  \draw [](1.5,-1) -- (5,-1);
+  \draw [-stealth](5,-1) -- (5,-2);
+  \node at(3.25,-.75)(){\textit{\smaller{thread$_N$}}};
+  \node at(5,-2.5)(){...};
+  % k2
+  \draw [-stealth](k2) -- (0,-3.25);
+  \node at(.75,-2.25)(){\textit{\smaller{thread$_2$}}};
+  % hash
+  \node at(0,-3.75)(){\smaller{\textit{$p_0=h=hash(k_2) \bmod c$}}};
+  % probe 1
+  \draw [-stealth](0,-4.25) -- (0,-5);
+  \node at(2.475,-4.65)[fill=misscolor,rounded corners](){\textit{\smaller{miss}}};
+  % titles
+  \node at(-2.6,-5.5)(){\textit{\smaller{indices}}};
+  \node at(-2.4,-6.3)(){\textit{\smaller{keys}}};
+  \node at(-2.55,-7.1)(){\textit{\smaller{values}}};
+  % indices
+  \node at(-1.3,-5.5)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(-.65,-5.5)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$1$}};
+  \node at(0,-5.5)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$p_0$}};
+  \node at(.65,-5.5)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$3$}};
+  \node at(1.3,-5.5)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$4$}};
+  \node at(1.95,-5.5)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$5$}};
+  \node at(2.6,-5.5)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % keys
+  \node at(-1.3,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(-.65,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(0,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm,fill=misscolor](){\smaller{$...$}};
+  \node at(.65,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$k_2$}};
+  \node at(1.3,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(1.95,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(2.6,-6.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % values
+  \node at(-1.3,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(-.65,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(0,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(.65,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(1.3,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(1.95,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(2.6,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  % probe 2
+  \draw [-stealth](0,-7.75) -- (0,-8.5);
+  \node at(0,-9)(){\smaller{\textit{$p_1=(p_0 + 1) \bmod c$}}};
+  \draw [](0,-9.5) -- (0,-9.85);
+  \draw [](0,-9.85) -- (.65,-9.85);
+  \draw [-stealth](.65,-9.85) -- (.65,-10.2);
+  \node at(-2.6,-10.7)(){\textit{\smaller{indices}}};
+  \node at(-2.4,-11.5)(){\textit{\smaller{keys}}};
+  \node at(-2.55,-12.3)(){\textit{\smaller{values}}};
+  \node at(2.6,-9.9)[fill=hitcolor,rounded corners](){\textit{\smaller{hit}}};
+  % indices
+  \node at(-1.3,-10.7)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(-.65,-10.7)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$1$}};
+  \node at(0,-10.7)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$2$}};
+  \node at(.65,-10.7)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$p_1$}};
+  \node at(1.3,-10.7)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$4$}};
+  \node at(1.95,-10.7)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$5$}};
+  \node at(2.6,-10.7)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % keys
+  \node at(-1.3,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(-.65,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(0,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(.65,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm,fill=hitcolor](){\smaller{$k_2$}};
+  \node at(1.3,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(1.95,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(2.6,-11.5)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % values
+  \node at(-1.3,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(-.65,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(0,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(.65,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(1.3,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(1.95,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(2.6,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  % count
+  \draw [-stealth](.65,-12.95) -- (.65,-13.7);
+  \node at(-2.6,-14.2)(){\textit{\smaller{indices}}};
+  \node at(-2.4,-15)(){\textit{\smaller{keys}}};
+  \node at(-2.55,-15.8)(){\textit{\smaller{values}}};
+  \node at(2.4,-13.4)[fill=countcolor,rounded corners](){\textit{\smaller{count}}};
+  % indices
+  \node at(-1.3,-14.2)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(-.65,-14.2)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$1$}};
+  \node at(0,-14.2)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$2$}};
+  \node at(.65,-14.2)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$p_1$}};
+  \node at(1.3,-14.2)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$4$}};
+  \node at(1.95,-14.2)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$5$}};
+  \node at(2.6,-14.2)[minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % keys
+  \node at(-1.3,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(-.65,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(0,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(.65,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$k_2$}};
+  \node at(1.3,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(1.95,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  \node at(2.6,-15)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$...$}};
+  % values
+  \node at(-1.3,-15.8)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(-.65,-15.8)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(0,-15.8)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(.65,-15.8)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$1$}};
+  \node at(1.3,-15.8)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(1.95,-15.8)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  \node at(2.6,-15.8)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
+  % capacity
+  \draw [](-1.625,-16.57) -- (2.925,-16.57); % -16.57
+  \draw [](-1.625,-16.47) -- (-1.625,-16.67); % -16.47, -16.67
+  \draw [](2.925,-16.47) -- (2.925,-16.67);
+  \node at(.65,-16.92)(c){\smaller{\textit{c}}};
+\end{tikzpicture}
+}
+\caption{
+  As an array of \textit{N} 64-bit integer encoded kmers are counted by the hash table, \textit{N} CUDA threads will launch and each will compute the first probe position $p_0$ for its assigned kmer \textit{k}. Then, if the key at slot $p_0$ does not contain \textit{k}, it will continue probing by linearly moving up to the next consecutive slot until either an empty key or \textit{k} observed. If an empty key is observed, the thread terminates without changing any of the hash table's values. If \textit{k} is observed, the current slot's value is incremented.
+}
+\label{methods:gpu_accelerating_kmer_counting:figures:count_example}
+\end{center}
+\end{figure}
+
+\paragraph{Integration to Python}
+In order to integrate the hash table implemented in C++ using CUDA to Python so that it would be compatible with KAGE, we used pybind11 (introduced in section \ref{background:implementation_tools_and_libraries:pybind11}) to create Python bindings for the C++ class and then wrap the implementation in a Python class.
+pybind11 provides easy-to-use macros for this, allowing us to add bindings by simply creating a bindings C++ file and then compiling a module where our C++ functionality is contained.
+
+\begin{figure}[H]
+\begin{center}
+bindings.cpp
+\end{center}
+\begin{lstlisting}[language=C++,style=cppcode]
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+
+int my_function(int a, int b) {
+  return a + b;
+}
+
+class MyClass {
+public:
+  MyClass(int number) : number(number) {}
+  int get_number() const { return number; } 
+private:
+  int number;
+};
+
+// Use pybind11's PYBIND11_MODULE macro to create Python bindings for our simple function and class
+PYBIND11_MODULE(my_module, m) {
+  m.doc() = "Documentation for my module";
+
+  m.def("my_function", &my_function);
+
+  py::class_<MyClass>(m, "MyClass")
+    .def(py::init<int>())
+    .def("get_number", &MyClass::get_number);
+}
+\end{lstlisting}
+\caption{
+  An illustration of how pybind11 can be used to create Python bindings for C++ functions and classes using a simple C++ macro: PYBIND11\_MODULE.
+  The C++ project can then be compiled to produce the module that can be imported directly into Python.
+  pybind11 takes care of translating common data types automatically, including some data structures such as tuples and lists.
+  In addition, pybind11 has specific support for NumPy, making the usage of NumPy arrays seamless.
+}
+\label{methods:gpu_accelerating_kmer_counting:figures:pybind11_example}
+\end{figure}
+
+The produced module is finally wrapped around a Python class that takes care of any transitional details between usage and the C++ interface, such as determining whether to call upon a version of a function that expects NumPy arrays with data allocated in the host's RAM or a CuPy array with data allocated in the GPU's RAM.
+
+The final implementation of this CUDA accelerated hash table can be found and installed at \url{https://github.com/kage-genotyper/cucounter}.
+
+\subsubsection{Assessment} \label{methods:gpu_accelerating_kmer_counting:assessment}
+In order to assess this new CUDA hash table implementation, we ran the benchmark described in section \ref{methods:initial_testing:assessment}, but using the CUDA hash table with Python bindings for \textit{k}mer counting instead of npstructures' counter object.
+The benchmark yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Counting time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{234.7} &  \\
+\multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{24.31} &  \\
+\multicolumn{1}{l|}{CUDA} & \multicolumn{1}{l}{2.94} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The total time spent counting \textit{k}mers using the CUDA hash table implemented in C++ with Python bindings.
+  NumPy and CuPy refers to the previously found runtimes using npstructures' counter object with NumPy- and CuPy-backends respectively.
+}
+\label{methods:gpu_accelerating_kmer_counting:tables:benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{7em}
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3,7)(){\textbf{\textit{k}mer Counting}};
+ 
+\begin{axis} [
+  ylabel={runtime (seconds)},
+  xlabel={method},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=.5,
+  symbolic x coords={NumPy, CuPy, CUDA},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 234.7)
+    (CuPy, 24.31)
+    (CUDA, 2.94)
+};
+\end{axis}
+\end{tikzpicture}
+%\end{center}
+\caption{
+  Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
+}
+\label{methods:gpu_accelerating_kmer_counting:figures:benchmark}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_kmer_counting:tables:benchmark}, the CUDA hash table implemented in C++ with Python bindings provided significantly better counting efficiancy compared to the CuPy-based npstructures counter, with nearly 80X speedup compared to the original NumPy-based counter and more than 8X speedup compared to the CuPy-based counter.
+\subsection{Initial Testing} \label{methods:initial_testing}
+Before delving into the GPU accelerated methods used to produce the final GKAGE product, we will here describe an initial test we performed in order to assess two things. Firstly, whether we could effectively GPU accelerate existing NumPy solutions using CuPy, all while staying within the comfort of Python, and secondly, whether such an implementation would result in significant speedup over a CPU solution or at least provide insight into how plausible getting significant speedup by utilizing the GPU was.
+For this, we decided on focusing on the \textit{partial} \textit{k}mer counting problem, detailed in section \ref{background:kmers_and_kmer_counting}.
+
+As detailed in section \ref{background:implementation_tools_and_libraries:npstructures}, npstructures is a Python library that enhances the NumPy library by providing additional data structures with NumPy-like behaviour and performance, built on top of NumPy.
+Additionally in section \ref{background:implementation_tools_and_libraries:npstructures}, we detailed a subset of npstructures' data structures, one of which was a counter object that efficiently counts occurences of a predefined keys-set in a sample.
+This counter object had previously been utilized to count a predefined set of \textit{k}mer's frequencies, albeit on the CPU.
+
+Since npstructures' data structures are all heavily reliant upon NumPy's array routines for fast performance, they are designed around utilizing the CPU's vectorization and data parallelism.
+Large array operations where data parallelism matters are ideal for the GPU architecture, which often can provide orders of magnitude more parallelism this way.
+In addition, we know that most, if not all of the functionality used from NumPy, will be supported with GPU acceleration by CuPy through an nearly identical interface.
+Thus, by replacing the NumPy functionality used in npstructures' data structures with CuPy's equivalent GPU accelerated functionality, we can GPU accelerate the necessary data structures in npstructures without having to leave Python.
+With this strategy we GPU accelerated npstructures' counter object using CuPy.
+
+\subsubsection{Using CuPy as a Drop-In Replacement for NumPy} \label{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy}
+Rather than creating a standalone package version of npstructures with GPU acceleration, we instead opted to add the possibility for GPU acceleration to the already existing package.
+This added a new self imposed requirement; we did not want CuPy to be a npstructures dependancy since many users may wish to use it simply for the NumPy implementations.
+Additionally, we still needed a way to redirect NumPy function calls to their equivalent CuPy functions.
+We fulfilled both of these requirements by exploiting Python's module system.
+
+Consider the following Python package example where our package, \textit{mypackage}, contains two modules, \textit{my\_classes} and \textit{my\_funcs}, both relying on NumPy for their implementations:
+
+\begin{center}
+mypackage.my\_funcs.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+
+def some_func_using_numpy():
+  return np.zeros(10)
+\end{lstlisting}
+
+\begin{center}
+mypackage.my\_classes.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+
+class SomeClassUsingNumPy:
+  def __init__(self):
+    self.data = np.zeros(10)
+
+  def get_data(self):
+    return self.data
+\end{lstlisting}
+
+Our package's initialization file imports our function and our class from their respective modules, and all functionality is usable without needing to import CuPy in either module or initialization file.
+Pay attention to the initialization file's \textit{set\_backend} function which takes a library as a parameter and reassigns the np variable in both package modules from the NumPy to the provided library.
+
+\begin{center}
+mypackage.\_\_init\_\_.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+from .my_funcs import some_func_using_numpy
+from .my_classes import SomeClassUsingNumPy 
+
+# Swaps NumPy with lib (presumably CuPy)
+def set_backend(lib):
+  from . import my_funcs
+  my_funcs.np = lib
+
+  from . import my_classes
+  my_classes.np = lib
+\end{lstlisting}
+
+In our own program, where we will import our package, \textit{mypackage}, we can either directly use our package's implementation with NumPy, or we can do as the following example shows and import CuPy and set the backend in the entire package to use CuPy functionality instead of NumPy.
+
+\begin{center}
+program.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import cupy as cp
+
+import mypackage
+mypackage.set_backend(cp)
+
+array = mypackage.some_func_using_numpy()
+type(array) # cupy.ndarray
+\end{lstlisting}
+
+Exploiting Python's module system this way has the benefits of not making CuPy a dependancy for npstructures, and it also allows for gradual GPU support by way of only updating the backend in modules where the existing implementations are ready to be ported as is to CuPy.
+
+\subsubsection{Resolving Unsupported or Poorly Performing Functionality}
+Two issues can arise when utilizing this method of GPU accelerating NumPy code.
+Firstly, some NumPy solutions may be effective on the CPU's architecture but ineffective on the GPU's, resulting in poor performance.
+This will often be the case when significant portions of the code needs to be ran in a serial fashion, as opposed to parallel, or when array sizes are too small to mask the overhead of copying data to and from the GPU memory.
+Secondly, certain NumPy functions are simply not supported by CuPy.
+In case of the former issue, one might want to create an alternative solution that better utilizes the GPU's strengths, such as its massive parallelism.
+For the latter issue, there is no other practical option than to create a custom solution that achieves the desired behaviour by using what CuPy functionality is available.
+We circumvented both of these issues by creating custom implementations where we had the freedom to use the full extend of CuPy's functionality to reproduce the desired behaviour.
+For classes, this can be achieved by subclassing and overriding methods where we wish to create our new custom implementations.
+To demonstrate this, we will have to slightly edit our example package, \textit{mypackage}.
+
+Consider if our package's class definition had instead been the following:
+\begin{center}
+mypackage.my\_classes.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+
+class SomeClassUsingNumPy:
+  def __init__(self):
+    self.data = np.zeros(10)
+
+  def pad_with_ones(self):
+    arr = self.data
+    self.data = np.insert(arr, [0, len(arr)], 1)
+\end{lstlisting}
+
+In the code above, we use NumPy's insert function, which as of April 2023 is not supported by CuPy.
+To circumvent this issue, we can subclass our \textit{SomeClassUsingNumPy} class and create our own custom implementation of \textit{pad\_with\_ones}.
+We will create a new file where we implement our CuPy compatible solution, and our subclass will override the \textit{pad\_with\_ones} method.
+\begin{center}
+mypackage.cp\_my\_classes.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+import numpy as np
+import cupy as cp
+
+from .my_classes import SomeClassUsingNumPy
+
+class CPSomeClassUsingNumPy(SomeClassUsingNumPy):
+  def pad_with_ones(self):
+    arr = self.data
+    self.data = cp.pad(arr, (1, 1), 'constant', constant_values=1)
+\end{lstlisting}
+
+In the above example we override the \textit{pad\_with\_ones} method with our alternative implementation that uses a different CuPy function that is supported by CuPy, the \textit{pad} function.
+Now, our two different \textit{pad\_with\_ones} implementations will behave equivalently, although our custom implementation will leverage CuPy and be GPU accelerated.
+
+Finally, we need to make one small change to our package's initialization file so that users of our package will import our CuPy compatible subclass of \textit{SomeClassUsingNumPy} after setting the backend to CuPy:
+\begin{center}
+mypackage.\_\_init\_\_.py
+\end{center}
+\begin{lstlisting}[language=Python,style=pycode]
+from .my_funcs import some_func_using_numpy
+from .my_classes import SomeClassUsingNumPy 
+
+# Swaps NumPy with lib (presumably CuPy)
+def set_backend(lib):
+  from . import my_funcs
+  my_funcs.np = lib
+
+  from . import my_classes
+  my_classes.np = lib
+
+  # Use CuPy compatible version of SomeClassUsingNumPy
+  global SomeClassUsingNumPy
+  from .cp_my_classes import CPSomeClassUsingNumPy
+  SomeClassUsingNumPy = CPSomeClassUsingNumPy
+\end{lstlisting}
+
+By utilizing this method, we implemented partial GPU support for the npstructures library, including enabling GPU support for the counter object used to count occurences of a predefined key-set in a sample.
+
+\subsubsection{Assessment} \label{methods:initial_testing:assessment}
+To assess the effect GPU accelerating npstructures by using CuPy as a drop-in replacement for NumPy, we benchmarked the GPU accelerated npstructures counter object by counting the occurences of a predefined set of 50 million unique \textit{k}mers in a set of 20 million DNA reads, each of length 150.
+This benchmark used BioNumPy to read the FASTA file in chunks of 10 million bytes, 2-bit encode the reads and hash the valid \textit{k}mers before counting.
+The time spent preparing each chunk was not included in the final measured runtime, since we were only interested in seeing the effects of GPU accelerating npstructures' counter object.
+It is important to note that while this benchmark provided a good assessment of the speedup gained from GPU accelerating our counter, it omits the overhead of transferring each chunk of \textit{k}mers to the GPU in order to be counted by our GPU accelerated counter.
+We justified the omission of this overhead because of two reasons.
+Firstly, during our initial testing we were only interested in assessing the runtime differences during processing on the GPU versus the CPU when using CuPy as a drop-in replacement for NumPy.
+Secondly, we only GPU accelerated one component of a much larger pipeline, and in such a case, the true effects of GPU acceleration may be overshadowed.
+Our intention was to GPU accelerate several consecutive components in a way where only a single copy step would need to be performed before several consecutive processing steps could benefit from GPU acceleration, minimizing the effects of the CPU to GPU copy overhead.
+
+\definecolor{cpucolor}{RGB}{255,255,225}
+\definecolor{gpucolor}{RGB}{225,255,255}
+
+\begin{figure}[H]
+\begin{center}
+\begin{tikzpicture}
+  \node at(5.35,-1)[]{\smaller{CPU}};
+  \node at(5.35,-2)[]{\smaller{GPU}};
+  \node at(4.4,-1)[draw,minimum width=.75cm,minimum height=.75cm,fill=cpucolor]{};
+  \node at(4.4,-2)[draw,minimum width=.75cm,minimum height=.75cm,fill=gpucolor]{};
+  % -- GPU --
+  \node at(.5,-3.5)[]{\smaller{\textbf{Benchmark pipeline}}};
+  % read fasta
+  \node at(0,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
+  \node at(0,-4.75)[]{\smaller{read}};
+  \node at(0,-5.25)[]{\smaller{FASTA}};
+  \draw [thick,-stealth](1.25,-5) -- (2,-5);
+  % 2-bit encoding
+  \node at(3.3,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
+  \node at(3.3,-4.75)[]{\smaller{prepare}};
+  \node at(3.3,-5.25)[]{\smaller{\textit{k}mer chunk}};
+  \draw [thick,-stealth](4.65,-5) -- (5.4,-5);
+  % kmer hashing
+  \node at(6.65,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
+  \node at(6.65,-4.75)[]{\smaller{cpu2gpu}};
+  \node at(6.65,-5.25)[]{\smaller{copy}};
+  \draw [thick,-stealth](8,-5) -- (8.75,-5);
+  % cpu2gpu copy
+  \node at(10.05,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
+  \node at(10.05,-4.75)[]{\smaller{\textit{k}mer}};
+  \node at(10.05,-5.25)[]{\smaller{counting}};
+  %\draw [thick,-stealth](11.4,-5) -- (12.05,-5);
+  % arrows
+  \draw [thick](10.05,-5.95) -- (10.05,-6.75);
+  \draw [thick](10.05,-6.75) -- (0,-6.75);
+  \draw [thick,-stealth](0,-6.75) -- (0,-5.95);
+  \node at(4.975,-7.25)[]{\smaller{repeat}};
+  % timestamps
+  \draw [thick,-stealth](8.375,-4) -- (8.375,-4.5);
+  \draw [thick,-stealth](11.725,-4) -- (11.725,-4.5);
+  \node at(8.375,-3.5)[]{\smaller{$t_0$}};
+  \node at(11.725,-3.5)[]{\smaller{$t_1$}};
+
+  \node at(4.975,-9)[]{\textit{counting time}$\hspace{.65em}=\displaystyle\sum_{i=1}^{\textit{num chunks}}t_1^i - t_0^i$};
+
+\end{tikzpicture}
+\end{center}
+\caption{
+  The pipeline used to benchmark the CuPy-based against the NumPy-based npstructures counter object.
+  Only the calls made to the counter object to count chunks of \textit{k}mers are timed, and these times are finally summed to get the total runtime spent on counting \textit{k}mers.
+  The difference between the two runtimes are then used to infer the effects of GPU accelerating npstructures' counter object using our initial testing method.
+}
+\label{methods:initial_testing:figures:benchmark_overview}
+\end{figure}
+
+We ran the \textit{k}mer counting pipeline and measured the time spent counting \textit{k}mers for both the NumPy-based CPU version of the counter and the CuPy-based GPU version.
+The total time spent counting \textit{k}mers was measured by timing each call to the counter object and summing these runtimes in order to get the total counting time.
+For the GPU version, we made sure to synchronize the GPU to the CPU between each call, since kernel calls made from the CPU to the GPU are asynchronous otherwise.
+This benchmark yielded the following results: 
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Counting time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{234.7} &  \\
+\multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{24.31}
+\end{tabular}
+\end{center}
+\caption{
+  The total time spent counting \textit{k}mers using npstructures' counter object, one with NumPy as the backend array-library, running on the CPU using one thread, and the other using CuPy as the backend, running on the GPU.
+}
+\label{methods:initial_testing:tables:benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{7em}
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3,7)(){\textbf{\textit{k}mer Counting}};
+ 
+\begin{axis} [
+  ylabel={runtime (seconds)},
+  xlabel={method},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=1.25,
+  symbolic x coords={NumPy, CuPy},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 234.7)
+    (CuPy, 24.31)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{
+  Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
+  Both methods use BioNumPy to read, 2-bit encode and hash chunks of \textit{k}mers, reading 10 million byte chunks from the FASTA at a time.
+  Both methods also use npstructures' NumPy-based counter object to count the \textit{k}mer frequencies, although the CuPy-based version replaces NumPy with CuPy to achieve GPU acceleration.
+}
+\label{methods:initial_testing:figures:benchmark}
+\end{figure}
+
+As can be seen in table \ref{methods:initial_testing:tables:benchmark}, simply using CuPy as a drop-in replacement for NumPy in npstructures to GPU accelerate its counter object yielded a nearly 10X speedup in counting efficiancy, without having to otherwise change the implementation or even leave Python.
+\subsubsection{Re-Implementing the Hash Table Directly in Python} \label{methods:gpu_accelerating_kmer_counting_jit}
+While the CUDA hash table we implemented in the previous section yielded significant speedup when \textit{k}mer counting and much better results than the GPU accelerated version of npstructures' hash table, it required us to dvelve into C++, using CUDA's programming framework and leaving the comforts of Python behind in order to implement.
+We therefore explored another possible avenue for implementing such a hash table, this time directly in Python.
+CuPy offers more than just a GPU accelerated subset of NumPy's array interface.
+Additionally, CuPy allows for custom kernels written directly in Python, to be \textit{jit} (just-in-time) compiled.
+By exploiting this, we were able to re-implement our parallel hash table directly in Python using CuPy's jit functionality.
+This implementation can be found online at \url{https://github.com/jorgenwh/cupycounter}.
+
+\subsubsection{Assessment}
+Again, we used the same benchmark used to assess the CuPy-based npstructures counter and the CUDA hash table (section \ref{methods:initial_testing:assessment}), to also assess the CuPy JIT (just-in-time) compiled implementation where we wrote custom kernels to get near-identical behaviour and performance as the CUDA hash table, all directly in Python.
+The benchmark yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Counting time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{234.7} &  \\
+\multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{24.31} &  \\
+\multicolumn{1}{l|}{CUDA} & \multicolumn{1}{l}{2.94} &  \\
+\multicolumn{1}{l|}{CuPy JIT} & \multicolumn{1}{l}{2.99} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The total time spent counting \textit{k}mers using the just-in-time compiled kernels written directly in Python using CuPy's custom kernel support.
+  NumPy, CuPy and CUDA refers to the previous benchmark results from section \ref{methods:initial_testing:assessment} and \ref{methods:gpu_accelerating_kmer_counting:assessment}.
+}
+\label{methods:gpu_accelerating_kmer_counting_jit:tables:benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{7em}
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3,7)(){\textbf{\textit{k}mer Counting}};
+ 
+\begin{axis} [
+  ylabel={runtime (seconds)},
+  xlabel={method},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=.2,
+  symbolic x coords={NumPy, CuPy, CUDA, CuPy (JIT)},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 234.7)
+    (CuPy, 24.31)
+    (CUDA, 2.94)
+    (CuPy (JIT), 2.99)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{
+  Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
+}
+\label{methods:gpu_accelerating_kmer_counting_jit:figures:benchmark}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_kmer_counting_jit:tables:benchmark}, the CuPy just-in-time compiled method of GPU accelerating \textit{k}mer counting resulted in (close to) identical performance as the CUDA hash table implementation, all in spite of being implemented directly in Python using CuPy's custom kernel support.
+The memory usage using the CuPy just-in-time compiled solution was also practically identical to the CUDA hash table's.
+\section{Methods} \label{methods}
+
+\input{sections/methods/introduction.tex}
+\input{sections/methods/determining_which_components_to_gpu_accelerate.tex}
+\input{sections/methods/initial_testing.tex}
+\input{sections/methods/gpu_accelerating_kmer_counting.tex}
+\input{sections/methods/gpu_accelerating_kmer_counting_jit.tex}
+\input{sections/methods/gpu_accelerating_kmer_hashing.tex}
+\input{sections/methods/gpu_accelerating_genotyping.tex}
+\subsection{GPU Accelerating \textit{k}mer Hashing} \label{methods:gpu_accelerating_kmer_hashing}
+The \textit{k}mer hashing component of KAGE is responsible for reading genomic reads from FASTA, FASTQ or other file types, encoding the reads as 2-bit encoded data and finally hashing all valid \textit{k}mers from the 2-bit encoded reads.
+In KAGE, the final product yielded by this component is a 64-bit unsigned integer array where each element is a 2-bit encoded 31-mer represented in the right-most 62 bits of the integer.
+Since the number of valid \textit{k}mers in a typical FASTA or FASTQ from sequencing a human genome is extremely vast, the file is usually read, encoded and hashed in chunks to alleviate the required amount of memory.
+Functionality for this exists in the BioNumPy Python package.
+BioNumPy implements this using NumPy and some parts of npstructures, resulting in an efficient solution that relies on NumPy's fast array operations for its performance.
+
+\subsubsection{Replacing NumPy with CuPy}
+The Python package BioNumPy, which provides an implementation for \textit{k}mer encoding and hashing directly in Python, is built on top of NumPy and npstructures.
+We utilized the method we described in section \ref{methods:initial_testing} and used CuPy as a drop-in replacement for NumPy to add further GPU acceleration support to npstructures, and to add partial GPU support to BioNumPy.
+The resulting pipeline remained the same, but with two notable differences.
+\begin{compactenum}
+  \item The raw byte chunk read from the FASTA files would be copied directly to the GPU.
+  \item The chunk of data received on the GPU would go through the same pipeline of array operations to 2-bit encode and hash the \textit{k}mers, but on the GPU as opposed to the CPU.
+\end{compactenum}
+
+\definecolor{cpucolor}{RGB}{255,255,225}
+\definecolor{gpucolor}{RGB}{225,255,255}
+
+\begin{figure}[H]
+\begin{center}
+\begin{tikzpicture}
+  \node at(4.25,3.75)[]{\smaller{CPU}};
+  \node at(4.25,2.75)[]{\smaller{GPU}};
+  \node at(3.3,3.75)[draw,minimum width=.75cm,minimum height=.75cm,fill=cpucolor]{};
+  \node at(3.3,2.75)[draw,minimum width=.75cm,minimum height=.75cm,fill=gpucolor]{};
+  \node at(0,1.5)[]{\smaller{\textbf{NumPy pipeline}}};
+  % read fasta
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
+  \node at(0,.25)[]{\smaller{read}};
+  \node at(0,-.25)[]{\smaller{FASTA}};
+  \draw [thick,-stealth](1.25,0) -- (2,0);
+  % cpu2gpu copy
+  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
+  \node at(3.3,.25)[]{\smaller{2-bit}};
+  \node at(3.3,-.25)[]{\smaller{encoding}};
+  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  % 2-bit encoding
+  \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
+  \node at(6.65,.25)[]{\smaller{\textit{k}mer}};
+  \node at(6.65,-.25)[]{\smaller{hashing}};
+  \draw [thick,-stealth](8,0) -- (8.85,0);
+  % arrows
+  \draw [thick](6.65,-.95) -- (6.65,-1.75);
+  \draw [thick](6.65,-1.75) -- (0,-1.75);
+  \draw [thick,-stealth](0,-1.75) -- (0,-.95);
+  \node at(3.3,-2.25)[]{\smaller{repeat}};
+\end{tikzpicture}
+\end{center}
+\end{figure}
+
+\begin{figure}[H]
+\begin{center}
+\begin{tikzpicture}
+  \node at(1.75,1.5)[]{\smaller{\textbf{CuPy pipeline}}};
+  % read fasta
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
+  \node at(0,.25)[]{\smaller{read}};
+  \node at(0,-.25)[]{\smaller{FASTA}};
+  \draw [thick,-stealth](1.25,0) -- (2,0);
+  % cpu2gpu copy
+  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
+  \node at(3.3,.25)[]{\smaller{cpu2gpu}};
+  \node at(3.3,-.25)[]{\smaller{copy}};
+  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  % 2-bit encoding
+  \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
+  \node at(6.65,.25)[]{\smaller{2-bit}};
+  \node at(6.65,-.25)[]{\smaller{encoding}};
+  \draw [thick,-stealth](8,0) -- (8.85,0);
+  % kmer hashing
+  \node at(10.15,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
+  \node at(10.15,.25)[]{\smaller{\textit{k}mer}};
+  \node at(10.15,-.25)[]{\smaller{hashing}};
+  \draw [thick,-stealth](11.50,0) -- (12.35,0);
+  % arrows
+  \draw [thick](10.15,-.95) -- (10.15,-1.75);
+  \draw [thick](10.15,-1.75) -- (0,-1.75);
+  \draw [thick,-stealth](0,-1.75) -- (0,-.95);
+  \node at(5.05,-2.25)[]{\smaller{repeat}};
+\end{tikzpicture}
+\caption{
+  By using CuPy as a drop-in replacement to add GPU acceleration to KAGE's \textit{k}mer hashing step, we effectively introduced a new step in the pipeline: copying the raw text data read from the FASTA file directly to the GPU to allow for all of BioNumPy's array operations that constitute 2-bit encoding and hashing the \textit{k}mers to be performed on the GPU.
+}
+\label{methods:gpu_accelerating_kmer_hashing:figures:gpu_pipeline}
+\end{center}
+\end{figure}
+
+Upon completing the 2-bit encoding and \textit{k}mer hashing of the chunk, the resulting \textit{k}mer array already resides in GPU memory for the counting step.
+Previously, when the 2-bit encoding and \textit{k}mer hashing was performed using only the CPU, the resulting \textit{k}mer array would need to be copied to the GPU for counting when deploying the GPU accelerated \textit{k}mer counting functionality detailed in section \ref{methods:gpu_accelerating_kmer_counting}.
+
+\subsubsection{Assessment}
+In order to assess the effects of GPU accelerating \textit{k}mer hashing, we measured the total runtime of reading, 2-bit encoding and hashing every valid \textit{k}mer from a FASTA file containing 20 million reads, each of length 150.
+The FASTA was read in chunks of 10 million bytes.
+We benchmarked this runtime using BioNumPy with the standard NumPy backend, and again using CuPy as the backend to compare.
+The benchmarking yielded the following results:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Method}} & \multicolumn{1}{l}{\textbf{Hashing time (seconds)}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{NumPy} & \multicolumn{1}{l}{62.46} &  \\
+\multicolumn{1}{l|}{CuPy} & \multicolumn{1}{l}{5.1} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The runtimes found by hashing all valid \textit{k}mers from a set of 20 million DNA reads, each of length 150.
+  The FASTA file containing the reads was read in chunks of 10 million bytes, and the BioNumPy library in Python was used to read, 2-bit encode and hash each chunk.
+  We ran the benchmark both using NumPy as the backend-library for BioNumPy, meaning the hashing was performed entirely on the CPU using a single thread, and using CuPy as the backend-library for BioNumPy, meaning the raw data read from the FASTA file was copied to the GPU and then 2-bit encoded and hashed there.
+}
+\label{methods:gpu_accelerating_kmer_hashing:tables:benchmark}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{7em}
+\begin{tikzpicture}[font=\small]
+  \pgfplotsset{
+    compat=newest,
+    xlabel near ticks,
+    ylabel near ticks
+  }
+  \pgfplotsset{compat=1.11,
+      /pgfplots/ybar legend/.style={
+      /pgfplots/legend image code/.code={%
+         \draw[##1,/tikz/.cd,yshift=-0.25em]
+          (0cm,0cm) rectangle (3pt,0.8em);},
+     },
+  }
+  \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(3,7)(){\textbf{\textit{k}mer Hashing}};
+ 
+\begin{axis} [
+  ylabel={runtime (seconds)},
+  xlabel={method},
+  ybar,
+  bar width=20pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=1.25,
+  symbolic x coords={NumPy, CuPy},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (NumPy, 62.46)
+    (CuPy, 5.1)
+};
+\end{axis}
+\end{tikzpicture}
+%\end{center}
+\caption{
+  Elapsed time spent reading, 2-bit encoding and hashing all valid \textit{k}mers from 20 million reads in 10 million byte chunks using both NumPy as CuPy to perform the processing on the CPU and GPU respectively.
+}
+\label{methods:gpu_accelerating_kmer_hashing:figures:benchmark}
+\end{figure}
+
+As can be seen in table \ref{methods:gpu_accelerating_kmer_hashing:tables:benchmark}, GPU accelerating BioNumPy's \textit{k}mer hashing functionality, simply by using CuPy as a drop-in replacement for NumPy, yielded a more than 12X speedup when hashing every valid \textit{k}mer in a set of 20 million reads of length 150.
+This dramatic increase in efficiency is achieved despite having to copy each chunk of raw data read from the FASTA file to the GPU memory before processing can begin.
+Recall that in section \ref{methods:initial_testing:assessment}, we justified only benchmarking the time spent counting \textit{k}mers on the GPU without including the overhead of copying the \textit{k}mer chunks to the GPU memory.
+Combined with the \textit{k}mer hashing component's GPU acceleration, which yields a dramatic increase in efficiency despite including this overhead, \textit{k}mer chunks that are hashed on the GPU will already reside in the GPU's memory for counting.
+\section{Thesis Goal} \label{thesis_goal}
+
+\input{sections/thesis_goal/thesis_goal.tex}
+This thesis has a two main goals.
+One of the goals is to explore whether state-of-the-art genotyping can be sped up in any significant way by utilizing GPUs.
+More specifically, this thesis will investigate whether alignment-free genotyping, which presently is significantly faster compared to alignment-based genotyping, can be sped up by utilizing the GPU.
+In order to investigate this, we will attempt to integrate GPU accelerated functionality into a base alignment-free genotyper, KAGE, which is presently the fastest known genotyper that also yields competitive results.
+The base genotyper, KAGE, is implemented in Python.
+This leads to several possible avenues for integrating GPU support, either by low level implementations in C++ using CUDA or using existing Python packages providing GPU accelerated functionality.
+This leads to the second goal of this thesis - to investigate and experiment with different ways of GPU accelerating exiting Python code (that relies on array-programming libraries such as NumPy), and to discuss the advantages and drawbacks of using the different methods.
+Finally, GPU accelerated functionality will be integrated into KAGE, resulting in GKAGE (GPU KAGE), and GKAGE will be benchmarked against KAGE to account for any potential speedup.
+\subsection{GKAGE} \label{results:gkage}
+In the previous section we explored three different methods for GPU accelerating existing NumPy-based code in Python: 
+1) using CuPy as a drop-in replacement for NumPy,
+2) implementing our own GPU accelerated solutions in C++ with CUDA and using pybind11 to create Python bindings for said solutions, 
+and 3) using CuPy's custom jit (just-in-time) compiled kernel support to implement kernels directly in Python, achieving similar control and granularity as with method 2.
+
+We chose to integrate the two following GPU accelerated functionalities into KAGE:
+1) our custom GPU accelerated hash table implemented in C++ using CUDA with pybind11 Python bindings (described in section \ref{methods:gpu_accelerating_kmer_counting}), and
+2) the CuPy drop-in solution for \textit{k}mer encoding and hashing (described in section \ref{methods:gpu_accelerating_kmer_hashing}).
+The GPU accelerated functionality implemented for the genotyping step in KAGE was not included, as it did not result in faster runtimes.
+We integrated the solutions into KAGE in such a way that the same piece of software could be ran on both the CPU and the GPU.
+In fact, running GKAGE is achieved by running KAGE, using the -g flag to enable GPU acceleration.
+KAGE (and GKAGE) can be found at \url{https://github.com/kage-genotyper}.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % Hints 
+  \node at(-1.5,2.5)[draw,minimum width=.75cm,minimum height=.5cm,rounded corners](){};
+  \node at(.5,2.5)[](){data or result};
+  \node at(-1.5,1.75)[draw,minimum width=.75cm,minimum height=.5cm](){};
+  \node at(.6635,1.75)[](){step or process};
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{FASTA}};
+  \node at(-2.5,-1)[](){\smaller{without -g}};
+  \node at(2.5,-1)[](){\smaller{with -g}};
+  \draw [thick,-stealth](.25,-.85) -- (2.5,-1.9);
+  \draw [thick,-stealth](-.25,-.85) -- (-2.5,-1.9);
+  \node at(-2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} hashing (CPU)}};
+  \node at(2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} hashing (GPU)}};
+  \draw [thick,-stealth](2.5,-3.6) -- (2.5,-4.25);
+  \draw [thick,-stealth](-2.5,-3.6) -- (-2.5,-4.25);
+  \node at(-2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} counting (CPU)}};
+  \node at(2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} counting (GPU)}};
+  \draw [thick,-stealth](2.5,-5.95) -- (.25,-7);
+  \draw [thick,-stealth](-2.5,-5.95) -- (-.25,-7);
+  \node at(0,-7.875)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{genotyping (CPU)}};
+  \draw [thick,-stealth](0,-8.75) -- (0,-9.4);
+  \node at(0,-10.225)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{genotypes}};
+\end{tikzpicture}
+}
+\caption{
+  To run GKAGE, you simply run KAGE with the -g flag to indicate that you want to use the GPU to accelerate the processing.
+  Out of the three components that we explored to GPU accelerate, only two made it into GKAGE.
+  Thus, only \textit{k}mer (encoding and) hashing and \textit{k}mer counting is GPU accelerated when running KGAKE.
+  The genotyping step, which constitutes a small portion of the runtime even on the CPU, is identical and runs on the CPU in both KAGE and GKAGE.
+}
+\label{results:gkage:figures:gkage}
+\end{center}
+\end{figure}
+\subsection{bioRxiv Preprint}
+As a part of this master's project, we published a preprint \cite{preprint} in biorxiv - the preprint server for biology.
+The preprint, \textit{Ultra-fast genotyping of SNPs and short indels using GPU acceleration}, presents GKAGE as a software tool and briefly details the runtime speedup gained over KAGE and how GKAGE was implemented.
+The preprint article can be found in appendix \ref{appendix:preprint}.
+In the following section we will present the final GPU accelerated version of KAGE: GKAGE. 
+Additionally, we will benchmark GKAGE against KAGE on two different computer systems to evaluate the final speedup achieved by GPU accelerating KAGE.
+
+
+\subsection{GPU Acceleration Methods}
+In our expedition to GPU accelerate components of the KAGE genotyping pipeline we found three distinct methods for GPU accelerating existing Python code based on NumPy.
+Each method has its own unique set of advantages and drawbacks that we gained insight into during our project.
+A more detailed discussion about their advantages and drawbacks will take place in section \ref{discussion:advantages_and_drawbacks_of_methods}.
+\subsection{Benchmarking} \label{results:benchmarking}
+In order to benchmark the effectiveness of the added GPU acceleration in GKAGE, we decided to benchmark GKAGE against KAGE to account for the speedup.
+The choice of only benchmarking GKAGE against KAGE was made based on the fact that KAGE recently showed that it was an order of magnitude faster than any other known genotyper \cite{kage}.
+
+\subsubsection{Snakemake pipeline}
+In order to adequately benchmark GKAGE, we set up a Snakemake pipeline that runs both KAGE and GKAGE on a full human genome and records the runtimes while also checking that the results of both processes are identical.
+This Snakemake pipeline can be found at \url{https://github.com/kage-genotyper/GKAGE-benchmarking}.
+
+\subsubsection{Systems}
+We benchmarked GKAGE against KAGE on two systems.
+\textbf{System 1}: a high-end compute server with a 64-core AMD EPYC 7742 CPU and two Nvidia Tesla V100 GPUs.
+\textbf{System 2}: a consumer grade desktop with a 6-core Intel Core i5-11400F CPU and a Nvidia GTX 1660 SUPER GPU.
+
+\vspace{1em}
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{System}} & \multicolumn{1}{l}{\textbf{CPU}}                  & \multicolumn{1}{l}{\textbf{GPU}}                   &  \\ \cline{1-3}
+\multicolumn{1}{l|}{1: High-end server} & \multicolumn{1}{l}{AMD EPYC 7742}        & \multicolumn{1}{l}{2x Nvidia Tesla V100}     &  \\ 
+\multicolumn{1}{l|}{2: Consumer desktop} & \multicolumn{1}{l}{Intel Core i5-11400F} & \multicolumn{1}{l}{Nvidia GTX 1660 SUPER} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The two systems used to benchmark GKAGE against KAGE to account for the speedup achieved through GPU acceleration.
+  \textbf{System 1} is a high-end compute server with top-of-the-line hardware.
+  \textbf{System 2} is a consumer grade desktop gaming computer.
+}
+\label{results:gkage:tables:systems}
+\end{table}
+
+Benchmarking on these two systems allowed us to benchmark GKAGE on both a very performant and a less performant system to examine the effects of GPU acceleration in both instances.
+A caveat with the high-end server system (system 1) was that it was it was a publicly available server for students at the University of Oslo.
+Thus, students were frequently running jobs on the server, occupying both CPU and GPU processing cores and memory.
+To the best of our capacity, we conducted our benchmarking during periods of lower activity.
+
+\subsubsection{Runtimes}
+We benchmarked GKAGE against KAGE on both system 1 and system 2.
+When running on system 1, we allowed KAGE 16 cores and GKAGE one Nvidia Tesla V100 GPU.
+When running on system 2, we allowed KAGE 6 cores and GKAGE the Nvidia GTX 1660 SUPER GPU.
+We ran the Snakemake pipeline, benchmarking GKAGE against KAGE, on both systems and achieved the following results:
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{System} & \multicolumn{1}{l}{KAGE}     & \multicolumn{1}{l}{GKAGE} &  \\ \cline{1-3}
+\multicolumn{1}{l|}{1}      & \multicolumn{1}{l}{1993 sec} & \multicolumn{1}{l}{178 sec} &  \\
+\multicolumn{1}{l|}{2}      & \multicolumn{1}{l}{510 sec}  & \multicolumn{1}{l}{94 sec} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The resulting runtimes (in seconds) found by benchmarking GKAGE against KAGE on a high-end server and a consumer desktop computer
+}
+\label{results:benchmarking:tables:runtimes}
+\end{table}
+
+\begin{figure}[H]
+\hspace*{3em}
+\begin{subfigure}{.4\textwidth}
+  \begin{tikzpicture}[font=\small]
+    \pgfplotsset{
+      compat=newest,
+      xlabel near ticks,
+      ylabel near ticks
+    }
+    \pgfplotsset{compat=1.11,
+        /pgfplots/ybar legend/.style={
+        /pgfplots/legend image code/.code={%
+           \draw[##1,/tikz/.cd,yshift=-0.25em]
+            (0cm,0cm) rectangle (3pt,0.8em);},
+       },
+    }
+    \node at(2.75,5.5)(title){\textbf{System 1}};
+ 
+\begin{axis} [
+  ylabel={runtime (seconds)},
+  width=7cm,
+  ybar,
+  bar width=15pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=1.25,
+  symbolic x coords={KAGE, GKAGE},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (KAGE, 510)
+    (GKAGE, 94)
+};
+\end{axis}
+
+\end{tikzpicture}
+\end{subfigure}
+\begin{subfigure}{.4\textwidth}
+  \begin{tikzpicture}[font=\small]
+    \pgfplotsset{
+      compat=newest,
+      xlabel near ticks,
+      ylabel near ticks
+    }
+    \pgfplotsset{compat=1.11,
+        /pgfplots/ybar legend/.style={
+        /pgfplots/legend image code/.code={%
+           \draw[##1,/tikz/.cd,yshift=-0.25em]
+            (0cm,0cm) rectangle (3pt,0.8em);},
+       },
+    }
+    \node at(2.75,5.5)(title){\textbf{System 2}};
+ 
+\begin{axis} [
+  width=7cm,
+  ybar,
+  bar width=15pt,
+  ymin=0,
+  xtick=data,
+  axis x line=bottom,
+  axis y line=left,
+  enlarge x limits=1.25,
+  symbolic x coords={KAGE, GKAGE},
+  xticklabel style={anchor=base, yshift=-\baselineskip},
+  /pgf/number format/.cd,fixed,precision=3,
+  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  legend style={anchor=west},
+]
+
+\addplot[fill=blue] coordinates {
+    (KAGE, 1993)
+    (GKAGE, 178)
+};
+\end{axis}
+\end{tikzpicture}
+\end{subfigure}
+\caption{
+  Benchmarking GKAGE against KAGE on both system 1 (high-end server) and system 2 (consumer desktop) revealed that GKAGE could genotype a full human genome more than 5 times faster than KAGE on a high-end server, and more than 11 times faster on a consumer desktop computer.
+}
+\label{results:benchmarking:figures:runtimes}
+\end{figure}
+
+The results from the benchmarking revealed that GKAGE achieves significant speedup over KAGE when genotyping a full human genome.
+As seen in table \ref{results:benchmarking:tables:runtimes} and figure \ref{results:benchmarking:figures:runtimes}, we can see that GKAGE achieves more than 5X speedup over KAGE on a high-end compute server and more than 11X speedup on a consumer grade desktop computer.
+\section{Results} \label{results}
+
+\input{sections/results/introduction.tex}
+\input{sections/results/gkage.tex}
+\input{sections/results/benchmarking.tex}
+\input{sections/results/gpu_acceleration_methods.tex}
+\input{sections/results/biorxiv_preprint.tex}
+\subsection{Nucleotide Binary Encoding} \label{background:nucleotide_binary_encoding}
+
+DNA nucleotide sequences (described in section \ref{background:biology:dna_chromosomes_and_genomes}) inside computer software is commonly represented simply by a sequence of the 8 bit characters A, C, T and G (or alternatively the lowercase a, c, t and g).
+This representation, however, is cumbersome to operate on and requires large amounts of memory to store.
+To circumvent these issues, a widely adopted technique is to encode the nucleotides into binary form, often referred to as 2-bit encoding.
+This leads to much quicker processing of nucleotide sequences and reduces the memory usage needed to store the sequences by 75\%.
+This is achieved by realizing that only 2 bits, giving \textit{$2^2=4$} possible unique states, is enough to represent all of the four DNA nucleotides A, C, G and T.
+The binary encoding can be extended further to represent whole nucleotide sequences in binary arrays.
+For example, an integer array, if interpreted 2 consecutive bits at a time, can represent such a sequence.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  \node at(0,0)(){T};
+  \node at(0,.6)(){G};
+  \node at(0,1.2)(){C};
+  \node at(0,1.8)(){A};
+  \node at(1.25,0)(){11};
+  \node at(1.25,.6)(){10};
+  \node at(1.25,1.2)(){01};
+  \node at(1.25,1.8)(){00};
+  \draw [<->](.35,0) -- (.8,0);
+  \draw [<->](.35,.6) -- (.8,.6);
+  \draw [<->](.35,1.2) -- (.8,1.2);
+  \draw [<->](.35,1.8) -- (.8,1.8);
+\end{tikzpicture}
+}
+
+\scalebox{1}{
+\begin{tikzpicture}
+  \node at(0,1)(title){};
+  \node at(-2,0)(){\textit{DNA}};
+  \node at(-3.465,-1.2)(){\textit{2 bit represented DNA}};
+  \node at(0,0)(){A};
+  \node at(.6,0)(){C};
+  \node at(1.2,0)(){C};
+  \node at(1.8,0)(){T};
+  \node at(2.4,0)(){G};
+  \node at(3,0)(){T};
+  \node at(3.6,0)(){A};
+  \node at(4.2,0)(){G};
+  \draw [](0,-.4) -- (0,-.8);
+  \draw [](.6,-.4) -- (.6,-.8);
+  \draw [](1.2,-.4) -- (1.2,-.8);
+  \draw [](1.8,-.4) -- (1.8,-.8);
+  \draw [](2.4,-.4) -- (2.4,-.8);
+  \draw [](3,-.4) -- (3,-.8);
+  \draw [](3.6,-.4) -- (3.6,-.8);
+  \draw [](4.2,-.4) -- (4.2,-.8);
+  \node at(0,-1.2)(){00};
+  \node at(.6,-1.2)(){01};
+  \node at(1.2,-1.2)(){01};
+  \node at(1.8,-1.2)(){11};
+  \node at(2.4,-1.2)(){10};
+  \node at(3,-1.2)(){11};
+  \node at(3.6,-1.2)(){00};
+  \node at(4.2,-1.2)(){10};
+  \draw [](-.35,-1.25) -- (-.35,-1.525);
+  \draw [](2.1,-1.25) -- (2.1,-1.525);
+  \draw [](-.35,-1.525) -- (2.1,-1.525);
+  \node at(.75,-1.95)(){\small{1 byte}};
+\end{tikzpicture}
+}
+\caption{A lookup table showing how nucleotides can be encoded using 2 bits and a DNA nucleotide sequence represented both as plain characters as well as its 2 bit encoded representation. Recall that computers use 8 bits to represent a single nucleotide with a character, whilst the 2 bit encoding only needs 2 bits to represent a nucleotide.}
+\label{background:nucleotide_binary_encoding:figures:nucleotide_binary_encoding}
+\end{center}
+\end{figure}
+\subsection{KAGE} \label{background:kage}
+KAGE \cite{kage} is an alignment-free genotyping tool for SNPs and short indels.
+As opposed to alignment-based genotyping tools, KAGE relies on an alignment-free method where genotype-probabilities are computed using a statistical model.
+These genotype-probabilities are supported by \textit{k}mer frequencies found in the input reads and previous knowledge of genetic variation and genotype information from thousands of individuals, produced by studies such as the 1000 Genomes Project \cite{1000_genomes_project}.
+KAGE recently showed (2022) that its accuracy was on par with the best existing alignment-free genotyping tools while being an order of magnitude faster \cite{kage}.
+
+KAGE is implemented in Python and relies heavily on the NumPy library for performance.
+Its genotyping pipeline is split into two distinct programs: \textit{kmer\_mapper}, solving the \textit{partial} \textit{k}mer counting problem of counting \textit{k}mer frequencies for a predefined set of \textit{k}mers in the input reads, and \textit{kage}, which finally computes the genotype-probabilities using a statistical model.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % kmer hashing 
+  \node at(-.25,1.25)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{\textit{k}mer hashing}};
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{FASTA}};
+  \draw [thick,-stealth](1.25,0) -- (2,0);
+  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{k}mer hashing}};
+  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners]{};
+  \node at(6.65,.25)[]{\smaller{encoded}};
+  \node at(6.65,-.25)[]{\smaller{\textit{k}mers}};
+  \node at(3.3,0)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
+  % arrows
+  \draw [thick](6.65,-.8) -- (6.65,-1.5);
+  \draw [thick](6.65,-1.5) -- (1.25,-1.5);
+  \draw [thick,-stealth](1.25,-1.5) -- (1.25,-2.2);
+  % kmer counting 
+  \node at(-.185,-1.75)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{\textit{k}mer counting}};
+  \node at(3.3,-3)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
+  \node at(1.25,-3)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(1.25,-2.75)[]{\smaller{\textit{k}mer}};
+  \node at(1.25,-3.25)[]{\smaller{counting}};
+  \draw [thick,-stealth](2.5,-3) -- (4.15,-3);
+  \node at(5.375,-3)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners]{};
+  \node at(5.375,-2.75)[]{\smaller{\textit{k}mer}};
+  \node at(5.375,-3.25)[]{\smaller{counts}};
+  % arrows
+  \draw [thick](5.375,-3.8) -- (5.375,-4.5);
+  \draw [thick](5.375,-4.5) -- (1.25,-4.5);
+  \draw [thick,-stealth](1.25,-4.5) -- (1.25,-5.2);
+  % genotyping
+  \node at(-.465,-4.75)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{genotyping}};
+  \node at(3.3,-6)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
+  \node at(1.25,-6)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{genotyping}};
+  \draw [thick,-stealth](2.5,-6) -- (4.15,-6);
+  \node at(5.375,-6)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{genotypes}};
+  % KAGE
+  \node at(3.3,2.05)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{KAGE}};
+  \node at(3.3,-3)[draw,minimum width=10.5cm,minimum height=9.5cm,rounded corners](){};
+  % Hints 
+  \node at(2,4)[draw,minimum width=.75cm,minimum height=.5cm,rounded corners](){};
+  \node at(4,4)[](){data or result};
+  \node at(2,3.25)[draw,minimum width=.75cm,minimum height=.5cm](){};
+  \node at(4.135,3.25)[](){step or process};
+\end{tikzpicture}
+}
+\caption{
+  A simplified illustration of how the KAGE genotyping pipeline works.
+  The two top most rows, going from an input FASTA file to \textit{k}mer counts, is implemented as an individual piece of software.
+  Three important parts of the pipeline are shown as distinct processes in the illustration: 
+  1) \textbf{\textit{k}mer hashing}, which refers to the process of 2-bit encoding input reads from the fasta file and extracting - \textit{hashing} - all valid \textit{k}mers from those reads, 
+  2) \textbf{\textit{k}mer counting}, which refers to the process of \textit{partial k}mer counting - counting the observed frequencies of a predefined set of \textit{k}mers in the input reads, and 
+  3) \textbf{genotyping}, which refers to the process of computing the final genotype-probabilities.
+}
+\label{background:kage:figures:pipeline}
+\end{center}
+\end{figure}
+
+\subsection{\textit{k}mers and the \textit{k}mer Counting Problem} \label{background:kmers_and_kmer_counting}
+A \textit{k}mer is a substring of \textit{k} consecutive nucleotides that occur in a DNA (or RNA) sequence.
+Because of how single nucleotides can be represented in a computer's memory using only 2 bits \ref{background:nucleotide_binary_encoding}, and how when we sequence an individual's genome we can not know which strand our sequenced read comes from, a popular choice of value for \textit{k} is 31 - the default value used in KAGE \ref{background:kage}.
+The value 31 is used in KAGE for two reasons: 1) having an odd value for \textit{k} ensures that no \textit{k}mer is equal to its reverse complement, and 2) having \textit{k} equals 31 means we need $31*2=62$ bits to represent the \textit{k}mer in a computer's memory, thus the \textit{k}mer will fit inside a single 64-bit integer.
+
+A common problem in various bioinformatics applications is to count the number of times each valid \textit{k}mer in a set of nucleotide sequences occur in those sequences.
+This problem is commonly refered to as \textit{k}mer counting.
+
+\definecolor{kmer1}{RGB}{40,40,215}
+\definecolor{kmer2}{RGB}{0,150,0}
+\definecolor{kmer3}{RGB}{225,30,30}
+\definecolor{kmer4}{RGB}{20,150,150}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % read
+  \node at(1.2,2.2)(){\textit{read}};
+  % sequence
+  \node at(0,0){G};
+  \node at(.35,0){C};
+  \node at(.7,0){A};
+  \node at(1.05,0){G};
+  \node at(1.4,0){T};
+  \node at(1.75,0){G};
+  \node at(2.1,0){C};
+  \node at(2.4,0){A};
+  % kmer indicators
+  % kmer 1
+  \draw [](0,-.225) -- (0,-.3);
+  \draw [](0,-.3) -- (.7,-.3);
+  \draw [](.7,-.3) -- (.7,-.225);
+  % kmer 2
+  \draw [](.35,-.425) -- (.35,-.5);
+  \draw [](.35,-.5) -- (1.05,-.5);
+  \draw [](1.05,-.5) -- (1.05,-.225);
+  % kmer 3
+  \draw [](.7,-.625) -- (.7,-.7);
+  \draw [](.7,-.7) -- (1.4,-.7);
+  \draw [](1.4,-.7) -- (1.4,-.225);
+  % kmer 4
+  \draw [](1.05,-.825) -- (1.05,-.9);
+  \draw [](1.05,-.9) -- (1.75,-.9);
+  \draw [](1.75,-.9) -- (1.75,-.225);
+  % kmer 5
+  \draw [](1.4,-1.025) -- (1.4,-1.1);
+  \draw [](1.4,-1.1) -- (2.1,-1.1);
+  \draw [](2.1,-1.1) -- (2.1,-.225);
+  % kmer 6
+  \draw [](1.75,-1.225) -- (1.75,-1.3);
+  \draw [](1.75,-1.3) -- (2.4,-1.3);
+  \draw [](2.4,-1.3) -- (2.4,-.225);
+  % arrow
+  \draw [-stealth](3.4,0) -- (4.05,0);
+  % k-mer counts
+  \node at(5.725,2.2)(){\textit{kmer counts}};
+  % kmer (count) representations
+  % kmer 1
+  \node at(5.05,1.2){G};
+  \node at(5.4,1.2){C};
+  \node at(5.75,1.2){A};
+  \node at(6.1,1.2){:};
+  \node at(6.45,1.2){2};
+  % kmer 2
+  \node at(5.05,.6){C};
+  \node at(5.4,.6){A};
+  \node at(5.75,.6){G};
+  \node at(6.1,.6){:};
+  \node at(6.45,.6){1};
+  % kmer 3
+  \node at(5.05,0){A};
+  \node at(5.4,0){G};
+  \node at(5.75,0){T};
+  \node at(6.1,0){:};
+  \node at(6.45,0){1};
+  % kmer 4
+  \node at(5.05,-.6){G};
+  \node at(5.4,-.6){T};
+  \node at(5.75,-.6){G};
+  \node at(6.1,-.6){:};
+  \node at(6.45,-.6){1};
+  % kmer 5
+  \node at(5.05,-1.2){T};
+  \node at(5.4,-1.2){G};
+  \node at(5.75,-1.2){C};
+  \node at(6.1,-1.2){:};
+  \node at(6.45,-1.2){1};
+\end{tikzpicture}
+}
+\caption{
+  \textit{Full} \textit{k}mer counting where we count the observed frequency of every valid \textit{k}mer in our read set.
+}
+\label{background:kmers_and_kmer_counting:full_kmer_counting:figure}
+\end{center}
+\end{figure}
+
+The genotyping software tool KAGE, detailed in section \ref{background:kage}, contains \textit{k}mer counting as one of its core steps in its genotyping pipeline.
+However, the \textit{k}mer counting process in KAGE is slightly different from the process commonly refered to by the term \textit{k}mer counting.
+Rather than counting the observed frequency of every valid \textit{k}mer in a set of input reads, KAGE only counts the observed frequencies of every \textit{k}mer in a predefined set.
+Given how many valid \textit{k}mers one can observe in a set of (hundreds of?) millions of reads (\textbf{cite?}), which is typical when sequencing and genotyping a human genome, not needing to store each of these with an associated count value makes this new \textit{k}mer counting variant significantly less memory and time consuming.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % titles
+  \node at(-0.55,3)(){\textit{input reads}};
+  % read 1
+  \node at(-1.85,2){G};
+  \node at(-1.5,2){C};
+  \node at(-1.15,2){\textcolor{kmer2}{A}};
+  \node at(-.8,2){\textcolor{kmer2}{G}};
+  \node at(-.45,2){\textcolor{kmer2}{T}};
+  \node at(-.1,2){G};
+  \node at(.25,2){C};
+  \node at(.6,2){G};
+  % read 2 
+  \node at(-1.85,1.4){T};
+  \node at(-1.5,1.4){C};
+  \node at(-1.15,1.4){C};
+  \node at(-.8,1.4){G};
+  \node at(-.45,1.4){\textcolor{kmer3}{G}};
+  \node at(-.1,1.4){\textcolor{kmer3}{T}};
+  \node at(.25,1.4){\textcolor{kmer3}{C}};
+  \node at(.6,1.4){T};
+  % read 3 
+  \node at(-1.85,.8){T};
+  \node at(-1.5,.8){\textcolor{kmer2}{A}};
+  \node at(-1.15,.8){\textcolor{kmer2}{G}};
+  \node at(-.8,.8){\textcolor{kmer2}{T}};
+  \node at(-.4,.8){T};
+  \node at(-.1,.8){G};
+  \node at(.25,.8){A};
+  \node at(.6,.8){G};
+  % read 4 
+  \node at(-1.85,.2){C};
+  \node at(-1.5,.2){\textcolor{kmer2}{A}};
+  \node at(-1.15,.2){\textcolor{kmer2}{G}};
+  \node at(-.8,.2){\textcolor{kmer2}{T}};
+  \node at(-.4,.2){\textcolor{kmer4}{G}};
+  \node at(-.1,.2){\textcolor{kmer4}{A}};
+  \node at(.25,.2){\textcolor{kmer4}{C}};
+  \node at(.6,.2){A};
+  % read 5 
+  \node at(-1.85,-.4){A};
+  \node at(-1.5,-.4){\textcolor{kmer4}{G}};
+  \node at(-1.15,-.4){\textcolor{kmer4}{A}};
+  \node at(-.8,-.4){\textcolor{kmer4}{C}};
+  \node at(-.4,-.4){C};
+  \node at(-.1,-.4){\textcolor{kmer3}{G}};
+  \node at(.25,-.4){\textcolor{kmer3}{T}};
+  \node at(.6,-.4){\textcolor{kmer3}{C}};
+  % Arrow
+  \draw [-stealth](2.75,.8) -- (3.4,.8);
+  % k-mer counts
+  \node at(6.5,3)(){\textit{kmer counts}};
+  % k-mer 1
+  \node at(5.8,1.7){\textcolor{kmer1}{A}};
+  \node at(6.15,1.7){\textcolor{kmer1}{T}};
+  \node at(6.5,1.7){\textcolor{kmer1}{T}};
+  \node at(6.85,1.7){:};
+  \node at(7.2,1.7){0};
+  % k-mer 2 
+  \node at(5.8,1.1){\textcolor{kmer2}{A}};
+  \node at(6.15,1.1){\textcolor{kmer2}{G}};
+  \node at(6.5,1.1){\textcolor{kmer2}{T}};
+  \node at(6.85,1.1){:};
+  \node at(7.2,1.1){3};
+  % k-mer 3 
+  \node at(5.8,.5){\textcolor{kmer3}{G}};
+  \node at(6.15,.5){\textcolor{kmer3}{T}};
+  \node at(6.5,.5){\textcolor{kmer3}{C}};
+  \node at(6.85,.5){:};
+  \node at(7.2,.5){2};
+  % k-mer 4 
+  \node at(5.8,-.1){\textcolor{kmer4}{G}};
+  \node at(6.15,-.1){\textcolor{kmer4}{A}};
+  \node at(6.5,-.1){\textcolor{kmer4}{C}};
+  \node at(6.85,-.1){:};
+  \node at(7.2,-.1){2};
+\end{tikzpicture}
+}
+\caption{
+  \textit{Partial} \textit{k}mer counting where we only count the observed frequencies of \textit{k}mers present in a predefined set. In this example, our set of predefined \textit{k}mers is \{ATT, AGT, GTC, GAC\}. During counting, \textit{k}mers not present in this set are skipped.
+}
+\label{background:kmers_and_kmer_counting:partial_kmer_counting:figure}
+\end{center}
+\end{figure}
+
+Henceforth in this thesis, we will in the favour of brevity refer to the former \textit{k}mer counting process where we count every valid \textit{k}mer's occurence as \textit{full} \textit{k}mer counting, and to the latter process where we only count the occurences of \textit{k}mers in a predefined set as \textit{partial} \textit{k}mer counting.
+
+While several \textit{k}mer counting software tools have been developed in previous work, with at least one, Gerbil \cite{gerbil}, having support for GPU acceleration \cite{kmer_counting_tools}, these tools are designed to solve the \textit{full} \textit{k}mer counting problem.
+\section{Background}
+
+\input{sections/background/biology/include.tex}
+\input{sections/background/nucleotide_binary_encoding.tex}
+\input{sections/background/kmers_and_kmer_counting.tex}
+\input{sections/background/graphical_processing_units/include.tex}
+\input{sections/background/implementation_tools_and_libraries/include.tex}
+\input{sections/background/kage.tex}
+\subsubsection{DNA, Chromosomes and Genomes} \label{background:biology:dna_chromosomes_and_genomes}
+
+DNA, or \textit{deoxyribonucleic acid}, is a type of molecule that contains all the genetic material found in the cells of all known living organisms \cite{nhgri_dna}. 
+The molecule is composed of two complementary strands of \textit{nucleotides} that are twisted together to form a double helix structure, connected by bonds formed between complementary nucleotides.
+The two strands are in turn composed of the four nucleotide bases: adenine (A), guanine (G), cytosine (C) and thymine (T), where A and T, and C and G are complementary bases \cite[p.15]{singh}.
+Furthermore, the two complementary strands of nucleotide bases actually encode the precise same information.
+This is because with knowledge of just one of the strands' nucleotide sequence, say \textit{strand$_1$}, we can determine the sequence of the other strand, \textit{strand$_2$}, by exchanging each nucleotide in \textit{strand$_1$} with their complements and finally reversing the strand to determine what \textit{strand$_2$}'s sequence is.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % texts
+  \node at(2.25,2.5)(title){\textit{DNA}};
+  \node at(-2,0)(title){\textit{strand$_2$}};
+  \node at(-2,1.5)(title){\textit{strand$_1$}};
+  % lower nodes
+  \node at(0,0)(n1){$...$};
+  \node at(.75,0)(n2){A};
+  \node at(1.25,0)(n3){T};
+  \node at(1.75, 0)(n4){G};
+  \node at(2.25,0)(n5){G};
+  \node at(2.75,0)(n5){C};
+  \node at(3.25,0)(n5){T};
+  \node at(3.75,0)(n5){G};
+  \node at(4.5,0)(n5){$...$};
+  % upper nodes
+  \node at(0,1.5)(n1){$...$};
+  \node at(.75,1.5)(n2){T};
+  \node at(1.25,1.5)(n3){A};
+  \node at(1.75,1.5)(n4){C};
+  \node at(2.25,1.5)(n5){C};
+  \node at(2.75,1.5)(n5){G};
+  \node at(3.25,1.5)(n5){A};
+  \node at(3.75,1.5)(n5){C};
+  \node at(4.5,1.5)(n5){$...$};
+  % base pair bonds 
+  \draw (.75,.5) -- (.75,1);
+  \draw (1.25,.5) -- (1.25,1);
+  \draw (1.75,.5) -- (1.75,1);
+  \draw (2.25,.5) -- (2.25,1);
+  \draw (2.75,.5) -- (2.75,1);
+  \draw (3.25,.5) -- (3.25,1);
+  \draw (3.75,.5) -- (3.75,1);
+\end{tikzpicture}
+}
+\caption{A conceptual representation of a DNA molecule made up of two strands. The strands are composed of nucleotides forming base pairs where A (adenine) and T (thymine), and C (cytosine) and G (guanine) are complements of each other.}
+\label{background:dna_and_chromosomes:figures:dna_strands}
+\end{center}
+\end{figure}
+
+Relatively small differences in these DNA sequences are what differentiates individuals within the same species from one other.
+It is therefore interesting to study these sequences of nucleotides encoding organisms' genetic information, as the encoded information can reveal details about both associated physical traits and diseases.
+In human cells, these DNA strands are estimated to be roughly $3 * 10^{9}$ bases long \cite[p.13]{singh}.
+
+DNA is organized into structures called \textit{chromosomes}. 
+Humans have 23 chromosome pairs, making up a total of 46 chromosomes.
+Each of the pairs include one version of the chromosome inherited from the male parent, and one version inherited from the female parent \cite{nhgri_chromosome}.
+
+The term \textit{genome} can be used to refer to the complete genetic material of an organism.
+In practice, however, the genome of an organism often simply refers to the complete DNA nucleotide sequence of one set of chromosomes for that organism \cite[p.13]{singh}.
+Commonly in bioinformatics, one can also encounter the term \textit{reference genome}, referring to a theoretical reconstruction of an organism's genome created by scientists.
+Such genome reconstructions are commonly used when examining new DNA sequences, often by aligning new DNA sequences to the reference in order to see at which positions their nucleotides differ and what differences are present at those positions \cite{gatk}.
+
+\subsubsection{Variants and Variant Calling} \label{background:biology:variants_and_variant_calling}
+When examining the genome of several individuals within the same species, one will find locations along the genome where the nucleotides differ for the different individuals.
+These distinct nucleotide manifestations are commonly referred to as \textit{variants}.
+The term \textit{variant calling} is used to refer to the process of determining which variants an individual has.
+In other words, given a reference genome sequence, where and how does the genome sequence of the individual of interest differ from the reference sequence.
+The traditional way of performing variant calling is to use an alignment-based method, which can abstractly be described as the following three steps:
+1) sequence the genome of interest to get DNA reads (described in section \ref{background:biology:high_throughput_dna_sequencing}), 
+2) align the reads to the reference genome by finding where along the reference genome sequence each read fits best, usually using a heuristic determining which location the read originates from, and 
+3) examine the alignments and note where and how the reference and the individual's sequences differ to determine the variants present in the individual's genome \cite{variant_calling}.
+A popular alignment-based tool for performing variant calling is GATK \cite{gatk}.
+
+Variants found in genomes of individuals of the same species can take many different forms.
+Three common types of variants are:
+\begin{compactitem}
+  \item \textit{Single nucleotide polymorphism} (SNP) is a variant in which only a single nucleotide differs in the sequenced genome when compared to a reference genome at a location of interest.
+  \item \textit{Indel} refers to one of two types of variants: \textit{insertion} - a sequence of nucleotides, not present in the reference genome, has been introduced in the sequenced genome, and \textit{deletion} - a sequence of nucleotides, present in the reference genome, are missing in the sequenced genome.
+  \item \textit{Structural variant} is a large-scale genetic variation in which several alterations in the structure have occured, typically affecting more than 1000 bases.
+\end{compactitem}
+
+\definecolor{variantcolor}{RGB}{230,230,230}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % SNP
+  \node at(.7,0)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  % lower
+  \node at(-.55,0)(){...};
+  \node at(0,0)(){C};
+  \node at(.35,0)(){A};
+  \node at(.7,0)(){T};
+  \node at(1.05,0)(){A};
+  \node at(1.4,0)(){C};
+  \node at(1.95,0)(){...};
+  % arrow
+  \draw [-stealth](.7,1) -- (.7,.5);
+  % upper
+  \node at(-.55,1.5)(){...};
+  \node at(0,1.5)(){C};
+  \node at(.35,1.5)(){A};
+  \node at(.7,1.5)(){G};
+  \node at(1.05,1.5)(){A};
+  \node at(1.4,1.5)(){C};
+  \node at(1.95,1.5)(){...};
+  \node at(.7,-.75)(){\smaller{SNP}};
+  % Insertion
+  \node at(.7+4,0)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  \node at(1.05+4,0)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  % lower
+  \node at(-.55+4,0)(){...};
+  \node at(0+4,0)(){C};
+  \node at(.35+4,0)(){A};
+  \node at(.7+4,0)(){G};
+  \node at(1.05+4,0)(){G};
+  \node at(1.4+4,0)(){C};
+  \node at(1.95+4,0)(){...};
+  % arrow
+  \draw [-stealth](.7+4,1) -- (.7+4,.5);
+  % upper
+  \node at(-.55+4,1.5)(){...};
+  \node at(.7+4-.35,1.5)(){C};
+  \node at(.7+4,1.5)(){A};
+  \node at(.7+4+.35,1.5)(){C};
+  \node at(1.95+4,1.5)(){...};
+  \node at(.7+4,-.75)(){\smaller{Insertion}};
+  % Deletion
+  \node at(.7+8,1.5)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  \node at(1.05+8,1.5)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  \node at(.35+8,1.5)[rounded corners,minimum width=.4cm,minimum height=.4cm, fill=variantcolor](variant){};
+  % lower
+  \node at(-.55+8,0)(){...};
+  \node at(.525+8,0)(){C};
+  \node at(.525+.35+8,0)(){C};
+  \node at(1.95+8,0)(){...};
+  % arrow
+  \draw [-stealth](.7+8,1) -- (.7+8,.5);
+  % upper
+  \node at(-.55+8,1.5)(){...};
+  \node at(0+8,1.5)(){C};
+  \node at(.35+8,1.5)(){A};
+  \node at(.7+8,1.5)(){G};
+  \node at(1.05+8,1.5)(){A};
+  \node at(1.4+8,1.5)(){C};
+  \node at(1.95+8,1.5)(){...};
+  \node at(.7+8,-.75)(){\smaller{Deletion}};
+\end{tikzpicture}
+}
+\caption{
+  An illustration demonstrating how three types of variants can manifest when aligning sequenced reads to a reference genome.
+  From left to right: a single nucleotide polymorphism (SNP), an insertion (indel), and a deletion (indel).
+}
+\label{background:variant_and_variant_calling:figures:variants}
+\end{center}
+\end{figure}
+
+The software tool KAGE, which is described in section \ref{background:kage}, focuses on genotyping SNPs and indels.
+
+A common way to represent genome sequence variations is to encode them according to the \textit{Variant Call Format} (VCF) file format.
+The VCF file format encodes a single variant per line, and each line contains a number of columns where each column encodes a particular piece of information about the associated variant, such as \cite{vcf}:
+\begin{compactenum}
+  \item
+    CHROM: an identifier for the reference sequence used, \textit{i}.\textit{e}. the sequence against which the sequenced reads varies.
+  \item
+    POS: the position along the reference sequence where it varies against the sequenced reads.
+  \item
+    ID: an identifier for the variantion.
+  \item
+    REF: the reference base (or bases) found at the POS position in the reference sequence.
+  \item
+    ALT: a list of the alternative base (or bases) found at this POS position.
+\end{compactenum}
+While more columns are usually present, this encapsulated the necessary knowledge about variants and their representation needed for this thesis.
+
+\definecolor{variantcolor}{RGB}{230,230,230}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{1}{
+\begin{tikzpicture}
+  % texts
+  \node at(-4.37,0)(){\smaller\textit{reference genome sequence (GRCh38)}};
+  \node at(-3.5,1)(){\smaller\textit{reads aligned to reference}};
+  % variant color box
+  \node at(2.85,.76)[rounded corners,minimum width=0.4cm,minimum height=2cm, fill=variantcolor](variant){};
+  % indices
+  \node at(-.5,-.65)(){...};
+  \node at(.05,-.65)(){\scalebox{.6}{4}};
+  \node at(.40,-.65)(){\scalebox{.6}{5}};
+  \node at(.75,-.65)(){\scalebox{.6}{6}};
+  \node at(1.1,-.65)(){\scalebox{.6}{7}};
+  \node at(1.45,-.65)(){\scalebox{.6}{8}};
+  \node at(1.8,-.65)(){\scalebox{.6}{9}};
+  \node at(2.15,-.65)(){\scalebox{.6}{10}};
+  \node at(2.5,-.65)(){\scalebox{.6}{11}};
+  \node at(2.85,-.65)(){\scalebox{.6}{12}};
+  \node at(3.2,-.65)(){\scalebox{.6}{13}};
+  \node at(3.55,-.65)(){\scalebox{.6}{14}};
+  \node at(3.9,-.65)(){\scalebox{.6}{15}};
+  \node at(4.25,-.65)(){\scalebox{.6}{16}};
+  \node at(4.6,-.65)(){\scalebox{.6}{17}};
+  \node at(4.95,-.65)(){\scalebox{.6}{18}};
+  \node at(5.5,-.65)(){...};
+  % lower nodes
+  \node at(-.5,0)(){...};
+  \node at(.05,0)(){C};
+  \node at(.40,0)(){A};
+  \node at(.75,0)(){T};
+  \node at(1.1,0)(){A};
+  \node at(1.45,0)(){G};
+  \node at(1.8,0)(){G};
+  \node at(2.15,0)(){T};
+  \node at(2.5,0)(){A};
+  \node at(2.85,0)(){C};
+  \node at(3.2,0)(){C};
+  \node at(3.55,0)(){G};
+  \node at(3.9,0)(){C};
+  \node at(4.25,0)(){G};
+  \node at(4.6,0)(){C};
+  \node at(4.95,0)(){T};
+  \node at(5.5,0)(){...};
+  % read 1
+  \node at(1.1,.5)(){A};
+  \node at(1.45,.5)(){G};
+  \node at(1.8,.5)(){G};
+  \node at(2.15,.5)(){T};
+  \node at(2.5,.5)(){A};
+  \node at(2.85,.5)(){T};
+  \node at(3.2,.5)(){C};
+  \node at(3.55,.5)(){G};
+  % read 2
+  \node at(2.85,1)(){T};
+  \node at(3.2,1)(){C};
+  \node at(3.55,1)(){G};
+  \node at(3.9,1)(){C};
+  \node at(4.25,1)(){G};
+  \node at(4.6,1)(){C};
+  \node at(4.95,1)(){T};
+  \node at(5.5,1)(){...};
+  % read 3
+  \node at(.40,1.5)(){A};
+  \node at(.75,1.5)(){T};
+  \node at(1.1,1.5)(){A};
+  \node at(1.45,1.5)(){G};
+  \node at(1.8,1.5)(){G};
+  \node at(2.15,1.5)(){T};
+  \node at(2.5,1.5)(){A};
+  \node at(2.85,1.5)(){T};
+  % down arrow
+  \draw [-stealth](-.7,-1.75) -- (-.7,-2.5);
+\end{tikzpicture}
+}
+
+\vspace{1em}
+\small{example.vcf}
+\begin{lstlisting}[style=vcf]
+##fileformat=VCFv4.2
+##reference=GRCh38
+#CHROM POS     ID  REF  ALT  QUAL FILTER INFO
+1      12      .   C    T    30   PASS   NS=3;DP=3
+...
+\end{lstlisting}
+\caption{
+An illustration of how sequenced reads can be aligned against a reference genome sequence in order to call variants present in the genome of the sequenced individual. The called variant in the illustration is then stored in a variant call format (VCF) file where the chromosome identifier, 1-indexed position along the chromosome reference sequence, an identifier for the variant, the allele or alleles present in the reference sequence, the alternative variant allele or alleles, along with a number of other parameters are used to represent each variant.
+}
+\label{background:variant_and_variant_calling:figures:variant_calling}
+\end{center}
+\end{figure}
+\subsubsection{High-Throughput DNA sequencing} \label{background:biology:high_throughput_dna_sequencing}
+\textit{High-throughput sequencing} (HTS), also known as \textit{next-generation sequencing} (NGS), refers to an assortment of recently developed technologies that parellalize the sequencing of DNA fragments to provide unprecedented amounts of genomic data in short amounts of time.
+While several such technologies with varying details exist today, they commonly follow a general paradigm of performing a template preparation, clonal amplification where they clone pieces of DNA in order to sequence the clones in parallel, and finally cyclical rounds of massively parallel sequencing \cite{hts}.
+The resulting DNA sequences produced by HTS technologies are usually referred to simply as (DNA) \textit{reads}.
+Such reads are commonly stored as plain text in FASTA or FASTQ files, which can later be used for different kinds of analysis such as genotyping.
+Depending on which HTS technology is used, one can expect read lengths ranging from as low as 150 bases using \textit{Illumina} technologies, referred to as \textit{short reads} \cite{illumina_read_length}, all the way up to 15-20 thousand bases using \textit{Pacific Biosciences} (PacBio) technologies, referred to as \textit{long reads} \cite{hts2}.
+Three factors are important to consider when determining which HTS technology to use for a given purpose: 1) the read lengths produced, 2) the average probability for each base being erroneous, usually referred to as the error rate, and 3) the cost of sequencing given the technology, which can potentially limit how much data one may be able to produce.
+
+\begin{figure}[H]
+\begin{center}
+\small{example.fa}
+\end{center}
+\begin{lstlisting}[style=vcf]
+>read 0
+ACGTATGCGGCGGGGCGCGATTATTCGTTGCGTATGC
+>read 1
+ACACGTCGTGCGTAGCGTGTCAGTCACAGTAAACAAA
+>read 2
+CGTTGCCATCAACGGCTGTGCACGATTGGGGGCGCGC
+...
+\end{lstlisting}
+\caption{
+  An illustration of how sequenced DNA reads are stored as plain text in a FASTA (.fa) file.
+  Before each read, a header file beginning with the character ">" may provide information about the read.
+}
+\label{background:biology:high_throughput_dna_sequencing:figures:fasta}
+\end{figure}
+\subsubsection{Genotypes and Genotyping} \label{background:biology:genotype_and_genotyping}
+%The term \textit{genotype} refers to the set of variants an individual carries at a particular location along the genome sequence of all of its chromosomes \cite{nhgri_genotype}.
+Recall that a genetic variant refers to a distinct variation at a particular location along an individual's genome when compared to a reference genome sequence.
+For humans, who have two of each chromosome, we may have the same, or two different variations present at a particular location in genome.
+The term \textit{genotype} refers to the set of variants an individual carries at such a location.
+%The term \textit{genotype} refers to the unique combination of genetic variants that an individual carries at a specific location within the genomic sequence of all their chromosomes.
+%For humans, who have two of each chromosome, a genotype would refer to two variants, one in each of the two chromosomes.
+\textit{Genotyping} an individual refers to the process of determining which genotypes an individual carries. 
+For humans, this would entail determining the set of variants present at each variant site.
+In most genotyping software tools today, genotypes are given in a format that specifies whether a particular variant is present in none, one or both of a human's chromosomes.
+For instance, given a reference genome sequence where a variant site is known to could manifest an A at a particular allele where the reference sequence contains a C, a human individual's genotype for this variant could either be referred to as $0/0$, meaning that the variant is present in neither of the chromosomes, $0/1$, meaning that the variant is present in one of the chromosomes, or $1/1$, meaning that the variant is present in both chromosomes.
+
+\definecolor{variantcolor}{RGB}{235,235,235}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{0.85}{
+\begin{tikzpicture}
+  % Variants
+  \node at(2.25,2)(title){\textit{Variants}};
+  \node at(2.25,0)[rounded corners,minimum width=0.5cm,minimum height=2.75cm, fill=variantcolor](variant){};
+  % Sequence (left)
+  \node at(0.75,0)(n2){\large A};
+  \node at(1.25,0)(n3){\large T};
+  \node at(1.75,0)(n4){\large G};
+  \node at(2.25,1)(n5){\large C};
+  \node at(2.25,0)(n5){\large G};
+  \node at(2.25,-1)(n5){\large A};
+  \node at(2.75,0)(n5){\large C};
+  \node at(3.25,0)(n5){\large T};
+  % Arrow
+  \draw [-stealth](4,0) -- (5,0);
+  % Genotype
+  \node at(7.5,2.5)(title){\textit{Genotype}};
+  \node at(9,0.25)[rectangle,rounded corners,draw,minimum width=7cm,minimum height=3.25cm](genotype){};
+  % Alleles 
+  \node at(7.5,1.5)(title){\textit{Alleles}};
+  % Chromosomes
+  \node at(10.5,0.5)(title){$Chromosome_1$};
+  \node at(10.5,-0.5)(title){$Chromosome_2$};
+  \node at(7.5,-.015)[rounded corners,minimum width=0.5cm,minimum height=1.75cm, fill=variantcolor](variant){};
+  % Chromosome 1 sequence
+  \node at(6,0.5)(n2){\large A};
+  \node at(6.5,0.5)(n3){\large T};
+  \node at(7,0.5)(n4){\large G};
+  \node at(7.5,0.5)(n5){\large A};
+  \node at(8,0.5)(n5){\large C};
+  \node at(8.5,0.5)(n5){\large T};
+  % Chromosome 2 sequence
+  \node at(6,-0.5)(n2){\large A};
+  \node at(6.5,-0.5)(n3){\large T};
+  \node at(7,-0.5)(n4){\large G};
+  \node at(7.5,-0.5)(n5){\large G};
+  \node at(8,-0.5)(n5){\large C};
+  \node at(8.5,-0.5)(n5){\large T};
+  % Reference and the individual's chromosomes
+  \node at(2.25,-2.5)(ref){\textit{Reference sequence}};
+  \node at(9,-2.5)(ind){\textit{Individual's chromosome sequences}};
+\end{tikzpicture}
+}
+\caption{In humans, where there are two chromosomes, a genotype constitutes as a set of two alleles, one in each chromosome at the variant location. Along the reference sequence on the left, several possible variants may be known to occur at a specific location. After examining the sequence of an individual, we try to determine the individual's genotype by scoring which variants are present in each chromosome at the location of interest.}
+\label{figure:variant_and_genotype}
+\end{center}
+\end{figure}
+
+The most established way to genotype an individual today is to align DNA reads to a reference genome sequence and then examine how the reads differ from the reference sequence to determine which variants are present, and which genotypes are most probable at the different locations \cite{gatk}.
+However, given how many reads one have come to expect from high-throughput sequencing today [\ref{background:biology:high_throughput_dna_sequencing}] and how time consuming it is to align reads to a $3*10^9$ long reference sequence, although accurate, this strategy is very compute- and time consuming.
+A new prominent strategy has emerged in recent years that helps to alleviate the compute- and time consumption aspect of genotyping.
+Statistics based methods, usually referred to \textit{alignment-free} genotyping methods, where the variant calling step where reads are aligned to the reference genome is skipped altogether. 
+In such methods, small parts of the sequenced reads called \textit{k}mers are analyzed, and bayesian models are then used to determine which genotypes are most probable given the results from the \textit{k}mer analysis and previous knowledge accumulated over years of research \cite{kage,malva,1000_genomes_project}.
+One such bayesian genotyper, KAGE, have recently showed that it can genotype a human individual more than 10 times faster than any other known genotyper tool, while still providing competitive accuracy scores \cite{kage}.
+\subsection{Biology} \label{background:biology}
+
+\input{sections/background/biology/dna_chromosomes_and_genomes.tex}
+\input{sections/background/biology/high_throughput_dna_sequencing.tex}
+\input{sections/background/biology/variants_and_variant_calling.tex}
+\input{sections/background/biology/genotypes_and_genotyping.tex}
+\subsubsection{npstructures} \label{background:implementation_tools_and_libraries:npstructures}
+npstructures (NumPy Structures) is a Python package built on top of NumPy that provides data structures with NumPy-like features to augment the NumPy library \cite{npstructures}.
+This is achieved by building these new data structures using NumPy's underlying multi-dimensional array object and fast array routines.
+
+Some of npstructures' data structures have been central in work done in this thesis.
+Those data structures will therefore be detailed in this section.
+
+\paragraph{Ragged Array}
+A central feature in npstructures is its ragged array object, a two-dimensional array data structure with differing column lengths that provides NumPy-like behaviour and performance.
+The ragged array object works as a drop in alternative to NumPy's multi-dimensional array object where one needs an array structure where the column lengths can vary, supporting many of the common NumPy functionalities such as multi-dimensional indexing, slicing, ufuncs and a subset of the function interface.
+\begin{figure}[H]
+\begin{lstlisting}[language=Python,style=console]
+>>> import numpy as np
+>>> from npstructures import RaggedArray
+>>> data = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+>>> column_lengths = np.array([4, 2, 3])
+>>> ra = RaggedArray(data, column_lengths)
+>>> ra
+ragged_array([0, 1, 2, 3]
+[4, 5]
+[6, 7, 8])
+>>> ra.ravel()
+array([0, 1, 2, 3, 4, 5, 6, 7, 8])
+>>> type(ra.ravel())
+<class 'numpy.ndarray'>
+>>> np.sum(ra)
+36
+\end{lstlisting}
+\caption{
+  A simple illustration of how npstructures' data structures can be used directly in Python as drop-in augmentations to the NumPy library.
+}
+\label{background:implementation_tools_and_libraries:npstructures:figure:ragged_array_example}
+\end{figure}
+
+\paragraph{Hash Table and Counter}
+npstructures also provides a memory efficient hash table built on top of the ragged array data structure.
+This hash table is designed to give dictionary-like behaviour for NumPy-arrays, meaning chunks of key-value pairs can be operated on at once using fast NumPy array routines.
+This hash table object is in turn the base for a counter object that allows for counting of occurences of a predefined set of keys.
+
+The counter (built on top of the hash table) achieves its memory efficiency by implementing a type of bucketed hash table where a ragged array is used to represent the table, and the number of rows of the array is equal to the number of buckets in the table, and the varying column lengths are equal to the bucket sizes.
+Upon initialization, the hash table hashes every key in the static key-set provided and computes how many keys hash to each row in the ragged array, thereby determining the column lengths (bucket sizes) for each row.
+\subsubsection{C and C++} \label{background:implementation_tools_and_libraries:c_and_cpp}
+C and C++ are compiled general purpose programming languages.
+C++ is a superset of C, and can in effect be considered to be C with classes among some other high-level functionality.
+C and C++ are popular choices for implementing optimized and performant code.
+They offer granular control over hardware and memory, where data such as arrays must be both allocated and de-allocated manually.
+\subsubsection{CuPy} \label{background:implementation_tools_and_libraries:cupy}
+CuPy is GPU accelerated NumPy \cite{numpy} and SciPy \cite{scipy} compatible array library that, much like NumPy \cite{numpy}, provides a multi-dimensional array object as well as mathematical functions and routines to operate on these arrays.
+In fact, CuPy's interface is designed to closely follow that of NumPy, meaning that most array-based code written in NumPy can trivially be replaced with CuPy to GPU accelerate the array operations.
+CuPy, unlike NumPy, will store all array data in GPU memory and all array routines will be performed by the GPU.
+
+CuPy also offers some access to CUDA functionality such as CUDA streams used to copy memory to and from the GPU's memory while simultaneously processing data, and device synchronization to halt the CPU until a process started on the GPU has completed.
+Additionally CuPy provides support for creating custom kernels that can operate on GPU allocated arrays, directly in Python.
+These kernels are then JIT (just-in-time) compiled when the program first encounters the kernel.
+Thus, CuPy provides a useful module where GPU accelerated implementations can be made directly with a NumPy-like array interface, while also supporting more granular custom kernels that can operate on the data in these arrays, all directly inside Python.
+\subsubsection{Python} \label{background:implementation_tools_and_libraries:python}
+Python is an interpreted high-level general purpose programming language that has gained significant traction, incuding in the scientific computing community, in recent years \cite{python,python_popular}.
+Since it is an interpreted language, Python in and of itself is not performant, and can in many instances be measured to be several orders of magnitude slower than similar implementations in performant compiled languages such as C and C++.
+The Python interpreter is written in C, and thus, the Python programming language can naturally be extended with additional C and C++ code.
+Because of its high-level and interpreted nature, it is well suited for quick prototyping of software.
+However, because of its ability to be extended with additional C and C++ code, many packages exist today that supplement Python with high-performance libraries, making Python a serious language candidate for scientific computing software today, albeit through calling upon optimized and performant C and C++ code.
+\subsubsection{pybind11} \label{background:implementation_tools_and_libraries:pybind11}
+pybind11 \cite{pybind11} is a C++ library that provides easy-to-use macros and tools for creating bindings between Python and C++. 
+Its main use case is to create Python bindings for existing C++ code.
+Using pybind11, this can be achieved seamslessly by using C++ macros to expose C++ functions, classes and their methods to Python.
+In addition, pybind11 also allows for direct use of certain Python types such as lists, tuples and dicts in C++, supporting both receiving and returning references to such Python objects in C++.
+NumPy is also supported, making it easy to send NumPy array references to C++ functions where the C++ function is allowed the freedom to both read and write to the array's data.
+While the work in this thesis evolves aroud GPU accelerating parts of a software tool written in Python, some of the solution implementations presented in this thesis were written partly in C++ for fast performance.
+pybind11 were in these cases crucial in order to create the bindings from these C++ implementations, making them usable directly in Python.
+\subsection{Implementation Tools and Libraries} \label{background:implementation_tools_and_libraries}
+
+\input{sections/background/implementation_tools_and_libraries/c_and_cpp.tex}
+\input{sections/background/implementation_tools_and_libraries/python.tex}
+\input{sections/background/implementation_tools_and_libraries/numpy.tex}
+\input{sections/background/implementation_tools_and_libraries/cupy.tex}
+\input{sections/background/implementation_tools_and_libraries/npstructures.tex}
+\input{sections/background/implementation_tools_and_libraries/bionumpy.tex}
+\input{sections/background/implementation_tools_and_libraries/pybind11.tex}
+\subsubsection{NumPy} \label{background:implementation_tools_and_libraries:numpy}
+NumPy is a scientific computing library for Python that provides support for fast multi-dimensional arrays along with a multitude of mathematical and other types of functions to operate on arrays efficiently \cite{numpy}.
+NumPy works as a Python interface to fast C and C++ code that implements the underlying functionalities.
+This underlying code relies on vectorization and SIMD instructions to perform array operations fast. 
+While NumPy's standard functionality is designed to run efficiently on a single CPU core, multithreading can be utilized to both parellalize on the local data (SIMD) and the total work level (multithreading) at the same time.
+Its flexible and easy-to-use interface along with its highly performant solutions that supports a wide range of hardware has made it a popular choice for any array-based scientific computing in Python.
+
+\subsubsection{BioNumPy} \label{background:implementation_tools_and_libraries:bionumpy}
+BioNumPy is a Python library built on top of NumPy that allows for easy and efficient representation and analysis of biological data \cite{bionumpy}.
+This includes functionality for efficiently and correctly reading a multitude of different file types that are commonly used for storing biological data directly into NumPy arrays, fast encoding from character arrays representing biological sequences into 2-bit encoding for faster processing and better memory efficiency, and \textit{k}mer analysis support.
+\subsubsection{GPUs in Computers}
+
+Two main computer GPU setups are prominent today: \textit{integrated} graphical processing units (iGPUs), and \textit{discrete} graphical processing units (dGPUs).
+iGPUs are GPUs integrated onto the same die as a computer's CPU, where the two share the same physical \textit{Random Access Memory} (RAM) unit.
+dGPUs are dedicated GPU devices that are physically distinct from the host computer's CPU and RAM, and have their own physical RAM.
+dGPUs are significantly more powerful in terms of compute throughput when compared to iGPUs.
+However, having their own physical RAM introduces an overhead;
+Memory buffers with input data have to be copied to the dGPU's RAM before processing, and results have to be copied back from the dGPU's RAM to the host RAM.
+
+\begin{figure}[H]\label{figure:igpu-and-dgpu-system}
+\begin{center}
+\begin{tikzpicture}
+  % draw die
+  \node at(0,2)[rectangle,draw](cpu){CPU and iGPU};
+  % draw RAM
+  \node at(0,0)[rectangle,draw](ram){RAM};
+  % draw "Host" text
+  \node at(0,2.85){\small Host};
+  % draw host computer
+  \node at(0,1)[rectangle,draw,minimum width=3.7cm,minimum height=3cm](dualhost){};
+  % draw arrow from die to RAM
+  \draw [-stealth](cpu) -- (ram);
+\end{tikzpicture}
+\hspace{4.5em}
+\begin{tikzpicture}
+  % draw CPU die
+  \node at(0,2)[rectangle,draw](cpu){CPU};
+  % draw host RAM
+  \node at(0,0)[rectangle,draw](cpuram){RAM};
+  % draw dGPU die
+  \node at(5,2)[rectangle,draw](gpu){dGPU};
+  % draw host RAM
+  \node at(5,0)[rectangle,draw](gpuram){Device RAM};
+  % draw host computer
+  \node at(0,1)[rectangle,draw,minimum width=2cm,minimum height=3cm](host){};
+  % draw device
+  \node at(5,1)[rectangle,draw,minimum width=3cm,minimum height=3cm](device){};
+  % draw arrow from CPU die to host RAM
+  \draw [-stealth](cpu) -- (cpuram);
+  % draw arrow from dGPU die to device RAM
+  \draw [-stealth](gpu) -- (gpuram);
+  % draw arrow to and from host and device
+  \draw [stealth-stealth](host) -- (device);
+  % draw "PCIe" text
+  \node at(2.3,1.3){\smaller PCIe};
+  % draw "Host" text
+  \node at(0,2.85){\small Host};
+  % draw "Device" text
+  \node at(5,2.85){\small Device};
+\end{tikzpicture}
+\caption{\textbf{Left}: A computer setup with a CPU and an iGPU sharing the same die and the same physical RAM. \textbf{Right}: A computer setup where a dGPU is connected over PCIe and the dGPU has its own physical RAM, adding the overhead of copying data both to and from the host computer when utilizing the GPU.}
+\end{center}
+\end{figure}
+
+For the work presented in this thesis, only dGPUs were utilized. 
+Therefore, the term GPU will from here on out be referring to a dGPU and not an iGPU.
+This means that all GPU implementations discussed in this thesis will include copying memory back and fourth from the \textit{host} (CPU) RAM and the \textit{device} (GPU) RAM.
+It is also possible for a single computer to have several connected GPUs, allowing for further parallelization of both memory transfers and compute, however this was not utilized in this thesis' work.
+\textit{Graphical Processing Units} (GPUs) are massively parallel processing units designed for high-throughput parallel computations.
+This is as opposed to \textit{Central Processing Units} (CPUs), which are designed to quickly perform many serial computations.
+GPUs were originally developed to accelerate computations performed on images, a highly parallel task where it is commonplace to have millions of relatively small independent computations that must be performed quickly in a single memory buffer.
+Although GPUs have mainly been used for graphical computations, they have in recent years been adopted in other areas as well with the introduction of the \textit{General Purpose Graphical Processing Unit} (GPGPU).
+The concept of the GPGPU is to use a GPU to accelerate computations in other domains where CPUs have traditionally been used.
+Fields such as artificial intelligence and the broader scientific computing community have enjoyed great utility from GPUs, using them to accelerate embarassingly parallel problems, e.g., matrix operations.
+Despite being comparable in power consumption, a GPU can provide much higher instruction throughput and memory bandwidth compared to its CPU competitors.
+These capability advantages exist in GPUs because they were specifically designed to perform well with regards to these dimensions.
+
+%As of 2023, Nvidia control the vast majority of the GPU market share, with only \textit{Advanced Micro Devices} (AMD) and Intel as current serious competitors (\textbf{try to find a serious cite}).
+%Furthermore, Nvidia GPUs with their CUDA programming model is considered to be the standard for scientific computing today (\textbf{cite}).
+%Although most of the GPUs manufactured by different GPU manufacturing companies are very similar in both architecture and compute models, the term \textit{GPU} will for the remainder of this thesis specifically refer to Nvidia GPUs, as the work presented in this thesis was developed and tested using only Nvidia GPUs.
+
+While several distinct brands of GPUs exist, the work presented in this thesis only leveraged GPUs produced by Nvidia, one of the leading accelerated computing manufacturers for scientific computing today \cite{gpu_marketshare}.
+\subsection{Graphical Processing Units} \label{background:graphical_processing_units}
+
+\input{sections/background/graphical_processing_units/introduction.tex}
+\input{sections/background/graphical_processing_units/gpus_in_computers.tex}
+\input{sections/background/graphical_processing_units/cuda.tex}
+\subsubsection{CUDA} \label{background:graphical_processing_units:cuda}
+
+CUDA \cite{cuda} is Nvidia's general purpose parallel computing platform and programming model that allows software engineers to leverage the parallel compute engines in Nvidia GPUs.
+Although the CUDA software environment can be imported in several supported programming languages, development of GPU accelerated programs have traditionally been done in C++ with CUDA functionality imported through header files \cite{cuda}.
+
+The CUDA programming model is designed to be utilized to solve parallel problems where the GPU is used.
+To programmers, the programming model is made up of a hierarchy of three units of different granularity: \textit{threads}, \textit{blocks}, and \textit{grids}.
+
+\paragraph{Threads, Blocks and Grids}
+CUDA threads are the most granular units of parallelism in the CUDA programming model.
+Thread blocks are collection of threads that can be either one-, two- or three-dimensional.
+Grids are at the top of the hierarchy, as collections of thread blocks.
+Both thread blocks and the grids can either be one-, two- or three-dimensional.
+Thus, their dimensions are referred to as $x$ for width, $y$ for height and $z$ for depth.
+In the CUDA model, each individual thread can be distinctly identified by its index in a thread block, and the thread block's index in a grid.
+When developing parallel programs, each thread has direct access to its (up to) three-dimensional index inside its thread block, and its thread block's (up to) three-dimensional index in its grid.
+If a thread resides in a three-dimensional thread block of dimensions $(Dx_b, Dy_b, Dz_b)$ at index $(x_b, y_b, z_b)$, its unique index within said block can be computed using:
+\begin{equation}
+  i_b = (x_b + y_bDx_b + z_bDx_bDy_b)
+\end{equation}
+Then, we can include the grid as well to compute the system-wide unique index for the thread.
+If the thread's thread block resides in a grid of dimensions $(Dx_g, Dy_g, Dz_g)$ at index $(x_g, y_g, z_g)$, its unique system-wide index can be computed using:
+
+\begin{equation}
+  i = (x_g + y_gDx_g + z_gDx_gDy_g)(Dx_bDy_bDz_b) + i_b
+\end{equation}
+
+This thread-hierarchy provides a natural way to perform computations over elements in i.g. vectors, matrices or tensors.
+All threads in a thread block must reside on the same \textit{stream multiprocessor core} in the GPU.
+Therefore, there is a size limit on how large thread blocks can be.
+The two types of Nvidia GPUs used in this thesis, the Nvidia Tesla V100 and the Nvidia GTX 1660 SUPER, have limits of 2048 and 1024 threads per thread block respectively.
+
+\definecolor{devicecolor}{RGB}{220,255,255}
+\definecolor{gridcolor}{RGB}{255,255,225}
+\definecolor{blockcolor}{RGB}{255,200,200}
+\definecolor{threadcolor}{RGB}{255,125,125}
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{0.75}{
+\begin{tikzpicture}
+  % draw device rectangle
+  \node at(0,0)[rectangle,draw,minimum width=10cm,minimum height=7cm,fill=devicecolor](device){};
+  % draw "Device" text
+  \node at(-4,3){\fontfamily{phv}\selectfont Device};
+  % draw grid rectangle
+  \node at(0,-.25)[rectangle,draw,minimum width=8.5cm,minimum height=5.5cm,fill=gridcolor](grid){};
+  % draw "Grid" text
+  \node at(-3.5,2){\fontfamily{phv}\selectfont Grid};
+  % draw block rectangles inside grid rectangle
+  \node at(-2.5,.75)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=blockcolor](block1){};
+  \node at(0,.75)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=blockcolor](block2){};
+  \node at(2.5,.75)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=blockcolor](block3){};
+  \node at(-2.5,-1.25)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=blockcolor](block4){};
+  \node at(0,-1.25)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=blockcolor](block5){};
+  \node at(2.5,-1.25)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=blockcolor](block6){};
+  % draw "Block(x,x)" text for each block
+  \node at(-2.5,.75){\fontfamily{phv}\selectfont Block(0,0)};
+  \node at(0,.75){\fontfamily{phv}\selectfont Block(1,0)};
+  \node at(2.5,.75){\fontfamily{phv}\selectfont Block(2,0)};
+  \node at(-2.5,-1.25){\fontfamily{phv}\selectfont Block(0,1)};
+  \node at(0,-1.25){\fontfamily{phv}\selectfont Block(1,1)};
+  \node at(2.5,-1.25){\fontfamily{phv}\selectfont Block(2,1)};
+  % draw zoom lines to detailed block rectangle
+  \draw (-1,-.5) -- (-7.5,-2.5);
+  \draw (1,-.5) -- (-.5,-2.5);
+  \draw (-1,-2) -- (-7.5,-7.5);
+  \draw (1,-2) -- (-.5,-7.5);
+  % draw detailed block rectangle
+  \node at(-4,-5)[rectangle,draw,minimum width=7cm,minimum height=5cm,fill=blockcolor](detailedblock){};
+  % draw "Block(1,1)" text for detailed block
+  \node at(-6.2,-3){\fontfamily{phv}\selectfont Block(1,1)};
+  % draw thread rectangles
+  \node at(-6,-4.5)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=threadcolor](thread1){};
+  \node at(-4,-4.5)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=threadcolor](thread2){};
+  \node at(-2,-4.5)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=threadcolor](thread3){};
+  \node at(-6,-6)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=threadcolor](thread4){};
+  \node at(-4,-6)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=threadcolor](thread5){};
+  \node at(-2,-6)[rectangle,draw,minimum width=2cm,minimum height=1.5cm,fill=threadcolor](thread6){};
+  % draw "Thread(x,x)" text for each thread rectangle
+  \node at(-6,-4.5){\smaller \fontfamily{phv}\selectfont Thread(0,0)};
+  \node at(-4,-4.5){\smaller \fontfamily{phv}\selectfont Thread(1,0)};
+  \node at(-2,-4.5){\smaller \fontfamily{phv}\selectfont Thread(2,0)};
+  \node at(-6,-6){\smaller \fontfamily{phv}\selectfont Thread(0,1)};
+  \node at(-4,-6){\smaller \fontfamily{phv}\selectfont Thread(1,1)};
+  \node at(-2,-6){\smaller \fontfamily{phv}\selectfont Thread(2,1)};
+\end{tikzpicture}
+}
+\caption{An overview of the CUDA programming model. A single two-dimensional grid contains two-dimensional thread blocks.}
+\label{figure:background:graphical_processing_units:cuda-model}
+\end{center}
+\end{figure}
+
+\paragraph{Kernels}
+When writing parallel programs for the GPU using CUDA, \textit{kernel} functions define how the GPU should solve problems in a parallel fashion by using the thread-hierarchy.
+Kernels are functions that, when called, launch once for each thread in the thread-hierarchy configurations, all in parallel.
+Thus, the code that resides in the kernel definition is executed in parallel by every distinct CUDA thread.
+Inside the kernel, each CUDA thread has access to its unique index within its thread block as well as unique thread block index within its grid.
+The thread blocks' dimensions and number of threads are typically determined by the problem and limited by the max number of threads per streaming multiprocessor core on the system.
+For the grid, the size is typically determined by the size of the problem, and computed as a result of how many thread blocks must be launched to fully complete the necessary computations.
+
+Below is a simple example program where a kernel is implemented to increment every integer in a vector by one.
+\begin{figure}[H]
+\begin{center}
+main.cu
+\end{center}
+\begin{lstlisting}[language=C++,style=cppcode]
+// Kernel definition
+__global__ void increment_kernel(int *array, size_t N) {
+  int i = (threadIdx.x * blockDim.x) + threadIdx.x;
+  array[i] = array[i] + 1;
+}
+
+int main() {
+  size_t N = 1048576;
+  // Allocate and initialize array on the GPU
+  int *array = ...
+  
+  // Determine grid- and block-dimensions and then launch kernels
+  dim3 block_dim(1, 1, 1028);
+  dim3 grid_dim(1, 1, N / 1028);
+  increment_kernel<<<grid_dim, block_dim>>>(array, N)
+  ...
+}
+\end{lstlisting}
+\caption{
+  A simple example program showing how the CUDA thread-hierarchy is utilized in a kernel to implement GPU acceleration for incrementing every value in an integer array.
+}
+\label{background:graphical_processing_units:cuda:example_code}
+\end{figure}
+
+\lstset{language=C++,style=cppcode}
+
+The example program above is implemented in C++.
+Certain keywords used are CUDA specific, and are not supported without including the necessary CUDA headers beforehand.
+\lstinline{__global__} is used to declare that a function is a kernel.
+The number of CUDA threads launched to run a kernel is specified in the \lstinline{<<<...>>>} part of the kernel call.
+
+\paragraph{Memory Hierarchy}
+Each CUDA thread has access to several distinct memory areas.
+Every distinct CUDA thread has its own private local memory.
+Here, the thread will store small amounts of data such as registers.
+If a thread needs more memory than than it has available through its private local memory, it will turn to the GPU's global RAM memory as a fallback, which significantly hurts performance.
+Each thread block has a shared memory region accessible by threads in said block.
+This memory region shares its lifetime with its associated block.
+The GPU's global RAM is the largest memory region in the GPU, typically ranging from a few to several gigabytes.
+The global memory is several orders of magnitude slower compared to the more local memory regions, so effective memory access patterns are paramount for performance.
+
+\paragraph{Programming and Considerations}
+The GPU is described by Nvidia to be a \textit{Single Instruction Multiple Threads} (SIMT) machine \cite{cuda}.
+Although CUDA threads are described as threads, modern GPUs can in effect be considered to be massive \textit{Single Instruction Multiple Data} (SIMD) machines. 
+Strict flow control is therefore important; 
+The same set of instructions should run in the same order for maximum utilization of the GPU's capability.
+Therefore, it is important to keep in mind that code branching may damage performance.
+Furthermore, because of the massive amounts of transistors dedicated to processing in the GPU, the bottlenecks in parallel programs on the GPU is typically memory bandwidth.
+Particularly global memory requests are expensive and should be avoided when possible.
+Ideally, consecutive CUDA threads should access consecutive data from the GPU's global RAM memory.
+This allows for the GPU to make larger and fewer memory requests, resulting in significantly better memory bandwidth and overall performance.
+\subsection{Further Work}
+While GKAGE demonstrates that alignment-free genotyping can be sped up through GPU acceleration, we believe that the current GKAGE runtimes can still be significantly improved.
+We will here identify some possible avenues where the current implementation can be altered or improved in order to better use the hardware and technology available to gain more speedup.
+
+\subsubsection{Better GPU Hash Table}
+While the GPU hash table used in GKAGE for \textit{k}mer counting is plenty effective for our purpose of demonstrating the effectiveness of GPU acceleration in alignment-free genotyping, alternative hash tables exist that, with correct integration, should perform better.
+Since optimizing GPU hash tables is all but a dicipline in and of itself and beyond the scope of this thesis, our GPU hash table implements a naive solution for collision handling and probing.
+An interesting future avenue would be to integrate a version a bucketed static cuckoo hash table from BGHT \cite{bght} to evaluate how a state-of-the-art hash table would perform compared to our own.
+Although faster, we doubt the effect would be dramatic in our case.
+
+\subsubsection{Parallelization of \textit{k}mer Chunk Preparation}
+Recall that in the \textit{k}mer counting step in KAGE, the input FASTA file is read in chunks.
+Each chunk of data is then 2-bit encoded and all valid \textit{k}mers are hashed from the 2-bit encoded data chunk.
+Finally, the chunk of hashed \textit{k}mers are counted.
+In GKAGE, the 2-bit encoding, \textit{k}mer hashing and \textit{k}mer counting are performed on the GPU.
+Thus, the chunk of data read from the FASTA file is copied to the GPU's memory before processing begins.
+Currently, GKAGE performs all of these processes sequentially.
+
+\vspace{.5em}
+\begin{figure}[H]
+\begin{center}
+\scalebox{.95}{
+\begin{tikzpicture}
+  % read fasta
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm](start){};
+  \node at(0,.25)[]{\smaller{read}};
+  \node at(0,-.25)[]{\smaller{FASTA}};
+  \draw [thick,-stealth](1.25,0) -- (2,0);
+  % cpu2gpu copy
+  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(3.3,.25)[]{\smaller{cpu2gpu}};
+  \node at(3.3,-.25)[]{\smaller{copy}};
+  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  % 2-bit encoding
+  \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(6.65,.25)[]{\smaller{2-bit}};
+  \node at(6.65,-.25)[]{\smaller{encoding}};
+  \draw [thick,-stealth](8,0) -- (8.85,0);
+  % kmer hashing
+  \node at(10.15,0)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(10.15,.25)[]{\smaller{\textit{k}mer}};
+  \node at(10.15,-.25)[]{\smaller{hashing}};
+  \draw [thick,-stealth](11.50,0) -- (12.35,0);
+  % kmer counting
+  \node at(13.65,0)[draw,minimum width=2cm,minimum height=1.2cm](end){};
+  \node at(13.65,.25)[]{\smaller{\textit{k}mer}};
+  \node at(13.65,-.25)[]{\smaller{counting}};
+  % arrows
+  \draw [thick](13.65,-.95) -- (13.65,-1.75);
+  \draw [thick](13.65,-1.75) -- (0,-1.75);
+  \draw [thick,-stealth](0,-1.75) -- (0,-.95);
+  \node at(6.825,-2.25)[]{\smaller{repeat}};
+\end{tikzpicture}
+}
+\caption{
+  GKAGE's current \textit{k}mer counting pipeline performs several steps in a sequential fashion.
+  While these steps are performed on many \textit{k}mers in parallel at once, each chunk (containing many \textit{k}mers) is processed sequentally. 
+}
+\label{discussion:parallelization_of_kmer_chunk_preparation:figures:pipeline}
+\end{center}
+\end{figure}
+
+By utilizing CUDA streams we can parallelize the copying of data to the GPU and the processing of the previous chunk, creating a new and more efficient pipeline.
+
+\begin{figure}[H]
+\begin{center}
+\scalebox{.95}{
+\begin{tikzpicture}
+  % hints
+  \draw [thick,<->](5.875,2.45) -- (5.875,1.7);
+  \node at(7.1,2.075)[]{\smaller{parallel}};
+  \draw [thick,<->](5.5,3.2) -- (6.25,3.2);
+  \node at(7.25,3.2)[]{\smaller{sequential}};
+  % large hints
+  \draw [thick,<->](-1.25,.6) -- (-1.25,-2.6);
+  \draw [thick,<->](-1,.875) -- (14.65,.875);
+  % read fasta
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm](start){};
+  \node at(0,.25)[]{\smaller{read}};
+  \node at(0,-.25)[]{\smaller{FASTA}};
+  \draw [thick,-stealth](1.25,0) -- (2,0);
+  % cpu2gpu copy
+  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(3.3,.25)[]{\smaller{cpu2gpu}};
+  \node at(3.3,-.25)[]{\smaller{copy}};
+  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  % 2-bit encoding
+  \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(6.65,.25)[]{\smaller{2-bit}};
+  \node at(6.65,-.25)[]{\smaller{encoding}};
+  \draw [thick,-stealth](8,0) -- (8.85,0);
+  % kmer hashing
+  \node at(10.15,0)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(10.15,.25)[]{\smaller{\textit{k}mer}};
+  \node at(10.15,-.25)[]{\smaller{hashing}};
+  \draw [thick,-stealth](11.5,0) -- (12.35,0);
+  % kmer counting
+  \node at(13.65,0)[draw,minimum width=2cm,minimum height=1.2cm](end){};
+  \node at(13.65,.25)[]{\smaller{\textit{k}mer}};
+  \node at(13.65,-.25)[]{\smaller{counting}};
+  % read fasta 2
+  \node at(6.65,-2)[draw,minimum width=2cm,minimum height=1.2cm](start){};
+  \node at(6.65,-1.75)[]{\smaller{read}};
+  \node at(6.65,-2.25)[]{\smaller{FASTA}};
+  \draw [thick,-stealth](8,-2) -- (8.85,-2);
+  % cpu2gpu copy 2
+  \node at(10.15,-2)[draw,minimum width=2cm,minimum height=1.2cm]{};
+  \node at(10.15,-1.75)[]{\smaller{cpu2gpu}};
+  \node at(10.15,-2.25)[]{\smaller{copy}};
+  \draw [thick,-stealth](11.5,-2) -- (12.35,-2);
+\end{tikzpicture}
+}
+\caption{
+  An illustration of a more optimal \textit{k}mer counting pipeline.
+  By utilizing CUDA's streams, we can parallelize copying of data to the GPU and actual GPU processing.
+}
+\label{discussion:parallelization_of_kmer_chunk_preparation:figures:parallel_pipeline}
+\end{center}
+\end{figure}
+\section{Discussions} \label{discussions}
+
+\input{sections/discussions/advantages_and_drawbacks_of_methods.tex}
+\input{sections/discussions/drawbacks_of_gpus.tex}
+\input{sections/discussions/further_work.tex}
+\subsection{Drawbacks of Graphical Processing Units}
+While GPUs can provide excellent acceleration for many problems in scientific computing, they do come with some notable caveats.
+
+The reason why GPUs are so powerful when it comes to accelerating certain parallel programs, is because they are designed for such problems.
+GPUs are highly specialized compute accelerators that perform poorly when applied to any problem that does not fit its compute architecture.
+Additionally, today's GPUs are expensive and less accessible than traditional CPUs.
+Because of the CPU's flexibility in regards to the problems it can be used to solve, CPUs exist in most - if not all - existing computers today.
+GPUs however, are less common, particularly serious GPUs fitting for scientific computing.
+
+Furthermore, GPU programming is by many considered to be its own discipline, as the programming models and paradigms used when developing GPU programs are quite different than the typical sequential programs written for the CPU.
+This leads to a higher bar for entry when it comes to developing effective GPU programs for difficult problems, as fewer expert programmers have the knowledge and training to understand such systems.
+
+\subsection{Advantages and Drawbacks of Methods} \label{discussion:advantages_and_drawbacks_of_methods}
+In section \ref{methods} we explored three different methods for GPU accelerating existing Python code.
+Each of the methods we explored have a unique set of advantages and drawbacks.
+The discipline of designing and implementing GPU programs is quite distinct from the more mainstream discipline of implementing programs meant to run on the CPU.
+Becoming an expert GPU programmer can in many instances take years with all the technologies and tools available today.
+Thus, an interesting dimension when assessing the advantages and drawbacks of the GPU acceleration methods we have explored is how seamless it is to implement the solution, particularly for someone with little or no experience in GPU programming.
+Other metrics we will discuss include how seamless the integration of a solution into Python is, how quickly a solution can be implemented compared to the alternative methods, among other per-method details.
+
+\subsubsection{Using CuPy as a NumPy Drop-in Replacement} \label{discussion:using_cupy_as_a_numpy_drop_in_replacement}
+The first GPU acceleration method we explored in section \ref{methods:initial_testing}, was to use CuPy, a GPU accelerated array library with an interface designed to closely follow NumPy, as a drop-in replacement for NumPy to GPU accelerate an already existing solution that was based on NumPy for performance.
+
+\paragraph{Advantages}
+This method is ideal in cases where an already existing Python solution based on NumPy exists and it is interesting to see whether porting it to the GPU will likely be beneficial.
+The technique of using CuPy as a drop-in for NumPy is, by a large margin, the fastest way of implementing GPU acceleration.
+This does, however, require an already existing solution based on NumPy.
+If a solution is to be made from scratch, CuPy is still an adequate tool for "quick and dirty" testing with seamless GPU acceleration directly in Python.
+Additionally, this method does not require deep knowledge or understanding of the GPU architecture, although understanding the GPU's hardware is helpful when determining which NumPy solutions are good candidates for GPU acceleration through CuPy.
+
+\paragraph{Drawbacks}
+While an advantage of CuPy is that it allows for seamless "quick and dirty" testing directly in Python, this conversely also introduces a drawback of this method.
+Many solutions implemented using NumPy are designed for fast processing on the CPU.
+While they can often be great candidates for the GPU since they perform array operations that can be well suited for the GPU architecture, this match is not guaranteed. 
+In such cases, the GPU will provide inadequate performance boosts, even if the solution could be redesigned to better fit the GPU architecture.
+
+\subsubsection{Custom C++ Implementations Using CUDA}
+The second GPU acceleration method we explored in section \ref{methods:gpu_accelerating_kmer_counting}, was to implement our own solution directly in C++ using the CUDA framework.
+We then used pybind11 to create Python bindings for our C++ fuctionality to gain access directly inside Python.
+
+\paragraph{Advantages}
+The clearest advantage of this method is the control over hardware and granularity achieved when implementing the solution directly using Nvidia's programming platform: CUDA.
+This provides the possibility of more closely tailoring the implementation to the problem and using all of CUDA's technology to gain the best performance possible.
+Additionally, since such an implementation would be created using C++, this allows access to C++ features that are otherwise out of reach in Python, such as thread parallelization.
+
+\paragraph{Drawbacks}
+For this method too, its main advantage also yields its greatest drawback.
+The CUDA programming platform is vast and provides support that can be extremely useful to solve certain problems effectively, but that also requires deep knowledge and understanding of the GPU hardware- and programming model.
+Additionally, since CUDA features are used in C++, the programmer would need to be, at the very least, comfortable with writing software in C++.
+Since such a solution would be implemented in C++, this makes integration into Python more difficult.
+Bindings using ctypes, pybind11 or some other method would be necessary to gain access to the solution directly in Python.
+C++ is also a significantly more verbose language, largely due to its more fine-grained control.
+The implementation is in many ways forced to be more detailed, which results in more time required to create the implementation.
+
+\subsubsection{Custom JIT-Compiled Kernels in Python}
+The third and final GPU acceleration method we explored in section \ref{methods:gpu_accelerating_kmer_counting_jit}, was to implement our solution using CuPy's support for jit compiled (just-in-time-compiled) custom kernels.
+CuPy, directly in Python through its module interface, provides access to certain CUDA functionality as well as support for creating kernels directly in Python code that are then compiled when the running program first encounters them.
+
+\paragraph{Advantages}
+This method has many of the same advantages as the method discussed in \ref{discussion:using_cupy_as_a_numpy_drop_in_replacement}, and can be viewed as an extension of the CuPy drop-in for NumPy method.
+What it brings in addition to being a drop-in replacement for NumPy is its jit-compiled custom kernel support and, although limited, CUDA functionality support.
+This allows for simple usage, similar to NumPy, where it is suitable, and more detailed usage such as implementing custom kernels in cases where the straight-forward array-interface does not suffice.
+In section \ref{methods:gpu_accelerating_kmer_counting_jit}, we showed that we could, in full, re-implement our CUDA based hash table directly using CuPy's custom kernel support.
+This was all achieved while never leaving Python, meaning a programmer does not need to know C++ in order to implement custom kernels this way.
+More additional functionality not used in our implementation of GKAGE is also supported through CuPy, such as CUDA streams cooperative groups and more \cite{cupy}.
+
+\paragraph{Drawbacks}
+While it is helpful to be able to implement custom kernels directly in Python code, it is uncertain how much simplicity this in effect introduces.
+The kernels implemented using CuPy's custom kernel support still need to adhere to the same programming model as CUDA kernels implemented in C++.
+A programmer with little to no knowledge of how the GPU hardware and programming model works, will not with ease be able to implement effective kernels this way.
+Therefore, we would argue that this advantage does not do much more than alleviate the need to dvelve into C++ and set up proper compiling and Python bindings.
+\begin{appendices}
+
+\section{bioRxiv Preprint - \textit{Ultra-fast genotyping of SNPs and short indels using GPU acceleration}}
+\label{appendix:preprint}
+\includepdf[pages=-,pagecommand={\thispagestyle{plain}}]{sections/appendices/preprint.pdf}
+
+\end{appendices}
+\section{Conclusion} \label{conclusion}
+\begin{abstract}
+
+In the last couple of decades, high-throughput sequencing has steadily become more effective and orders of magnitude cheaper.
+With the potential for millions of genomes being sequenced in the coming years, tools for analysing the large amounts of sequenced data will become increasingly important.
+Recent work in alignment-free genotyping methods have shown that alignment-free methods where we use statistical methods on analysis of \textit{k}mers from sequenced reads can give competitive accuracies while being significantly faster compared to more established alignment-based methods.
+A recently published genotyper, KAGE, showed that an alignment-free genotyper implemented in Python could yield competitive accuracies while being more than 10 times faster than any other known method.
+This thesis explores how parts of KAGE that deals with large matrix- and array-operations can be GPU accelerated, and finally presents GKAGE, a GPU accelerated version of KAGE. 
+GKAGE achieves up to 10 times speed up compared to KAGE and is able to genotype a human individual in only a few minutes on consumer grade hardware.
+
+\end{abstract}
+A central problem in biology is to effectively uncover and characterize genomic sequence varitaions in humans.
+By understanding where and how the human genome varies from individual to individual, we can vastly improve our understanding of how an individual's genomic makeup affects its observable traits - its phenotype.
+To realize this goal, it is inescapable that we need fast and reliable methods for genotyping - characterizing an individual's genetic makeup - in order to gather data to further explore links between genotypes and phenotypes.
+
+As the price of high-throughput sequencing has steadily become cheaper over the last few decades \cite{nhgri_sequencing_cost}, whole genome sequencing of human genomes has become more accessible than ever before.
+Today, we can relatively cheaply sequence a whole human genome and expect to receive millions of short polynucleotide reads (often of length $\sim$ 150) \cite{illumina_read_length}.
+From just such reads, where we neither know where the read originates from in the sequences genome or where it may be erroneous, we want to perform the difficult task of accurately genotyping the individual, and to perform this analysis as quickly as possible.
+
+The traditional and more established methods for genotyping a human individual have involved aligning all sequenced reads to a reference genome to examine where the reads differ from the reference, noting the genotypes supported.
+Such \textit{alignment-based} methods are computationally expensive and time consuming, with established genotypers such as GATK \cite{gatk} needing tens of gigabytes of memory and several hours to run \cite{kage}.
+In recent years, new \textit{alignment-free} strategies for genotyping human individuals have emerged.
+Because of work such as the 1000 Genomes Project \cite{1000_genomes_project}, we today have access to vast amounts of knowledge about human genetic variation and genotype information.
+Alignment-free genotyping methods leverage such knowledge to skip the taxing alignment step altogether in favour of genotyping individuals directly based on analysis of \textit{k}mers - short substrings of the read sequences - and previous knowledge of known genetic variation \cite{kage,malva}.
+Recently, a new genotyping tool, KAGE, showed that by deploying an alignment-free method, it is possible to yield competitive genotype prediction accuracies while being an order of magnitude faster than any other known genotyper \cite{kage}.
+
+In recent years, with the introduction of the \textit{general purpose graphical processing unit} (GPGPU), the \textit{graphical processing unit} (GPU) has become increasingly popular for solving problems that require heavy amounts of compute, with many such problems existing in the space of scientific computing.
+Common for all traditional genotyping tools is that they are implemented to run on the \textit{central processing unit} (CPU).
+This likely stems from the fact that memory usage commonly reaches tens, and sometimes hundreds of gigabytes when running these tools \cite{kage}, and that not all problems are fit to run on the GPU architecture.
+However, the currently fastest known genotyping tool, KAGE, requires significantly less memory compared to its competitors.
+Additionally, KAGE is implemented in Python, and performs a significant amount of large array operations - a type of operation well suited for the GPU architecture - using the Python library NumPy \cite{numpy}.
+Because of this, KAGE seemingly stood to benefit from GPU acceleration.
+
+In this thesis, we will explore whether we can speed up (alignment-free) genotyping in any significant way by utilizing the GPU.
+We will start with KAGE as a base genotyper, and explore possible avenues for implementing GPU acceleration in KAGE to assess whether it results in significant speedup.
+Since KAGE is implemented in Python and consists of several steps that can in effect be considered independent, several possible avenues for GPU acceleration are possible.
+We will explore several of them to assess what options developers may have to GPU accelerate existing work in Python, and evaluate the advantages and drawbacks of each.
+
+\section{Introduction} \label{introduction}
+
+\input{sections/introduction/introduction.tex}
+%\documentclass[12pt,letterpaper]{article}
+\documentclass[12pt,a4paper,UKenglish]{article} % NEW
+
+% packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry} % ORIGINAL
+\usepackage[skip=0.5cm]{parskip} % ORIGINAL
+%\usepackage[skip=10pt plus1pt, indent=20pt]{parskip} % NEW
+%\usepackage[skip=10pt plus1pt]{parskip} % NEW TEST
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{times}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[font=footnotesize]{caption}
+\usepackage{relsize}
+\usepackage{environ}
+\usepackage[sorting=none]{biblatex}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{paralist}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{titling}
+\usepackage{blindtext}
+\usepackage{titlesec}
+\usepackage{subcaption}
+\usepackage{multicol}
+\usepackage{abstract}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage[UKenglish]{uiomasterfp}
+\usepackage{dirtree}
+\usepackage{pdfpages}
+\usepackage[toc,page]{appendix}
+
+% --- stuff from google ---
+% Add an extra layer of headers
+\setcounter{secnumdepth}{4}
+
+\titleformat{\paragraph}
+{\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}
+{0pt}{3.25ex plus 1ex minus .2ex}{1.5ex plus .2ex}
+
+\edef\origparind{\the\parindent}
+\usetikzlibrary{positioning}
+\pgfplotsset{compat=1.16}
+\parindent=\origparind\relax
+\DeclareCaptionType{equ}[][]
+
+\emergencystretch=1em
+
+\makeatletter
+\def\maketag@@@#1{\hbox{\m@th\normalfont\normalsize#1}}
+\makeatother
+
+% make text lines be further away from each other
+%\setstretch{1.4}
+
+\linespread{1.35} % ORIGINAL
+%\linespread{1.3}
+%\linespread{1.25}
+
+% env for equations and mathematical expressions
+\NewEnviron{EQUATIONS}{%
+  \scalebox{1.25}{$\BODY$}
+}
+
+% set size and (something else?) for the section and subsection headers (I think)
+%\titleformat*{\section}{\large\bfseries}
+%\titleformat*{\subsection}{\normalsize\bfseries}
+
+% make abstract header larger
+\renewcommand{\abstractnamefont}{\normalfont\large\bfseries}
+
+% make urls in references look way less unacceptable
+\renewcommand{\UrlFont}{\small\rm}
+
+\makeatletter
+\newrobustcmd{\mkbiblege}[1]{%
+  \begingroup
+  \blx@blxinit
+  \blx@setsfcodes
+  <#1>
+  \endgroup}
+\makeatother
+
+\DeclareFieldFormat{url}{\bibstring{url}\space\mkbiblege{\url{#1}}}
+% --- stuff from google END ---
+
+% --- lstlisting START ---
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{pycomment}{rgb}{.3,.3,.3}
+
+\lstdefinestyle{cppcode}{
+  frame=tb,
+  aboveskip=3mm,
+  belowskip=-0.8mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=left,
+  numberstyle=\tiny,
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+  morekeywords={int8_t, int16_t, int32_t, int64_t,
+                uint8_t, uint16_t, uint32_t, uint64_t,
+                size_t, dim3}
+}
+
+\lstdefinestyle{pycode}{
+  frame=tb,
+  framerule=.75pt,
+  aboveskip=3mm,
+  belowskip=-0.8mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=left,
+  numberstyle=\tiny,
+  keywordstyle=\color{blue},
+  commentstyle=\color{pycomment},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+}
+
+\lstdefinestyle{console}{
+  frame=tb,
+  framerule=.75pt,
+  aboveskip=3mm,
+  belowskip=-0.8mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  keywordstyle=\color{blue},
+  commentstyle=\color{pycomment},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+}
+
+\lstdefinestyle{pseudocode}{
+  mathescape=true,
+  frame=tb,
+  aboveskip=3mm,
+  belowskip=-0.8mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=left,
+  numberstyle=\tiny,
+  keywordstyle=\color{black}\bfseries\em,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3,
+  literate=
+       {=}{$\leftarrow{}$}{1}
+       {==}{$={}$}{1}
+       {<=}{$\leq{}$}{1}
+       {>=}{$\geq{}$}{1}
+       {!=}{$\neq{}$}{1}
+       {&&}{$\wedge{}$ }{1}
+       {||}{$\vee{}$ }{1},
+  morekeywords={else,begin,input,output,function,procedure,end,then,do,if,while,return,min,max}
+}
+
+\lstdefinestyle{vcf}{
+  frame=tb,
+  framerule=.75pt,
+  language=,
+  basicstyle={\small\ttfamily},
+  breaklines=true,
+}
+% --- lstlisting END ---
+
+\addbibresource{bibliography.bib}
+
+\title{\textbf{Speeding up Genotyping through GPU Acceleration}}
+\date{15th of May 2023}
+\author{\Large{Master's Thesis}\\\\Jørgen Wictor Henriksen}
+
+\begin{document}
+% UiO front page
+\uiomasterfp[author={Jørgen Wictor Henriksen},date={Spring 2023},dept={Department of Bioinformatics},color=blue,long,supervisors={Ivar Grytten \and Knut Rand \and Geir Kjetil Sandve},program={Programming and System Architecture},title={Speeding up Genotyping through GPU Acceleration},subtitle={}]
+
+% abstract
+\input{sections/abstract/include.tex}
+\newpage
+
+% table of contents
+\tableofcontents
+\newpage
+
+% sections
+\input{sections/introduction/include.tex}
+\newpage
+\input{sections/thesis_goal/include.tex}
+\newpage
+\input{sections/background/include.tex}
+\newpage
+\input{sections/methods/include.tex}
+\newpage
+\input{sections/results/include.tex}
+\newpage
+\input{sections/discussions/include.tex}
+\newpage
+\input{sections/conclusion/include.tex}
+\newpage
+
+% bibliography
+%\printbibliography
+\printbibliography[heading=bibintoc,title={References}]
+\newpage
+
+% Appendices
+\input{sections/appendices/include.tex}
+
+\end{document}

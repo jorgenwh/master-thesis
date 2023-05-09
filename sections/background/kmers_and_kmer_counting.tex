@@ -3,8 +3,8 @@ A \textit{k}mer is a substring of \textit{k} consecutive nucleotides that occur 
 Because of how single nucleotides can be represented in a computer's memory using only 2 bits \ref{background:nucleotide_binary_encoding}, and how when we sequence an individual's genome we can not know which strand our sequenced read comes from, a popular choice of value for \textit{k} is 31 - the default value used in KAGE \ref{background:kage}.
 The value 31 is used in KAGE for two reasons: 1) having an odd value for \textit{k} ensures that no \textit{k}mer is equal to its reverse complement, and 2) having \textit{k} equals 31 means we need $31*2=62$ bits to represent the \textit{k}mer in a computer's memory, thus the \textit{k}mer will fit inside a single 64-bit integer.
 
-A common problem in various bioinformatics applications is to count the number of times each valid \textit{k}mer in a set of nucleotide sequences occur in those sequences.
-This problem is commonly refered to as \textit{k}mer counting.
+A common problem in various bioinformatics applications is to count the number of times each valid \textit{k}mer in a set of nucleotide sequences occurs in those sequences.
+This problem is commonly referred to as \textit{k}mer counting.
 
 \definecolor{kmer1}{RGB}{40,40,215}
 \definecolor{kmer2}{RGB}{0,150,0}
@@ -188,6 +188,6 @@ Given how many valid \textit{k}mers one can observe in a set of (hundreds of?) m
 \end{center}
 \end{figure}
 
-Henceforth in this thesis, we will in the favour of brevity refer to the former \textit{k}mer counting process where we count every valid \textit{k}mer's occurence as \textit{full} \textit{k}mer counting, and to the latter process where we only count the occurences of \textit{k}mers in a predefined set as \textit{partial} \textit{k}mer counting.
+Henceforth in this thesis, we will in the favour of brevity refer to the former \textit{k}mer counting process where we count every valid \textit{k}mer's occurrence as \textit{full} \textit{k}mer counting, and to the latter process where we only count the occurrences of \textit{k}mers in a predefined set as \textit{partial} \textit{k}mer counting.
 
 While several \textit{k}mer counting software tools have been developed in previous work, with at least one, Gerbil \cite{gerbil}, having support for GPU acceleration \cite{kmer_counting_tools}, these tools are designed to solve the \textit{full} \textit{k}mer counting problem.

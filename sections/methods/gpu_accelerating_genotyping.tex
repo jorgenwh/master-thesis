@@ -1,13 +1,14 @@
 \subsection{GPU Accelerating Genotyping} \label{methods:gpu_accelerating_genotyping}
 The genotyping step of KAGE (introduced in section \ref{background:kage}) computes genotype-probabilities, supported by the \textit{k}mer counts found during the \textit{k}mer counting portion.
 A central part of this step is computing the \textit{logarithm of the probability mass function} (LOGPMF) a large number of times on large arrays.
+Because the LOGPMF computations took up most of the runtime in KAGE's genotyping step and its implementation relied on computing many parallel mathematical expressions for large arrays, we chose to focus on LOGPMF to GPU accelerate the genotyping step.
 
 The logarithm of the probability mass function at $k$ is computed using:
 \begin{equation} \label{methods:gpu_accelerating_genotyping:equations:logpmf}
   logpmf = k * \log(\mu) - \mu - \ln(|\Gamma(k + 1)|)
 \end{equation}
 where $\Gamma$ is the gamma function.
-In KAGE, this formula is computed for every element at index in two equal-sized arrays $k$ and $mu$.
+In KAGE, this formula is computed for every element at every index in two equal-sized arrays $k$ and $\mu$.
 The original implementation utilizes NumPy's efficient array-operations to compute LOGPMF efficiently using data-parallelism on the CPU.
 
 \begin{figure}[H]
@@ -281,7 +282,7 @@ __global__ void logpmf_kernel(
 \end{figure}
 
 \subsubsection{Assessment}
-To benchmark the custom CUDA kernel we used the same benchmark as for the CuPy solution described in section \ref{methods:gpu_accelerating_genotyping:cupy_logpmf_assessment}.
+To benchmark the CUDA kernel implementation we used the same benchmark as for the CuPy solution described in section \ref{methods:gpu_accelerating_genotyping:cupy_logpmf_assessment}.
 Our benchmarking yielded the following results:
 \begin{table}[H]
 \begin{center}
@@ -297,8 +298,8 @@ Our benchmarking yielded the following results:
 \caption{
   Time spent computing the logarithm of the probability mass function for 40 million elements.
   \textbf{NumPy}, \textbf{CuPy (with copy)} and \textbf{CuPy (without copy)} are the benchmark results from table \ref{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark}.
-  \textbf{CUDA (with copy)} uses the custom CUDA kernel implementation, but $k$ and $r$ are both copied from RAM to GPU memory before the kernel is launched, and the result array is copied from GPU memory back to RAM.
-  \textbf{CUDA (without copy)} uses the custom CUDA kernel implementation, but $k$ and $r$ are both already residing in GPU memory and the result array is not copied from GPU memory to RAM.
+  \textbf{CUDA (with copy)} uses the CUDA kernel implementation, but $k$ and $r$ are both copied from RAM to GPU memory before the kernel is launched, and the result array is copied from GPU memory back to RAM.
+  \textbf{CUDA (without copy)} uses the CUDA kernel implementation, but $k$ and $r$ are both already residing in GPU memory and the result array is not copied from GPU memory to RAM.
   Runtimes are the mean of 100 runs.
 }
 \label{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark_2}
@@ -320,7 +321,7 @@ Our benchmarking yielded the following results:
        },
     }
     \node at(3.375,7.5)(){\small{\textbf{CuPy as NumPy drop-in}}};
-    \node at(3.45,7)(){\small{\textbf{versus custom CUDA implementation}}};
+    \node at(3.45,7)(){\small{\textbf{versus CUDA implementation}}};
  
 \begin{axis} [
   ylabel={runtime (milliseconds)},
@@ -382,11 +383,11 @@ def extended_logpmf(observed_counts, counts):
 \label{methods:gpu_accelerating_genotyping:figures:extended_logpmf_context}
 \end{figure}
 
-We used two previously described methods to implement the outer function from figure \ref{methods:gpu_accelerating_genotyping:figures:extended_logpmf_context} with GPU acceleration: we used CuPy as a drop-in replacement for NumPy, and we implemented a custom CUDA kernel in C++ where we again were able to optimize away unnecessary array allocations and de-allocations, as well as RAM writes and reads.
+We used two previously described methods to implement the outer function from figure \ref{methods:gpu_accelerating_genotyping:figures:extended_logpmf_context} with GPU acceleration: we used CuPy as a drop-in replacement for NumPy, and we implemented a CUDA kernel in C++ where we again were able to optimize away unnecessary array allocations and de-allocations, as well as RAM writes and reads.
 The implementations can be found (along with the GPU accelerated LOGPMF function) online at \url{}https://github.com/jorgenwh/custats.
 
 \subsubsection{Assessment}
-To assess the extended LOGPMF implementation, we benchmarked the NumPy-based version found in KAGE, the CuPy drop-in replacement for NumPy version, and the custom CUDA kernel implementation.
+To assess the extended LOGPMF implementation, we benchmarked the NumPy-based version found in KAGE, the CuPy drop-in replacement for NumPy version, and the CUDA kernel implementation.
 For both GPU accelerated methods, namely the CuPy and CUDA methods, we additionally benchmarked their performances when inputs are copied from RAM to GPU memory beforehand and results are copied from GPU memory to RAM.
 
 To benchmark, we initialized the input arrays \textit{observed\_counts} and \textit{counts} (the model counts) to be randomly generated numbers.
@@ -474,4 +475,4 @@ Our benchmarking yielded the following results:
 \end{figure}
 
 As can be seen in table \ref{methods:gpu_accelerating_genotyping:tables:extended_logpmf_benchmark}, both the methods we tried for GPU accelerating the extended LOGPMF function found in KAGE yielded significant runtime speedup.
-Clearly, our custom CUDA implementation performs significantly better than simply using CuPy as a drop-in replacement for NumPy.
+Clearly, our CUDA implementation performs significantly better than simply using CuPy as a drop-in replacement for NumPy.

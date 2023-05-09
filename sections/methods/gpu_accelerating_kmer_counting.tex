@@ -1,7 +1,7 @@
 \subsection{GPU Accelerating \textit{k}mer Counting} \label{methods:gpu_accelerating_kmer_counting}
 While several \textit{k}mer counting solutions have been developed in previous work, with at least one having support for GPU acceleration \cite{kmer_counting_tools}, most such tools are designed to solve the \textit{full} \textit{k}mer counting problem, which we described in section \ref{background:kmers_and_kmer_counting}.
 Additionally in section \ref{background:kmers_and_kmer_counting}, we described how KAGE's \textit{k}mer counting step is a less compute and memory demanding problem which we defined as \textit{partial} \textit{k}mer counting.
-As a reminder: we defined \textit{partial} \textit{k}mer counting as the process of only counting the observed occurences of a predefined set of \textit{k}mers in a sample.
+As a reminder: we defined \textit{partial} \textit{k}mer counting as the process of only counting the observed occurrences of a predefined set of \textit{k}mers in a sample.
 Repurposing \textit{k}mer counting tools that are designed to solve the \textit{full} \textit{k}mer counting problem is futile if the goal is speedup.
 Thus, we opted to implement our own GPU accelerated \textit{k}mer counting tool where its design is considered in the context of the \textit{partial} \textit{k}mer counting problem.
 
@@ -13,12 +13,12 @@ The hash table's interface needed to support three main operations: 1) \textbf{i
 
 Common for all three operations mentioned above is that they need to adhere to an addressing and probing scheme.
 Since our hash table resides on the GPU, certain common paradigms such as open hashing - where each address in the table contains a pointer to a linked-list or tree-type data structure for placing values - are immediately disqualified.
-This is because GPUs, which architectures are designed for massive data parallelism, performs poorly when needing to de-reference pointers and make many strided memory accesses.
-Thus, we went with a simple open addressing with linear probing scheme. 
+This is because GPUs, which architectures are designed for massive data parallelism, perform poorly when needing to dereference pointers and make many strided memory accesses.
+Thus, we went with a simple scheme using open addressing and linear probing. 
 
-Two arrays of equal size makes up the data structure where one array stores the table's keys (\textit{k}mers) and the other array stores its values (counts).
+Two arrays of equal size make up the data structure where one array stores the table's keys (\textit{k}mers) and the other array stores its values (counts).
 The keys array is an array of 64-bit unsigned integers.
-The choice of using 64 bits for the keys, as opposed to \textit{i}.\textit{e}. 32, was to accomidate for larger \textit{k}mer values since 32 bits would only allow for \textit{k} up to $(32/2)-1=15$.
+The choice of using 64 bits for the keys, as opposed to \textit{i}.\textit{e}. 32, was to accommodate for larger \textit{k}mer values since 32 bits would only allow for \textit{k} up to $(32/2)-1=15$.
 Using 64-bit keys increases our maximum \textit{k} size to 31, which is the default value for KAGE.
 This choice also reveals a limitation of our hash table, which is that it can not support \textit{k}mers where $k>31$ in its current form.
 The reason why 64 bits does not allow for \textit{k} up to 32, considering a 2-bit encoded 64-mer can be stored in a single 64-bit integer, is that the max 64-bit integer value is used as an indicator that a slot is empty in the hash table.
@@ -203,7 +203,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
 \end{tikzpicture}
 }
 \caption{
-  As an array of \textit{N} 64-bit integer encoded kmers are counted by the hash table, \textit{N} CUDA threads will launch and each will compute the first probe position $p_0$ for its assigned kmer \textit{k}. Then, if the key at slot $p_0$ does not contain \textit{k}, it will continue probing by linearly moving up to the next consecutive slot until either an empty key or \textit{k} observed. If an empty key is observed, the thread terminates without changing any of the hash table's values. If \textit{k} is observed, the current slot's value is incremented.
+  As an array of \textit{N} 64-bit integer encoded kmers are counted by the hash table, \textit{N} CUDA threads will launch and each will compute the first probe position $p_0$ for its assigned kmer \textit{k}. Then, if the key at slot $p_0$ does not contain \textit{k}, it will continue probing by linearly moving up to the next consecutive slot until either an empty key or \textit{k} is observed. If an empty key is observed, the thread terminates without changing any of the hash table's values. If \textit{k} is observed, the current slot's value is incremented.
 }
 \label{methods:gpu_accelerating_kmer_counting:figures:count_example}
 \end{center}
@@ -320,9 +320,9 @@ The benchmark yielded the following results:
 \end{tikzpicture}
 %\end{center}
 \caption{
-  Elapsed time counting the occurences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
+  Elapsed time counting the occurrences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
 }
 \label{methods:gpu_accelerating_kmer_counting:figures:benchmark}
 \end{figure}
 
-As can be seen in table \ref{methods:gpu_accelerating_kmer_counting:tables:benchmark}, the CUDA hash table implemented in C++ with Python bindings provided significantly better counting efficiancy compared to the CuPy-based npstructures counter, with nearly 80X speedup compared to the original NumPy-based counter and more than 8X speedup compared to the CuPy-based counter.
+As can be seen in table \ref{methods:gpu_accelerating_kmer_counting:tables:benchmark}, the CUDA hash table implemented in C++ with Python bindings provided significantly better counting efficiency compared to the CuPy-based npstructures counter, with nearly 80X speedup compared to the original NumPy-based counter and more than 8X speedup compared to the CuPy-based counter.

@@ -1,0 +1,7 @@
+\subsection{Implementing Our Own \textit{k}mer Counting Tool} \label{discussion:implementing_our_own_kmer_counting_tool}
+In section \ref{results:benchmarking:runtimes} we showed that Gerbil's \cite{gerbil} runtime was greater than that of GKAGE despite Gerbil only performing \textit{k}mer counting and GKAGE performing the full genotyping pipeline.
+The reason for why we decided to implement our own tool for \textit{k}mer counting on the GPU and why it seemingly performs so much better than Gerbil is because the problems solved by Gerbil and GKAGE's \textit{k}mer counting tool are inherently different.
+Recall from section \ref{background:kmers_and_kmer_counting}, we defined \textit{full k}mer counting as the problem of counting the occurrence of every valid \textit{k}mer in a set of reads, and \textit{partial k}mer counting as the problem of only counting the occurrences of \textit{k}mers present in a predefined set of \textit{k}mers in a set of reads.
+Gerbil, unlike the \textit{k}mer counting tool we implemented for GKAGE, solves the \textit{full k}mer counting problem - a significantly more processing and memory demanding task compared to \textit{partial k}mer counting.
+While Gerbil could have been used in GKAGE for the \textit{k}mer counting portion, we would not only be counting the occurrences of superfluous \textit{k}mers, we would additionally be required to parse Gerbil's output for the wanted \textit{k}mer counts.
+It was for this reason that we decided on implementing a new \textit{k}mer counting tool targeted for our particular purpose.

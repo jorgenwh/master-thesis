@@ -20,31 +20,31 @@ The resulting pipeline remained the same, but with two notable differences.
 \begin{figure}[H]
 \begin{center}
 \begin{tikzpicture}
-  \node at(4.25,3.75)[]{\smaller{CPU}};
-  \node at(4.25,2.75)[]{\smaller{GPU}};
+  \node at(4.25,3.75)[]{\fontfamily{phv}\selectfont\smaller{CPU}};
+  \node at(4.25,2.75)[]{\fontfamily{phv}\selectfont\smaller{GPU}};
   \node at(3.3,3.75)[draw,minimum width=.75cm,minimum height=.75cm,fill=cpucolor]{};
   \node at(3.3,2.75)[draw,minimum width=.75cm,minimum height=.75cm,fill=gpucolor]{};
-  \node at(0,1.5)[]{\smaller{\textbf{NumPy pipeline}}};
+  \node at(0,1.5)[]{\fontfamily{phv}\selectfont\smaller{\textbf{NumPy pipeline}}};
   % read fasta
   \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
-  \node at(0,.25)[]{\smaller{read}};
-  \node at(0,-.25)[]{\smaller{FASTA}};
-  \draw [thick,-stealth](1.25,0) -- (2,0);
+  \node at(0,.25)[]{\fontfamily{phv}\selectfont\smaller{read}};
+  \node at(0,-.25)[]{\fontfamily{phv}\selectfont\smaller{FASTA}};
+  \draw [double distance=.75pt,->](1.25,0) -- (2,0);
   % cpu2gpu copy
   \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-  \node at(3.3,.25)[]{\smaller{2-bit}};
-  \node at(3.3,-.25)[]{\smaller{encoding}};
-  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  \node at(3.3,.25)[]{\fontfamily{phv}\selectfont\smaller{2-bit}};
+  \node at(3.3,-.25)[]{\fontfamily{phv}\selectfont\smaller{encoding}};
+  \draw [double distance=.75pt,->](4.65,0) -- (5.4,0);
   % 2-bit encoding
   \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-  \node at(6.65,.25)[]{\smaller{\textit{k}mer}};
-  \node at(6.65,-.25)[]{\smaller{hashing}};
-  \draw [thick,-stealth](8,0) -- (8.85,0);
+  \node at(6.65,.25)[]{\fontfamily{phv}\selectfont\smaller{\textit{k}mer}};
+  \node at(6.65,-.25)[]{\fontfamily{phv}\selectfont\smaller{hashing}};
+  \draw [double distance=.75pt,->](8,0) -- (8.85,0);
   % arrows
-  \draw [thick](6.65,-.95) -- (6.65,-1.75);
-  \draw [thick](6.65,-1.75) -- (0,-1.75);
-  \draw [thick,-stealth](0,-1.75) -- (0,-.95);
-  \node at(3.3,-2.25)[]{\smaller{repeat}};
+  \draw [double distance=.75pt](6.65,-.95) -- (6.65,-1.75);
+  \draw [double distance=.75pt](6.65,-1.75) -- (0,-1.75);
+  \draw [double distance=.75pt,->](0,-1.75) -- (0,-.95);
+  \node at(3.3,-2.25)[]{\fontfamily{phv}\selectfont\smaller{repeat}};
 \end{tikzpicture}
 \end{center}
 \end{figure}
@@ -52,32 +52,32 @@ The resulting pipeline remained the same, but with two notable differences.
 \begin{figure}[H]
 \begin{center}
 \begin{tikzpicture}
-  \node at(1.75,1.5)[]{\smaller{\textbf{CuPy pipeline}}};
+  \node at(1.75,1.5)[]{\fontfamily{phv}\selectfont\smaller{\textbf{CuPy pipeline}}};
   % read fasta
   \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
-  \node at(0,.25)[]{\smaller{read}};
-  \node at(0,-.25)[]{\smaller{FASTA}};
-  \draw [thick,-stealth](1.25,0) -- (2,0);
+  \node at(0,.25)[]{\fontfamily{phv}\selectfont\smaller{read}};
+  \node at(0,-.25)[]{\fontfamily{phv}\selectfont\smaller{FASTA}};
+  \draw [double distance=.75pt,->](1.25,0) -- (2,0);
   % cpu2gpu copy
   \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-  \node at(3.3,.25)[]{\smaller{cpu2gpu}};
-  \node at(3.3,-.25)[]{\smaller{copy}};
-  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  \node at(3.3,.25)[]{\fontfamily{phv}\selectfont\smaller{cpu2gpu}};
+  \node at(3.3,-.25)[]{\fontfamily{phv}\selectfont\smaller{copy}};
+  \draw [double distance=.75pt,->](4.65,0) -- (5.4,0);
   % 2-bit encoding
   \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
-  \node at(6.65,.25)[]{\smaller{2-bit}};
-  \node at(6.65,-.25)[]{\smaller{encoding}};
-  \draw [thick,-stealth](8,0) -- (8.85,0);
+  \node at(6.65,.25)[]{\fontfamily{phv}\selectfont\smaller{2-bit}};
+  \node at(6.65,-.25)[]{\fontfamily{phv}\selectfont\smaller{encoding}};
+  \draw [double distance=.75pt,->](8,0) -- (8.85,0);
   % kmer hashing
   \node at(10.15,0)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
-  \node at(10.15,.25)[]{\smaller{\textit{k}mer}};
-  \node at(10.15,-.25)[]{\smaller{hashing}};
-  \draw [thick,-stealth](11.50,0) -- (12.35,0);
+  \node at(10.15,.25)[]{\fontfamily{phv}\selectfont\smaller{\textit{k}mer}};
+  \node at(10.15,-.25)[]{\fontfamily{phv}\selectfont\smaller{hashing}};
+  \draw [double distance=.75pt,->](11.50,0) -- (12.35,0);
   % arrows
-  \draw [thick](10.15,-.95) -- (10.15,-1.75);
-  \draw [thick](10.15,-1.75) -- (0,-1.75);
-  \draw [thick,-stealth](0,-1.75) -- (0,-.95);
-  \node at(5.05,-2.25)[]{\smaller{repeat}};
+  \draw [double distance=.75pt](10.15,-.95) -- (10.15,-1.75);
+  \draw [double distance=.75pt](10.15,-1.75) -- (0,-1.75);
+  \draw [double distance=.75pt,->](0,-1.75) -- (0,-.95);
+  \node at(5.05,-2.25)[]{\fontfamily{phv}\selectfont\smaller{repeat}};
 \end{tikzpicture}
 \caption{
   By using CuPy as a drop-in replacement to add GPU acceleration to KAGE's \textit{k}mer hashing step, we effectively introduced a new step in the pipeline: copying the raw text data read from the FASTA file directly to the GPU to allow for all of BioNumPy's array operations that constitute 2-bit encoding and hashing the \textit{k}mers to be performed on the GPU.
@@ -126,7 +126,7 @@ The benchmarking yielded the following results:
      },
   }
   \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
-  \node at(3,7)(){\textbf{\textit{k}mer Hashing}};
+  \node at(3.5,7)(){\textbf{\textit{k}mer Hashing}};
  
 \begin{axis} [
   ylabel={runtime (seconds)},

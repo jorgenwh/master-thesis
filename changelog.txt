@@ -1,0 +1,9 @@
+10. mai
+- added a very small description of genotyping in the introduction (1
+sentence).
+- added Gerbil benchmark to results and a section in discussion about why it
+is infeasible to use Gerbil in GKAGE.
+- Re-wrote the CUDA memory hierarchy section.
+- Changed the description of structural variants in background.
+- Made some small changes to Thesis Goals.
+

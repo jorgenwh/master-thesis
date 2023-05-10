@@ -18,25 +18,25 @@ KAGE (and GKAGE) can be found at \url{https://github.com/kage-genotyper}.
 \begin{tikzpicture}
   % Hints 
   \node at(-1.5,2.5)[draw,minimum width=.75cm,minimum height=.5cm,rounded corners](){};
-  \node at(.5,2.5)[](){data or result};
+  \node at(.5,2.5)[](){\fontfamily{phv}\selectfont data or result};
   \node at(-1.5,1.75)[draw,minimum width=.75cm,minimum height=.5cm](){};
-  \node at(.6635,1.75)[](){step or process};
-  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{FASTA}};
+  \node at(.6635,1.75)[](){\fontfamily{phv}\selectfont step or process};
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\fontfamily{phv}\selectfont\smaller{FASTA}};
   \node at(-2.5,-1)[](){\smaller{without -g}};
   \node at(2.5,-1)[](){\smaller{with -g}};
-  \draw [thick,-stealth](.25,-.85) -- (2.5,-1.9);
-  \draw [thick,-stealth](-.25,-.85) -- (-2.5,-1.9);
-  \node at(-2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} hashing (CPU)}};
-  \node at(2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} hashing (GPU)}};
-  \draw [thick,-stealth](2.5,-3.6) -- (2.5,-4.25);
-  \draw [thick,-stealth](-2.5,-3.6) -- (-2.5,-4.25);
-  \node at(-2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} counting (CPU)}};
-  \node at(2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{kmer} counting (GPU)}};
-  \draw [thick,-stealth](2.5,-5.95) -- (.25,-7);
-  \draw [thick,-stealth](-2.5,-5.95) -- (-.25,-7);
-  \node at(0,-7.875)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{genotyping (CPU)}};
-  \draw [thick,-stealth](0,-8.75) -- (0,-9.4);
-  \node at(0,-10.225)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{genotypes}};
+  \draw [double distance=.75pt,->](.25,-.85) -- (2.5,-1.9);
+  \draw [double distance=.75pt,->](-.25,-.85) -- (-2.5,-1.9);
+  \node at(-2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller{\textit{k}mer hashing (CPU)}};
+  \node at(2.5,-2.75)[draw,minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller{\textit{k}mer hashing (GPU)}};
+  \draw [double distance=.75pt,->](2.5,-3.6) -- (2.5,-4.25);
+  \draw [double distance=.75pt,->](-2.5,-3.6) -- (-2.5,-4.25);
+  \node at(-2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller{\textit{k}mer counting (CPU)}};
+  \node at(2.5,-5.075)[draw,minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller{\textit{k}mer counting (GPU)}};
+  \draw [double distance=.75pt,->](2.5,-5.95) -- (.25,-7);
+  \draw [double distance=.75pt,->](-2.5,-5.95) -- (-.25,-7);
+  \node at(0,-7.875)[draw,minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller{genotyping (CPU)}};
+  \draw [double distance=.75pt,->](0,-8.75) -- (0,-9.4);
+  \node at(0,-10.225)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\fontfamily{phv}\selectfont\smaller{genotypes}};
 \end{tikzpicture}
 }
 \caption{

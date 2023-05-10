@@ -138,13 +138,18 @@ The number of CUDA threads launched to run a kernel is specified in the \lstinli
 
 \paragraph{Memory Hierarchy}
 Each CUDA thread has access to several distinct memory areas.
-Every distinct CUDA thread has its own private local memory.
-Here, the thread will store small amounts of data such as registers.
-If a thread needs more memory than it has available through its private local memory, it will turn to the GPU's global RAM memory as a fallback, which significantly hurts performance.
-Each thread block has a shared memory region accessible by threads in said block.
-This memory region shares its lifetime with its associated block.
+Every distinct CUDA thread has its own set of registers and local memory.
+Typically, all the relevant data for a single CUDA thread is contained within its set of registers.
+If, however, a thread runs out of registers or otherwise uses too much memory, it will turn to its local memory.
+A CUDA thread's local memory is a piece of the GPU's global memory allocated for the thread.
+While accessing memory from registers is swift, memory requests to and from global memory is slow in comparison.
+It is therefore desirable to avoid spilling memory from registers into local memory for individual threads.
+
+Each thread block has a shared memory region accessible by all threads contained in the block.
+This memory region shares its lifetime with its associated block and is also very fast in comparison to global memory.
+
 The GPU's global RAM is the largest memory region in the GPU, typically ranging from a few to several gigabytes.
-The global memory is several orders of magnitude slower compared to the more local memory regions, so effective memory access patterns are paramount for performance.
+The global memory is several orders of magnitude slower compared to the previously mentioned memory regions, so effective memory access patterns to minimize the number of memory requests and maximizing bandwidth usage are paramount for performance.
 
 \paragraph{Programming and Considerations}
 The GPU is described by Nvidia to be a \textit{Single Instruction Multiple Threads} (SIMT) machine \cite{cuda}.

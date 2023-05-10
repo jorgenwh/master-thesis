@@ -1,10 +1,12 @@
 \subsection{Benchmarking} \label{results:benchmarking}
 In order to benchmark the effectiveness of the added GPU acceleration in GKAGE, we decided to benchmark GKAGE against KAGE to account for the speedup.
-The choice of only benchmarking GKAGE against KAGE was made based on the fact that KAGE recently showed that it was an order of magnitude faster than any other known genotyper \cite{kage}.
+The choice of only benchmarking GKAGE against one other genotyping tool, KAGE, was made based on the fact that KAGE recently showed that it was an order of magnitude faster than any other known genotyper \cite{kage}.
+For completeness we also ran Gerbil \cite{gerbil}, a \textit{k}mer counting tool with GPU support, to assess how GKAGE's total runtime compares to a GPU accelerated \textit{k}mer counting tool that solves the \textit{full} \textit{k}mer counting problem.
 
-\subsubsection{Snakemake pipeline}
+\subsubsection{Snakemake Pipeline}
 In order to adequately benchmark GKAGE, we set up a Snakemake pipeline that runs both KAGE and GKAGE on a full human genome and records the runtimes while also checking that the results of both processes are identical.
-This Snakemake pipeline can be found at \url{https://github.com/kage-genotyper/GKAGE-benchmarking}.
+Additionally, the pipeline runs and records the runtime of Gerbil for \textit{k}mer counting.
+This Snakemake pipeline is available online at \url{https://github.com/kage-genotyper/GKAGE-benchmarking}.
 
 \subsubsection{Systems}
 We benchmarked GKAGE against KAGE on two systems.
@@ -33,29 +35,119 @@ A caveat with the high-end server system (system 1) was that it was a publicly a
 Thus, students were frequently running jobs on the server, occupying both CPU and GPU processing cores and memory.
 To the best of our capacity, we conducted our benchmarking during periods of lower activity.
 
-\subsubsection{Runtimes}
+\subsubsection{Runtimes} \label{results:benchmarking:runtimes}
 We benchmarked GKAGE against KAGE on both system 1 and system 2.
-When running on system 1, we allowed KAGE 16 cores and GKAGE one Nvidia Tesla V100 GPU.
-When running on system 2, we allowed KAGE 6 cores and GKAGE the Nvidia GTX 1660 SUPER GPU.
-We ran the Snakemake pipeline, benchmarking GKAGE against KAGE, on both systems and achieved the following results:
+When running on system 1, we allowed KAGE 16 threads and GKAGE one Nvidia Tesla V100 GPU.
+When running on system 2, we allowed KAGE 6 threads and GKAGE the Nvidia GTX 1660 SUPER GPU.
+Gerbil, which only performed \textit{full} \textit{k}mer counting, was allowed 16 and 6 threads on system 1 and 2 respectively.
+We ran the Snakemake pipeline on both systems, benchmarking GKAGE against KAGE and running Gerbil.
+From this we found the following results:
 
 \begin{table}[H]
 \begin{center}
 \begin{tabular}{lllll}
-\multicolumn{1}{l|}{System} & \multicolumn{1}{l}{KAGE}     & \multicolumn{1}{l}{GKAGE} &  \\ \cline{1-3}
-\multicolumn{1}{l|}{1}      & \multicolumn{1}{l}{1993 sec} & \multicolumn{1}{l}{178 sec} &  \\
-\multicolumn{1}{l|}{2}      & \multicolumn{1}{l}{510 sec}  & \multicolumn{1}{l}{94 sec} &  \\
+  \multicolumn{1}{l|}{System} & \multicolumn{1}{l}{KAGE}     & \multicolumn{1}{l}{GKAGE} & \multicolumn{1}{l}{Gerbil (only \textit{k}mer counting)} & \\ \cline{1-4}
+\multicolumn{1}{l|}{1}      & \multicolumn{1}{l}{510 sec}  & \multicolumn{1}{l}{94 sec} & \multicolumn{1}{l}{156 sec} & \\
+\multicolumn{1}{l|}{2}      & \multicolumn{1}{l}{1993 sec} & \multicolumn{1}{l}{178 sec} & \multicolumn{1}{l}{464 sec} & \\
 \end{tabular}
 \end{center}
 \caption{
-  The resulting runtimes (in seconds) found by benchmarking GKAGE against KAGE on a high-end server and a consumer desktop computer
+  The runtimes (in seconds) found by benchmarking GKAGE against KAGE and running Gerbil for \textit{k}mer counting on a high-end server and a consumer desktop computer
 }
 \label{results:benchmarking:tables:runtimes}
 \end{table}
 
+%\begin{figure}[H]
+%\hspace*{3em}
+%\begin{subfigure}{.4\textwidth}
+%  \begin{tikzpicture}[font=\small]
+%    \pgfplotsset{
+%      compat=newest,
+%      xlabel near ticks,
+%      ylabel near ticks
+%    }
+%    \pgfplotsset{compat=1.11,
+%        /pgfplots/ybar legend/.style={
+%        /pgfplots/legend image code/.code={%
+%           \draw[##1,/tikz/.cd,yshift=-0.25em]
+%            (0cm,0cm) rectangle (3pt,0.8em);},
+%       },
+%    }
+%    \node at(2.75,5.5)(title){\textbf{System 1}};
+ 
+%\begin{axis} [
+%  ylabel={runtime (seconds)},
+%  width=7cm,
+%  ybar,
+%  bar width=15pt,
+%  ymin=0,
+%  xtick=data,
+%  axis x line=bottom,
+%  axis y line=left,
+%  enlarge x limits=1.25,
+%  symbolic x coords={KAGE, GKAGE},
+%  xticklabel style={anchor=base, yshift=-\baselineskip},
+%  /pgf/number format/.cd,fixed,precision=3,
+%  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+%  legend style={anchor=west},
+%]
+
+%\addplot[fill=blue] coordinates {
+%    (KAGE, 510)
+%    (GKAGE, 94)
+%};
+%\end{axis}
+
+%\end{tikzpicture}
+%\end{subfigure}
+%\begin{subfigure}{.4\textwidth}
+%  \begin{tikzpicture}[font=\small]
+%    \pgfplotsset{
+%      compat=newest,
+%      xlabel near ticks,
+%      ylabel near ticks
+%    }
+%    \pgfplotsset{compat=1.11,
+%        /pgfplots/ybar legend/.style={
+%        /pgfplots/legend image code/.code={%
+%           \draw[##1,/tikz/.cd,yshift=-0.25em]
+%            (0cm,0cm) rectangle (3pt,0.8em);},
+%       },
+%    }
+%    \node at(2.75,5.5)(title){\textbf{System 2}};
+ 
+%\begin{axis} [
+%  width=7cm,
+%  ybar,
+%  bar width=15pt,
+%  ymin=0,
+%  xtick=data,
+%  axis x line=bottom,
+%  axis y line=left,
+%  enlarge x limits=1.25,
+%  symbolic x coords={KAGE, GKAGE},
+%  xticklabel style={anchor=base, yshift=-\baselineskip},
+%  /pgf/number format/.cd,fixed,precision=3,
+%  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+%  legend style={anchor=west},
+%]
+%
+%\addplot[fill=blue] coordinates {
+%    (KAGE, 1993)
+%    (GKAGE, 178)
+%};
+%\end{axis}
+%\end{tikzpicture}
+%\end{subfigure}
+%\caption{
+%  Benchmarking GKAGE against KAGE on both system 1 (high-end server) and system 2 (consumer desktop) revealed that GKAGE could genotype a full human genome more than 5 times faster than KAGE on a high-end server, and more than 11 times faster on a consumer desktop computer.
+%}
+%\label{results:benchmarking:figures:runtimes}
+%\end{figure}
+
+%
 \begin{figure}[H]
-\hspace*{3em}
-\begin{subfigure}{.4\textwidth}
+\hspace*{2.75cm}
   \begin{tikzpicture}[font=\small]
     \pgfplotsset{
       compat=newest,
@@ -69,77 +161,46 @@ We ran the Snakemake pipeline, benchmarking GKAGE against KAGE, on both systems 
             (0cm,0cm) rectangle (3pt,0.8em);},
        },
     }
-    \node at(2.75,5.5)(title){\textbf{System 1}};
+    \node at(3.375,7.5)(){\small{\textbf{KAGE and GKAGE runtimes}}};
+    %\node at(3.45,7)(){\small{\textbf{the extended LOGPMF function from KAGE}}};
  
 \begin{axis} [
   ylabel={runtime (seconds)},
-  width=7cm,
   ybar,
-  bar width=15pt,
+  bar width=20pt,
   ymin=0,
   xtick=data,
   axis x line=bottom,
   axis y line=left,
-  enlarge x limits=1.25,
-  symbolic x coords={KAGE, GKAGE},
+  enlarge x limits=.5,
+  symbolic x coords={System 1, System 2},
   xticklabel style={anchor=base, yshift=-\baselineskip},
   /pgf/number format/.cd,fixed,precision=3,
-  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
+  nodes near coords={\smaller\pgfmathprintnumber{\pgfplotspointmeta}},
+  every y tick scale label/.style={at={(yticklabel cs:1.1)},anchor=north},
   legend style={anchor=west},
 ]
 
 \addplot[fill=blue] coordinates {
-    (KAGE, 510)
-    (GKAGE, 94)
+    (System 1, 510)
+    (System 2, 1993)
 };
-\end{axis}
 
-\end{tikzpicture}
-\end{subfigure}
-\begin{subfigure}{.4\textwidth}
-  \begin{tikzpicture}[font=\small]
-    \pgfplotsset{
-      compat=newest,
-      xlabel near ticks,
-      ylabel near ticks
-    }
-    \pgfplotsset{compat=1.11,
-        /pgfplots/ybar legend/.style={
-        /pgfplots/legend image code/.code={%
-           \draw[##1,/tikz/.cd,yshift=-0.25em]
-            (0cm,0cm) rectangle (3pt,0.8em);},
-       },
-    }
-    \node at(2.75,5.5)(title){\textbf{System 2}};
- 
-\begin{axis} [
-  width=7cm,
-  ybar,
-  bar width=15pt,
-  ymin=0,
-  xtick=data,
-  axis x line=bottom,
-  axis y line=left,
-  enlarge x limits=1.25,
-  symbolic x coords={KAGE, GKAGE},
-  xticklabel style={anchor=base, yshift=-\baselineskip},
-  /pgf/number format/.cd,fixed,precision=3,
-  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
-  legend style={anchor=west},
-]
-
-\addplot[fill=blue] coordinates {
-    (KAGE, 1993)
-    (GKAGE, 178)
+\addplot[fill=red] coordinates {
+    (System 1, 94)
+    (System 2, 178)
 };
+
+\legend{KAGE, GKAGE}
 \end{axis}
 \end{tikzpicture}
-\end{subfigure}
 \caption{
   Benchmarking GKAGE against KAGE on both system 1 (high-end server) and system 2 (consumer desktop) revealed that GKAGE could genotype a full human genome more than 5 times faster than KAGE on a high-end server, and more than 11 times faster on a consumer desktop computer.
 }
 \label{results:benchmarking:figures:runtimes}
 \end{figure}
+%
 
 The results from the benchmarking revealed that GKAGE achieves significant speedup over KAGE when genotyping a full human genome.
 As seen in table \ref{results:benchmarking:tables:runtimes} and figure \ref{results:benchmarking:figures:runtimes}, we can see that GKAGE achieves more than 5X speedup over KAGE on a high-end compute server and more than 11X speedup on a consumer grade desktop computer.
+Additionally, GKAGE's runtime when performing the full genotyping pipeline is smaller than that of Gerbil, despite Gerbil only performing \textit{k}mer counting, also on the GPU.

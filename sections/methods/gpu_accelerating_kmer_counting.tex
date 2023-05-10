@@ -83,25 +83,25 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
   % k0
   \draw [](k0) -- (-1.5,-1);
   \draw [](-1.5,-1) -- (-5,-1);
-  \draw [-stealth](-5,-1) -- (-5,-2);
+  \draw [->](-5,-1) -- (-5,-2);
   \node at(-3.25,-.75)(){\textit{\smaller{thread$_0$}}};
   \node at(-5,-2.5)(){...};
   % k1
-  \draw [-stealth](k1) -- (-.75,-2);
+  \draw [->](k1) -- (-.75,-2);
   \node at(-.75,-2.5)(){...};
   % kn
   \draw [](kn) -- (1.5,-1);
   \draw [](1.5,-1) -- (5,-1);
-  \draw [-stealth](5,-1) -- (5,-2);
+  \draw [->](5,-1) -- (5,-2);
   \node at(3.25,-.75)(){\textit{\smaller{thread$_N$}}};
   \node at(5,-2.5)(){...};
   % k2
-  \draw [-stealth](k2) -- (0,-3.25);
+  \draw [->](k2) -- (0,-3.25);
   \node at(.75,-2.25)(){\textit{\smaller{thread$_2$}}};
   % hash
   \node at(0,-3.75)(){\smaller{\textit{$p_0=h=hash(k_2) \bmod c$}}};
   % probe 1
-  \draw [-stealth](0,-4.25) -- (0,-5);
+  \draw [->](0,-4.25) -- (0,-5);
   \node at(2.475,-4.65)[fill=misscolor,rounded corners](){\textit{\smaller{miss}}};
   % titles
   \node at(-2.6,-5.5)(){\textit{\smaller{indices}}};
@@ -132,11 +132,11 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
   \node at(1.95,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
   \node at(2.6,-7.1)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
   % probe 2
-  \draw [-stealth](0,-7.75) -- (0,-8.5);
+  \draw [->](0,-7.75) -- (0,-8.5);
   \node at(0,-9)(){\smaller{\textit{$p_1=(p_0 + 1) \bmod c$}}};
   \draw [](0,-9.5) -- (0,-9.85);
   \draw [](0,-9.85) -- (.65,-9.85);
-  \draw [-stealth](.65,-9.85) -- (.65,-10.2);
+  \draw [->](.65,-9.85) -- (.65,-10.2);
   \node at(-2.6,-10.7)(){\textit{\smaller{indices}}};
   \node at(-2.4,-11.5)(){\textit{\smaller{keys}}};
   \node at(-2.55,-12.3)(){\textit{\smaller{values}}};
@@ -166,7 +166,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
   \node at(1.95,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
   \node at(2.6,-12.3)[draw,minimum width=0.65cm,minimum height=0.65cm](){\smaller{$0$}};
   % count
-  \draw [-stealth](.65,-12.95) -- (.65,-13.7);
+  \draw [->](.65,-12.95) -- (.65,-13.7);
   \node at(-2.6,-14.2)(){\textit{\smaller{indices}}};
   \node at(-2.4,-15)(){\textit{\smaller{keys}}};
   \node at(-2.55,-15.8)(){\textit{\smaller{values}}};
@@ -292,7 +292,7 @@ The benchmark yielded the following results:
      },
   }
   \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
-  \node at(3,7)(){\textbf{\textit{k}mer Counting}};
+  \node at(3.5,7)(){\textbf{\textit{k}mer Counting}};
  
 \begin{axis} [
   ylabel={runtime (seconds)},

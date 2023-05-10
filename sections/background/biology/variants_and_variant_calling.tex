@@ -9,12 +9,12 @@ The traditional way of performing variant calling is to use an alignment-based m
 3) examine the alignments and note where and how the reference and the individual's sequences differ to determine the variants present in the individual's genome \cite{variant_calling}.
 A popular alignment-based tool for performing variant calling is GATK \cite{gatk}.
 
-Variants found in genomes of individuals of the same species can take many different forms.
+Variants found in genomes of individuals of the same species can manifest in several different forms.
 Three common types of variants are:
 \begin{compactitem}
-  \item \textit{Single nucleotide polymorphism} (SNP) is a variant in which only a single nucleotide differs in the sequenced genome when compared to a reference genome at a location of interest.
-  \item \textit{Indel} refers to one of two types of variants: \textit{insertion} - a sequence of nucleotides, not present in the reference genome, has been introduced in the sequenced genome, and \textit{deletion} - a sequence of nucleotides, present in the reference genome, are missing in the sequenced genome.
-  \item \textit{Structural variant} is a large-scale genetic variation in which several alterations in the structure have occurred, typically affecting more than 1000 bases.
+  \item A \textit{Single nucleotide polymorphism} (SNP) is a variant in which only a single nucleotide differs in the sequenced genome when compared to a reference genome at a location of interest.
+  \item An \textit{Indel} refers to one of two types of variants: \textit{insertion} - a sequence of nucleotides, not present in the reference genome, has been introduced in the sequenced genome, and \textit{deletion} - a sequence of nucleotides, present in the reference genome, are missing in the sequenced genome.
+  \item A \textit{Structural variant} is a larger-scale genetic variation referring to insertion, deletion or inversion events affecting more than 50 bases \cite{structural_variant_size}.
 \end{compactitem}
 
 \definecolor{variantcolor}{RGB}{230,230,230}
@@ -34,7 +34,8 @@ Three common types of variants are:
   \node at(1.4,0)(){C};
   \node at(1.95,0)(){...};
   % arrow
-  \draw [-stealth](.7,1) -- (.7,.5);
+  %\draw [-stealth](.7,1) -- (.7,.5);
+  \draw [thick,->](.7,1) -- (.7,.5);
   % upper
   \node at(-.55,1.5)(){...};
   \node at(0,1.5)(){C};
@@ -56,7 +57,8 @@ Three common types of variants are:
   \node at(1.4+4,0)(){C};
   \node at(1.95+4,0)(){...};
   % arrow
-  \draw [-stealth](.7+4,1) -- (.7+4,.5);
+  %\draw [-stealth](.7+4,1) -- (.7+4,.5);
+  \draw [thick,->](.7+4,1) -- (.7+4,.5);
   % upper
   \node at(-.55+4,1.5)(){...};
   \node at(.7+4-.35,1.5)(){C};
@@ -74,7 +76,8 @@ Three common types of variants are:
   \node at(.525+.35+8,0)(){C};
   \node at(1.95+8,0)(){...};
   % arrow
-  \draw [-stealth](.7+8,1) -- (.7+8,.5);
+  %\draw [-stealth](.7+8,1) -- (.7+8,.5);
+  \draw [thick,->](.7+8,1) -- (.7+8,.5);
   % upper
   \node at(-.55+8,1.5)(){...};
   \node at(0+8,1.5)(){C};
@@ -187,7 +190,8 @@ While more columns are usually present, this encapsulated the necessary knowledg
   \node at(2.5,1.5)(){A};
   \node at(2.85,1.5)(){T};
   % down arrow
-  \draw [-stealth](-.7,-1.75) -- (-.7,-2.5);
+  %\draw [-stealth](-.7,-1.75) -- (-.7,-2.5);
+  \draw [double distance=1pt,->](-.7,-1.75) -- (-.7,-2.5);
 \end{tikzpicture}
 }
 

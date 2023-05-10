@@ -5,7 +5,7 @@ Because the LOGPMF computations took up most of the runtime in KAGE's genotyping
 
 The logarithm of the probability mass function at $k$ is computed using:
 \begin{equation} \label{methods:gpu_accelerating_genotyping:equations:logpmf}
-  logpmf = k * \log(\mu) - \mu - \ln(|\Gamma(k + 1)|)
+  o = k * \log(\mu) - \mu - \ln(|\Gamma(k + 1)|)
 \end{equation}
 where $\Gamma$ is the gamma function.
 In KAGE, this formula is computed for every element at every index in two equal-sized arrays $k$ and $\mu$.
@@ -19,8 +19,8 @@ The original implementation utilizes NumPy's efficient array-operations to compu
   \node at(2.9,3.8){\textbf{input}};
   \node at(2.9,3.2){\textbf{arrays}};
   % k
-  \draw [-stealth](-1.1,2.5) -- (2.3,2.5);
-  \draw [-stealth](-1.4,2.1) -- (-1.4,-.25);
+  \draw [->](-1.1,2.5) -- (2.3,2.5);
+  \draw [->](-1.4,2.1) -- (-1.4,-.25);
   % row 0
   \node at(-.75,2){$k_{0,0}$};
   \node at(.1,2){$k_{1,0}$};
@@ -56,8 +56,8 @@ The original implementation utilizes NumPy's efficient array-operations to compu
   \node at(1.2,.05){.};
   \node at(1.9,.05){$k_{n,m}$};
   % mu
-  \draw [-stealth](-1.1+4.5,2.5) -- (2.3+4.5,2.5);
-  \draw [-stealth](-1.4+4.5,2.1) -- (-1.4+4.5,-.25);
+  \draw [->](-1.1+4.5,2.5) -- (2.3+4.5,2.5);
+  \draw [->](-1.4+4.5,2.1) -- (-1.4+4.5,-.25);
   % row 0
   \node at(-.75+4.5,2){$\mu_{0,0}$};
   \node at(.1+4.5,2){$\mu_{1,0}$};
@@ -93,16 +93,16 @@ The original implementation utilizes NumPy's efficient array-operations to compu
   \node at(1.2+4.5,.05){.};
   \node at(1.9+4.5,.05){$\mu_{n,m}$};
   % arrow 1
-  \draw [-stealth,thick](7.2,1.25) -- (7.7,1.25);
+  \draw [->,thick](7.2,1.25) -- (7.7,1.25);
   % equation
   \node at(11.85,1.25){$o_{i,j}=k_{i,j}*\log(\mu_{i,j})-\mu_{i,j}-\ln(|\Gamma(k_{i,j}+1)|)$};
   % arrow 2
-  \draw [-stealth,thick](16,1.25) -- (16.5,1.25);
+  \draw [->,thick](16,1.25) -- (16.5,1.25);
   % output
   \node at(18.6,3.8){\textbf{output}};
   \node at(18.6,3.2){\textbf{array}};
-  \draw [-stealth](-1.1+18.15,2.5) -- (2.3+18.15,2.5);
-  \draw [-stealth](-1.4+18.15,2.1) -- (-1.4+18.15,-.25);
+  \draw [->](-1.1+18.15,2.5) -- (2.3+18.15,2.5);
+  \draw [->](-1.4+18.15,2.1) -- (-1.4+18.15,-.25);
   % row 0
   \node at(-.75+18.15,2){$o_{0,0}$};
   \node at(.1+18.15,2){$o_{1,0}$};
@@ -205,7 +205,7 @@ Our benchmarking yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\hspace*{7.25em}
+\hspace*{6.8em}
 \scalebox{.85}{
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
@@ -220,8 +220,8 @@ Our benchmarking yielded the following results:
           (0cm,0cm) rectangle (3pt,0.8em);},
      },
   }
-  \node at(4.5,8.5)(){\textbf{Effect of GPU Accelerating}};
-  \node at(3.5,8)(){\textbf{LOGPMF}};
+  \node at(4.4,8.5)(){\textbf{Effect of GPU Accelerating}};
+  \node at(4.3,8)(){\textbf{LOGPMF}};
  
 \begin{axis} [
   ylabel={runtime (milliseconds)},
@@ -476,3 +476,4 @@ Our benchmarking yielded the following results:
 
 As can be seen in table \ref{methods:gpu_accelerating_genotyping:tables:extended_logpmf_benchmark}, both the methods we tried for GPU accelerating the extended LOGPMF function found in KAGE yielded significant runtime speedup.
 Clearly, our CUDA implementation performs significantly better than simply using CuPy as a drop-in replacement for NumPy.
+

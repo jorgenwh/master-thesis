@@ -30,8 +30,8 @@ For example, an integer array, if interpreted 2 consecutive bits at a time, can 
 \scalebox{1}{
 \begin{tikzpicture}
   \node at(0,1)(title){};
-  \node at(-2,0)(){\textit{DNA}};
-  \node at(-3.465,-1.2)(){\textit{2 bit represented DNA}};
+  \node at(-2.26,0)(){\small\textit{DNA}};
+  \node at(-3.35,-1.2)(){\small\textit{2 bit encoded DNA}};
   \node at(0,0)(){A};
   \node at(.6,0)(){C};
   \node at(1.2,0)(){C};
@@ -56,10 +56,10 @@ For example, an integer array, if interpreted 2 consecutive bits at a time, can 
   \node at(3,-1.2)(){11};
   \node at(3.6,-1.2)(){00};
   \node at(4.2,-1.2)(){10};
-  \draw [](-.35,-1.25) -- (-.35,-1.525);
-  \draw [](2.1,-1.25) -- (2.1,-1.525);
-  \draw [](-.35,-1.525) -- (2.1,-1.525);
-  \node at(.75,-1.95)(){\small{1 byte}};
+  \draw [](-.35,-1.35) -- (-.35,-1.625);
+  \draw [](2.1,-1.35) -- (2.1,-1.625);
+  \draw [](-.35,-1.625) -- (2.1,-1.625);
+  \node at(.75,-2.05)(){\small{1 byte}};
 \end{tikzpicture}
 }
 \caption{A lookup table showing how nucleotides can be encoded using 2 bits and a DNA nucleotide sequence represented both as plain characters as well as its 2 bit encoded representation. Recall that computers use 8 bits to represent a single nucleotide with a character, whilst the 2 bit encoding only needs 2 bits to represent a nucleotide.}

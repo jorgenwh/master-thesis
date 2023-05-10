@@ -12,47 +12,47 @@ Its genotyping pipeline is split into two distinct programs: \textit{kmer\_mappe
 \scalebox{1}{
 \begin{tikzpicture}
   % kmer hashing 
-  \node at(-.25,1.25)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{\textit{k}mer hashing}};
-  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{FASTA}};
-  \draw [thick,-stealth](1.25,0) -- (2,0);
-  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{\textit{k}mer hashing}};
-  \draw [thick,-stealth](4.65,0) -- (5.4,0);
+  \node at(-.25,1.25)[minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller\textbf{\textit{k}mer hashing}};
+  \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\fontfamily{phv}\selectfont\smaller{FASTA}};
+  \draw [double distance=.75pt,->](1.25,0) -- (2,0);
+  \node at(3.3,0)[draw,minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller{\textit{k}mer hashing}};
+  \draw [double distance=.75pt,->](4.65,0) -- (5.4,0);
   \node at(6.65,0)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners]{};
-  \node at(6.65,.25)[]{\smaller{encoded}};
-  \node at(6.65,-.25)[]{\smaller{\textit{k}mers}};
+  \node at(6.65,.25)[]{\fontfamily{phv}\selectfont\smaller{encoded}};
+  \node at(6.65,-.25)[]{\fontfamily{phv}\selectfont\smaller{\textit{k}mers}};
   \node at(3.3,0)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
   % arrows
-  \draw [thick](6.65,-.8) -- (6.65,-1.5);
-  \draw [thick](6.65,-1.5) -- (1.25,-1.5);
-  \draw [thick,-stealth](1.25,-1.5) -- (1.25,-2.2);
+  \draw [double distance=.75pt](6.65,-.8) -- (6.65,-1.5);
+  \draw [double distance=.75pt](6.65,-1.5) -- (1.25,-1.5);
+  \draw [double distance=.75pt,->](1.25,-1.5) -- (1.25,-2.2);
   % kmer counting 
-  \node at(-.185,-1.75)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{\textit{k}mer counting}};
+  \node at(-.185,-1.75)[minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller\textbf{\textit{k}mer counting}};
   \node at(3.3,-3)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
   \node at(1.25,-3)[draw,minimum width=2cm,minimum height=1.2cm]{};
-  \node at(1.25,-2.75)[]{\smaller{\textit{k}mer}};
-  \node at(1.25,-3.25)[]{\smaller{counting}};
-  \draw [thick,-stealth](2.5,-3) -- (4.15,-3);
+  \node at(1.25,-2.75)[]{\fontfamily{phv}\selectfont\smaller{\textit{k}mer}};
+  \node at(1.25,-3.25)[]{\fontfamily{phv}\selectfont\smaller{counting}};
+  \draw [double distance=.75pt,->](2.5,-3) -- (4.15,-3);
   \node at(5.375,-3)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners]{};
-  \node at(5.375,-2.75)[]{\smaller{\textit{k}mer}};
-  \node at(5.375,-3.25)[]{\smaller{counts}};
+  \node at(5.375,-2.75)[]{\fontfamily{phv}\selectfont\smaller{\textit{k}mer}};
+  \node at(5.375,-3.25)[]{\fontfamily{phv}\selectfont\smaller{counts}};
   % arrows
-  \draw [thick](5.375,-3.8) -- (5.375,-4.5);
-  \draw [thick](5.375,-4.5) -- (1.25,-4.5);
-  \draw [thick,-stealth](1.25,-4.5) -- (1.25,-5.2);
+  \draw [double distance=.75pt](5.375,-3.8) -- (5.375,-4.5);
+  \draw [double distance=.75pt](5.375,-4.5) -- (1.25,-4.5);
+  \draw [double distance=.75pt,->](1.25,-4.5) -- (1.25,-5.2);
   % genotyping
-  \node at(-.465,-4.75)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{genotyping}};
+  \node at(-.465,-4.75)[minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller\textbf{genotyping}};
   \node at(3.3,-6)[draw,minimum width=9.5cm,minimum height=2cm,rounded corners](){};
-  \node at(1.25,-6)[draw,minimum width=2cm,minimum height=1.2cm](){\smaller{genotyping}};
-  \draw [thick,-stealth](2.5,-6) -- (4.15,-6);
-  \node at(5.375,-6)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\smaller{genotypes}};
+  \node at(1.25,-6)[draw,minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller{genotyping}};
+  \draw [double distance=.75pt,->](2.5,-6) -- (4.15,-6);
+  \node at(5.375,-6)[draw,minimum width=2cm,minimum height=1.2cm,rounded corners](){\fontfamily{phv}\selectfont\smaller{genotypes}};
   % KAGE
-  \node at(3.3,2.05)[minimum width=2cm,minimum height=1.2cm](){\smaller\textbf{KAGE}};
+  \node at(3.3,2.05)[minimum width=2cm,minimum height=1.2cm](){\fontfamily{phv}\selectfont\smaller\textbf{KAGE}};
   \node at(3.3,-3)[draw,minimum width=10.5cm,minimum height=9.5cm,rounded corners](){};
   % Hints 
   \node at(2,4)[draw,minimum width=.75cm,minimum height=.5cm,rounded corners](){};
-  \node at(4,4)[](){data or result};
+  \node at(4,4)[](){\fontfamily{phv}\selectfont data or result};
   \node at(2,3.25)[draw,minimum width=.75cm,minimum height=.5cm](){};
-  \node at(4.135,3.25)[](){step or process};
+  \node at(4.135,3.25)[](){\fontfamily{phv}\selectfont step or process};
 \end{tikzpicture}
 }
 \caption{

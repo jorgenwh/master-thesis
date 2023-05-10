@@ -12,7 +12,7 @@ In addition, we know that most, if not all of the functionality used from NumPy,
 Thus, by replacing the NumPy functionality used in npstructures' data structures with CuPy's equivalent GPU accelerated functionality, we can GPU accelerate the necessary data structures in npstructures without having to leave Python.
 With this strategy we GPU accelerated npstructures' counter object using CuPy.
 
-\subsubsection{Using CuPy as a Drop-In Replacement for NumPy} \label{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy}
+\subsubsection{Using CuPy as a Drop-in Replacement for NumPy} \label{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy}
 Rather than creating a standalone package version of npstructures with GPU acceleration, we instead opted to add the possibility for GPU acceleration to the already existing package.
 This added a new self imposed requirement; we did not want CuPy to be a npstructures dependency since many users may wish to use it simply for the NumPy implementations.
 Additionally, we still needed a way to redirect NumPy function calls to their equivalent CuPy functions.
@@ -168,44 +168,44 @@ Our intention was to GPU accelerate several consecutive components in a way wher
 \begin{figure}[H]
 \begin{center}
 \begin{tikzpicture}
-  \node at(5.35,-1)[]{\smaller{CPU}};
-  \node at(5.35,-2)[]{\smaller{GPU}};
+  \node at(5.35,-1)[]{\fontfamily{phv}\selectfont\smaller{CPU}};
+  \node at(5.35,-2)[]{\fontfamily{phv}\selectfont\smaller{GPU}};
   \node at(4.4,-1)[draw,minimum width=.75cm,minimum height=.75cm,fill=cpucolor]{};
   \node at(4.4,-2)[draw,minimum width=.75cm,minimum height=.75cm,fill=gpucolor]{};
   % -- GPU --
-  \node at(.5,-3.5)[]{\smaller{\textbf{Benchmark pipeline}}};
+  \node at(.5,-3.5)[]{\fontfamily{phv}\selectfont\smaller{\textbf{Benchmark pipeline}}};
   % read fasta
   \node at(0,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor](start){};
-  \node at(0,-4.75)[]{\smaller{read}};
-  \node at(0,-5.25)[]{\smaller{FASTA}};
-  \draw [thick,-stealth](1.25,-5) -- (2,-5);
+  \node at(0,-4.75)[]{\fontfamily{phv}\selectfont\smaller{read}};
+  \node at(0,-5.25)[]{\fontfamily{phv}\selectfont\smaller{FASTA}};
+  \draw [double distance=.75pt,->](1.25,-5) -- (2,-5);
   % 2-bit encoding
   \node at(3.3,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-  \node at(3.3,-4.75)[]{\smaller{prepare}};
-  \node at(3.3,-5.25)[]{\smaller{\textit{k}mer chunk}};
-  \draw [thick,-stealth](4.65,-5) -- (5.4,-5);
+  \node at(3.3,-4.75)[]{\fontfamily{phv}\selectfont\smaller{prepare}};
+  \node at(3.3,-5.25)[]{\fontfamily{phv}\selectfont\smaller{\textit{k}mer chunk}};
+  \draw [double distance=.75pt,->](4.65,-5) -- (5.4,-5);
   % kmer hashing
   \node at(6.65,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=cpucolor]{};
-  \node at(6.65,-4.75)[]{\smaller{cpu2gpu}};
-  \node at(6.65,-5.25)[]{\smaller{copy}};
-  \draw [thick,-stealth](8,-5) -- (8.75,-5);
+  \node at(6.65,-4.75)[]{\fontfamily{phv}\selectfont\smaller{cpu2gpu}};
+  \node at(6.65,-5.25)[]{\fontfamily{phv}\selectfont\smaller{copy}};
+  \draw [double distance=.75pt,->](8,-5) -- (8.75,-5);
   % cpu2gpu copy
   \node at(10.05,-5)[draw,minimum width=2cm,minimum height=1.2cm,fill=gpucolor]{};
-  \node at(10.05,-4.75)[]{\smaller{\textit{k}mer}};
-  \node at(10.05,-5.25)[]{\smaller{counting}};
-  %\draw [thick,-stealth](11.4,-5) -- (12.05,-5);
+  \node at(10.05,-4.75)[]{\fontfamily{phv}\selectfont\smaller{\textit{k}mer}};
+  \node at(10.05,-5.25)[]{\fontfamily{phv}\selectfont\smaller{counting}};
   % arrows
-  \draw [thick](10.05,-5.95) -- (10.05,-6.75);
-  \draw [thick](10.05,-6.75) -- (0,-6.75);
-  \draw [thick,-stealth](0,-6.75) -- (0,-5.95);
-  \node at(4.975,-7.25)[]{\smaller{repeat}};
+  \draw [double distance=.75pt](10.05,-5.95) -- (10.05,-6.75);
+  \draw [double distance=.75pt](10.05,-6.75) -- (0,-6.75);
+  \draw [double distance=.75pt,->](0,-6.75) -- (0,-5.95);
+  \node at(4.975,-7.25)[]{\fontfamily{phv}\selectfont\smaller{repeat}};
   % timestamps
-  \draw [thick,-stealth](8.375,-4) -- (8.375,-4.5);
-  \draw [thick,-stealth](11.725,-4) -- (11.725,-4.5);
-  \node at(8.375,-3.5)[]{\smaller{$t_0$}};
-  \node at(11.725,-3.5)[]{\smaller{$t_1$}};
+  \draw [thick,->](8.375,-4) -- (8.375,-4.5);
+  \draw [thick,->](11.725,-4) -- (11.725,-4.5);
+  \node at(8.375,-3.5)[]{\fontfamily{phv}\selectfont\smaller{$t_0$}};
+  \node at(11.725,-3.5)[]{\fontfamily{phv}\selectfont\smaller{$t_1$}};
 
-  \node at(4.975,-9)[]{\textit{counting time}$\hspace{.65em}=\displaystyle\sum_{i=1}^{\textit{num chunks}}t_1^i - t_0^i$};
+  \node at(3.45,-9)[]{\fontfamily{phv}\selectfont\smaller\textit{counting time}};
+  \node at(6.13,-9)[]{$\hspace{.65em}=\displaystyle\sum_{i=1}^{\textit{num chunks}}t_1^i - t_0^i$};
 
 \end{tikzpicture}
 \end{center}
@@ -252,7 +252,7 @@ This benchmark yielded the following results:
      },
   }
   \node at(3.5,7.5)(){\textbf{Effect of GPU Accelerating}};
-  \node at(3,7)(){\textbf{\textit{k}mer Counting}};
+  \node at(3.5,7)(){\textbf{\textit{k}mer Counting}};
  
 \begin{axis} [
   ylabel={runtime (seconds)},

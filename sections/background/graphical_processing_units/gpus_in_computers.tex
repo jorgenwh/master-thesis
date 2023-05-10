@@ -19,7 +19,8 @@ Memory buffers with input data have to be copied to the dGPU's RAM before proces
   % draw host computer
   \node at(0,1)[rectangle,draw,minimum width=3.7cm,minimum height=3cm](dualhost){};
   % draw arrow from die to RAM
-  \draw [-stealth](cpu) -- (ram);
+  %\draw [-stealth](cpu) -- (ram);
+  \draw [->](cpu) -- (ram);
 \end{tikzpicture}
 \hspace{4.5em}
 \begin{tikzpicture}
@@ -36,11 +37,14 @@ Memory buffers with input data have to be copied to the dGPU's RAM before proces
   % draw device
   \node at(5,1)[rectangle,draw,minimum width=3cm,minimum height=3cm](device){};
   % draw arrow from CPU die to host RAM
-  \draw [-stealth](cpu) -- (cpuram);
+  %\draw [-stealth](cpu) -- (cpuram);
+  \draw [->](cpu) -- (cpuram);
   % draw arrow from dGPU die to device RAM
-  \draw [-stealth](gpu) -- (gpuram);
+  %\draw [-stealth](gpu) -- (gpuram);
+  \draw [->](gpu) -- (gpuram);
   % draw arrow to and from host and device
-  \draw [stealth-stealth](host) -- (device);
+  %\draw [stealth-stealth](host) -- (device);
+  \draw [<->](host) -- (device);
   % draw "PCIe" text
   \node at(2.3,1.3){\smaller PCIe};
   % draw "Host" text

@@ -1,4 +1,4 @@
-10. mai
+----- 10. and 11. may -----
 - added a very small description of genotyping in the introduction (1
 sentence).
 - added Gerbil benchmark to results and a section in discussion about why it
@@ -13,3 +13,8 @@ speedup. Additionally described in results how GPU genotyping did not result
 in speedup after the new sparse solution was implemented for the CPU, thus not
 being integrated into (G)KAGE.
 - Re-wrote abstract.
+- Some small changes to the background section about variants and variant
+calling.
+- Re-wrote most of the genotypes and genotyping section in background.
+- Re-wrote parts of results' benchmarking section.
+- moved thesis goals to the end of the introduction.

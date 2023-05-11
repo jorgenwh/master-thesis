@@ -31,9 +31,9 @@ We benchmarked GKAGE against KAGE on two systems.
 \end{table}
 
 Benchmarking on these two systems allowed us to benchmark GKAGE on both a very performant and a less performant system to examine the effects of GPU acceleration in both instances.
-A caveat with the high-end server system (system 1) was that it was a publicly available server for students at the University of Oslo.
-Thus, students were frequently running jobs on the server, occupying both CPU and GPU processing cores and memory.
-To the best of our capacity, we conducted our benchmarking during periods of lower activity.
+A caveat with the high-end server system (system 1) is that it is a high-end compute server available to both staff and students at the Biomedical Informatics research group at the University of Oslo.
+This meant that others were frequently running jobs on the server, occupying both CPU and GPU processing cores and memory.
+To the best of our ability, we conducted our benchmarkings during periods of lower activity.
 
 \subsubsection{Runtimes} \label{results:benchmarking:runtimes}
 We benchmarked GKAGE against KAGE on both system 1 and system 2.
@@ -204,3 +204,5 @@ From this we found the following results:
 The results from the benchmarking revealed that GKAGE achieves significant speedup over KAGE when genotyping a full human genome.
 As seen in table \ref{results:benchmarking:tables:runtimes} and figure \ref{results:benchmarking:figures:runtimes}, we can see that GKAGE achieves more than 5X speedup over KAGE on a high-end compute server and more than 11X speedup on a consumer grade desktop computer.
 Additionally, GKAGE's runtime when performing the full genotyping pipeline is smaller than that of Gerbil, despite Gerbil only performing \textit{k}mer counting, also on the GPU.
+
+Since KAGE recently showed that it was an order of magnitude faster than any other known genotyping tool \cite{kage}, GKAGE's significant speedup leads us to conclude that it is, to the best of our knowledge, now clearly the fastest method for genotyping an individual, allowing for the genotyping of a human genome in just 3 minutes on consumer hardware and 1.5 minutes on a high-end compute server.

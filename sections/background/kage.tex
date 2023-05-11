@@ -1,11 +1,15 @@
 \subsection{KAGE} \label{background:kage}
 KAGE \cite{kage} is an alignment-free genotyping tool for SNPs and short indels.
-As opposed to alignment-based genotyping tools, KAGE relies on an alignment-free method where genotype-probabilities are computed using a statistical model.
-These genotype-probabilities are supported by \textit{k}mer frequencies found in the input reads and previous knowledge of genetic variation and genotype information from thousands of individuals, produced by studies such as the 1000 Genomes Project \cite{1000_genomes_project}.
+%As opposed to alignment-based genotyping tools, KAGE relies on an alignment-free method where genotype-probabilities are computed using a statistical model.
+As opposed to alignment-based genotyping tools, KAGE uses an alignment-free method that does not align sequenced reads to a reference genome.
+Instead, KAGE counts the occurrences of a predefined set of \textit{k}mers in the input reads to then directly compute the likelihood of every possible genotype ($0/0$, $0/1$ or $1/1$) being present for each variant in an input set of known variants.
+These probabilities are based on the observed \textit{k}mer counts in the reads and the expected \textit{k}mer counts for an individual who carries the particular genotype.
+The expected \textit{k}mer counts for each genotype are estimated beforehand based on large catalogues of genotype data accumulated over many years of research from projects such as the 1000 Genomes Project \cite{1000_genomes_project}.
+Indices of estimated expected \textit{k}mer counts are created once and then re-used for many consecutive genotyping runs.
 KAGE recently showed (2022) that its accuracy was on par with the best existing alignment-free genotyping tools while being an order of magnitude faster \cite{kage}.
 
-KAGE is implemented in Python and relies heavily on the NumPy library for performance.
-Its genotyping pipeline is split into two distinct programs: \textit{kmer\_mapper}, solving the \textit{partial} \textit{k}mer counting problem of counting \textit{k}mer frequencies for a predefined set of \textit{k}mers in the input reads, and \textit{kage}, which finally computes the genotype-probabilities using a statistical model.
+KAGE is implemented in Python and relies extensively on the NumPy library for performance.
+Its genotyping pipeline is split into two distinct programs: \textit{kmer\_mapper}, solving the \textit{partial} \textit{k}mer counting problem of counting \textit{k}mer frequencies for a predefined set of \textit{k}mers in the input reads, and \textit{kage}, which finally computes the genotype-probabilities based on the \textit{k}mer counts provided by \textit{kmer\_mapper}.
 
 \begin{figure}[H]
 \begin{center}
@@ -56,12 +60,11 @@ Its genotyping pipeline is split into two distinct programs: \textit{kmer\_mappe
 \end{tikzpicture}
 }
 \caption{
-  A simplified illustration of how the KAGE genotyping pipeline works.
-  The two top most rows, going from an input FASTA file to \textit{k}mer counts, are implemented as an individual piece of software.
+  A simplified overview of the KAGE genotyping pipeline.
   Three important parts of the pipeline are shown as distinct processes in the illustration: 
   1) \textbf{\textit{k}mer hashing}, which refers to the process of 2-bit encoding input reads from the fasta file and extracting - \textit{hashing} - all valid \textit{k}mers from those reads, 
   2) \textbf{\textit{k}mer counting}, which refers to the process of \textit{partial k}mer counting - counting the observed frequencies of a predefined set of \textit{k}mers in the input reads, and 
-  3) \textbf{genotyping}, which refers to the process of computing the final genotype-probabilities.
+  3) \textbf{genotyping}, which refers to the process of computing the final genotype-probabilities supported by the observed \textit{k}mer counts.
 }
 \label{background:kage:figures:pipeline}
 \end{center}

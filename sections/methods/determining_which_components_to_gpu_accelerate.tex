@@ -1,6 +1,6 @@
 \subsection{Determining which Components to GPU Accelerate} \label{methods:determining_which_components_to_gpu_accelerate}
 
-When developing GKAGE, we started with KAGE as a baseline and analysed the pipeline to find the most pronounced bottlenecks in terms of runtime.
+When developing GKAGE, we started with KAGE as a baseline and analyzed the pipeline to find the most pronounced bottlenecks in terms of runtime.
 We then examined whether these bottlenecks could benefit from GPU acceleration by taking into consideration the type of computations that were performed, whether they would be suitable for the GPU's architecture and how much of the overall runtime the component constituted. 
 We would then intuit whether the component in question would be worthwhile trying to GPU accelerate given the project's time constraints and estimated difficulty.
 

@@ -11,27 +11,28 @@ Memory buffers with input data have to be copied to the dGPU's RAM before proces
 \begin{center}
 \begin{tikzpicture}
   % draw die
-  \node at(0,2)[rectangle,draw](cpu){CPU and iGPU};
+  \node at(0,2)[rectangle,draw](cpu){\fontfamily{phv}\selectfont\small CPU and iGPU};
   % draw RAM
-  \node at(0,0)[rectangle,draw](ram){RAM};
+  \node at(0,0)[rectangle,draw](ram){\fontfamily{phv}\selectfont\small RAM};
   % draw "Host" text
-  \node at(0,2.85){\small Host};
+  \node at(0,2.85){\fontfamily{phv}\selectfont\small Host};
   % draw host computer
   \node at(0,1)[rectangle,draw,minimum width=3.7cm,minimum height=3cm](dualhost){};
   % draw arrow from die to RAM
   %\draw [-stealth](cpu) -- (ram);
   \draw [->](cpu) -- (ram);
 \end{tikzpicture}
-\hspace{4.5em}
+%\hspace{4.5em}
+\hspace{7em}
 \begin{tikzpicture}
   % draw CPU die
-  \node at(0,2)[rectangle,draw](cpu){CPU};
+  \node at(0,2)[rectangle,draw](cpu){\fontfamily{phv}\selectfont\small CPU};
   % draw host RAM
-  \node at(0,0)[rectangle,draw](cpuram){RAM};
+  \node at(0,0)[rectangle,draw](cpuram){\fontfamily{phv}\selectfont\small RAM};
   % draw dGPU die
-  \node at(5,2)[rectangle,draw](gpu){dGPU};
+  \node at(5,2)[rectangle,draw](gpu){\fontfamily{phv}\selectfont\small dGPU};
   % draw host RAM
-  \node at(5,0)[rectangle,draw](gpuram){Device RAM};
+  \node at(5,0)[rectangle,draw](gpuram){\fontfamily{phv}\selectfont\small Device RAM};
   % draw host computer
   \node at(0,1)[rectangle,draw,minimum width=2cm,minimum height=3cm](host){};
   % draw device
@@ -46,11 +47,11 @@ Memory buffers with input data have to be copied to the dGPU's RAM before proces
   %\draw [stealth-stealth](host) -- (device);
   \draw [<->](host) -- (device);
   % draw "PCIe" text
-  \node at(2.3,1.3){\smaller PCIe};
+  \node at(2.3,1.3){\fontfamily{phv}\selectfont\smaller PCIe};
   % draw "Host" text
-  \node at(0,2.85){\small Host};
+  \node at(0,2.85){\fontfamily{phv}\selectfont\small Host};
   % draw "Device" text
-  \node at(5,2.85){\small Device};
+  \node at(5,2.85){\fontfamily{phv}\selectfont\small Device};
 \end{tikzpicture}
 \caption{\textbf{Left}: A computer setup with a CPU and an iGPU sharing the same die and the same physical RAM. \textbf{Right}: A computer setup where a dGPU is connected over PCIe and the dGPU has its own physical RAM, adding the overhead of copying data both to and from the host computer when utilizing the GPU.}
 \end{center}

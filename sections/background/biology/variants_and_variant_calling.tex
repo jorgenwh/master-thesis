@@ -1,13 +1,14 @@
 \subsubsection{Variants and Variant Calling} \label{background:biology:variants_and_variant_calling}
 When examining the genome of several individuals within the same species, one will find locations along the genome where the nucleotides differ for the different individuals.
 These distinct nucleotide manifestations are commonly referred to as \textit{variants}.
-The term \textit{variant calling} is used to refer to the process of determining which variants an individual has.
-In other words, given a reference genome sequence, where and how does the genome sequence of the individual of interest differ from the reference sequence.
+The term \textit{variant calling} refers to the process of determining which variants are present in an individual's genome.
+In practice, the term variant is often used to refer to a segment of an individual's genome that differs from a reference genome sequence.
+Thus, variant calling, in practice, is often referred to the process of determining where and how an individual's genetic sequence differs from a reference genome sequence.
 The traditional way of performing variant calling is to use an alignment-based method, which can abstractly be described as the following three steps:
 1) sequence the genome of interest to get DNA reads (described in section \ref{background:biology:high_throughput_dna_sequencing}), 
-2) align the reads to the reference genome by finding where along the reference genome sequence each read fits best, usually using a heuristic determining which location the read originates from, and 
+2) align the reads to the reference genome by finding where along the reference genome sequence each read fits best, typically by using a comparison heuristic to determining which location the read originates from, and 
 3) examine the alignments and note where and how the reference and the individual's sequences differ to determine the variants present in the individual's genome \cite{variant_calling}.
-A popular alignment-based tool for performing variant calling is GATK \cite{gatk}.
+A popular and well-established alignment-based variant calling tool is GATK \cite{gatk}.
 
 Variants found in genomes of individuals of the same species can manifest in several different forms.
 Three common types of variants are:
@@ -97,13 +98,13 @@ Three common types of variants are:
 \end{center}
 \end{figure}
 
-The software tool KAGE, which is described in section \ref{background:kage}, focuses on genotyping SNPs and indels.
+The software tool KAGE, which is described in section \ref{background:kage}, focuses particularly on genotyping SNPs and indels.
 
 A common way to represent genome sequence variations is to encode them according to the \textit{Variant Call Format} (VCF) file format.
 The VCF file format encodes a single variant per line, and each line contains a number of columns where each column encodes a particular piece of information about the associated variant, such as \cite{vcf}:
 \begin{compactenum}
   \item
-    CHROM: an identifier for the reference sequence used, \textit{i}.\textit{e}. the sequence against which the sequenced reads varies.
+    CHROM: an identifier for the reference sequence used, i.e. the sequence against which the sequenced reads varies.
   \item
     POS: the position along the reference sequence where it varies against the sequenced reads.
   \item

@@ -4,9 +4,9 @@ We will here identify some possible avenues where the current implementation can
 
 \subsubsection{Better GPU Hash Table}
 While the GPU hash table used in GKAGE for \textit{k}mer counting is plenty effective for our purpose of demonstrating the effectiveness of GPU acceleration in alignment-free genotyping, alternative hash tables exist that, with correct integration, should perform better.
-Since optimizing GPU hash tables is all but a discipline in and of itself and beyond the scope of this thesis, our GPU hash table implements a naive solution for collision handling and probing.
-An interesting future avenue would be to integrate a version of a bucketed static cuckoo hash table from BGHT \cite{bght} to evaluate how a state-of-the-art hash table would perform compared to our own.
-Although faster, we doubt the effect would be dramatic in our case.
+Since optimizing GPU hash tables can be considered a discipline in and of itself, and beyond the scope of this thesis, our GPU hash table implements a naive solution for collision handling and probing.
+An interesting avenue would be to integrate a version of a bucketed static cuckoo hash table from Awad et al., (2023) \cite{bght} to evaluate how a state-of-the-art GPU accelerated hash table would perform compared to our own implementation.
+%Although faster, we doubt the effect would be dramatic in our case.
 
 \subsubsection{Parallelization of \textit{k}mer Chunk Preparation}
 Recall that in the \textit{k}mer counting step in KAGE, the input FASTA file is read in chunks.

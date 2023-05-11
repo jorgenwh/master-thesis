@@ -6,4 +6,9 @@ is infeasible to use Gerbil in GKAGE.
 - Re-wrote the CUDA memory hierarchy section.
 - Changed the description of structural variants in background.
 - Made some small changes to Thesis Goals.
-
+- Made some small changes to the Methods introduction.
+- Added a section in methods describing how the GPU accelerated components
+were integrated into KAGE and how the components were benchmarked to assure
+speedup. Additionally described in results how GPU genotyping did not result
+in speedup after the new sparse solution was implemented for the CPU, thus not
+being integrated into (G)KAGE.

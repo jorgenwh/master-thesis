@@ -258,7 +258,7 @@ The produced module is finally wrapped around a Python class that takes care of 
 The final implementation of this CUDA accelerated hash table can be found and installed at \url{https://github.com/kage-genotyper/cucounter}.
 
 \subsubsection{Assessment} \label{methods:gpu_accelerating_kmer_counting:assessment}
-In order to assess this new CUDA hash table implementation, we ran the benchmark described in section \ref{methods:initial_testing:assessment}, but using the CUDA hash table with Python bindings for \textit{k}mer counting instead of npstructures' counter object.
+In order to assess this new CUDA hash table implementation, we ran the benchmark described in section \ref{methods:preliminary_testing:assessment}, but using the CUDA hash table with Python bindings for \textit{k}mer counting instead of npstructures' counter object.
 The benchmark yielded the following results:
 \begin{table}[H]
 \begin{center}
@@ -277,7 +277,7 @@ The benchmark yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\hspace*{7em}
+\centering
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,

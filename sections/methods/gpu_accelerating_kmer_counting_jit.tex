@@ -7,7 +7,7 @@ By exploiting this, we were able to re-implement our parallel hash table directl
 This implementation can be found online at \url{https://github.com/jorgenwh/cupycounter}.
 
 \subsubsection{Assessment}
-Again, we used the same benchmark used to assess the CuPy-based npstructures counter and the CUDA hash table (section \ref{methods:initial_testing:assessment}), to also assess the CuPy JIT (just-in-time) compiled implementation where we wrote custom kernels to get near-identical behaviour and performance as the CUDA hash table, all directly in Python.
+Again, we used the same benchmark used to assess the CuPy-based npstructures counter and the CUDA hash table (section \ref{methods:preliminary_testing:assessment}), to also assess the CuPy JIT (just-in-time) compiled implementation where we wrote custom kernels to get near-identical behaviour and performance as the CUDA hash table, all directly in Python.
 The benchmark yielded the following results:
 \begin{table}[H]
 \begin{center}
@@ -21,13 +21,13 @@ The benchmark yielded the following results:
 \end{center}
 \caption{
   The total time spent counting \textit{k}mers using the just-in-time compiled kernels written directly in Python using CuPy's custom kernel support.
-  NumPy, CuPy and CUDA refers to the previous benchmark results from section \ref{methods:initial_testing:assessment} and \ref{methods:gpu_accelerating_kmer_counting:assessment}.
+  NumPy, CuPy and CUDA refers to the previous benchmark results from section \ref{methods:preliminary_testing:assessment} and \ref{methods:gpu_accelerating_kmer_counting:assessment}.
 }
 \label{methods:gpu_accelerating_kmer_counting_jit:tables:benchmark}
 \end{table}
 
 \begin{figure}[H]
-\hspace*{7em}
+\centering
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,

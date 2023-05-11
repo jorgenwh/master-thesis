@@ -147,7 +147,7 @@ The original implementation utilizes NumPy's efficient array-operations to compu
 \end{figure}
 
 \subsubsection{Replacing NumPy with CuPy}
-Since the original KAGE solution for computing LOGPMF was implemented using NumPy, our first GPU acceleration was to use the method described in section \ref{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy} where we used CuPy as a drop-in replacement for NumPy to GPU accelerate existing NumPy-based code.
+Since the original KAGE solution for computing LOGPMF was implemented using NumPy, our first GPU acceleration was to use the method described in section \ref{methods:preliminary_testing:using_cupy_as_a_drop_in_replacement_for_numpy} where we used CuPy as a drop-in replacement for NumPy to GPU accelerate existing NumPy-based code.
 The NumPy solution from KAGE relies on SciPy \cite{scipy} to compute the natural logarithm of the gamma function: $\ln(|\Gamma(x)|)$.
 For our CuPy solution, we instead used CuPy's cupyx.scipy's implementation.
 
@@ -205,7 +205,8 @@ Our benchmarking yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\hspace*{6.8em}
+%\hspace*{6.8em}
+\centering
 \scalebox{.85}{
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
@@ -306,7 +307,8 @@ Our benchmarking yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\hspace*{2.75cm}
+%\hspace*{2.75cm}
+\centering
   \begin{tikzpicture}[font=\small]
     \pgfplotsset{
       compat=newest,
@@ -416,7 +418,8 @@ Our benchmarking yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\hspace*{2.75cm}
+%\hspace*{2.75cm}
+\centering
   \begin{tikzpicture}[font=\small]
     \pgfplotsset{
       compat=newest,
@@ -476,4 +479,5 @@ Our benchmarking yielded the following results:
 
 As can be seen in table \ref{methods:gpu_accelerating_genotyping:tables:extended_logpmf_benchmark}, both the methods we tried for GPU accelerating the extended LOGPMF function found in KAGE yielded significant runtime speedup.
 Clearly, our CUDA implementation performs significantly better than simply using CuPy as a drop-in replacement for NumPy.
+
 

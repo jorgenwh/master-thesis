@@ -1,4 +1,48 @@
 \subsection{Integration into KAGE} \label{methods:integration_into_kage}
-In section \ref{methods:gpu_accelerating_kmer_counting}, \ref{methods:gpu_accelerating_kmer_hashing} and \ref{methods:gpu_accelerating_genotyping} we developed GPU accelerated alternatives for three components in KAGE.
+Previously in section \ref{methods}, we described how we implemented GPU acceleration for three components of KAGE: the \textit{k}mer hashing, \textit{k}mer counting and genotyping components.
+Several different methods were explored, and some yielded better performance than others.
+Common for each GPU accelerated component is that they were GPU accelerated in isolation to keep their modular behaviour identical to the non-GPU accelerated versions.
+Thus, each accelerated component could be used as drop-in replacements for their non-GPU counterparts in KAGE.
 
-Explain how GPU accelerated components were integrated into KAGE and how speedup means yes good good and how GPU acc genotyping was faster but got outcompeted by a new solution.
+We chose the components accelerated using the methods yielding the best performance and used them as drop-in replacements in KAGE.
+For each component we chose the following implementations:
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+\multicolumn{1}{l|}{\textbf{Component}} & \multicolumn{1}{l}{\textbf{Method}} &  \\ \cline{1-2}
+\multicolumn{1}{l|}{\textit{k}mer hashing} & \multicolumn{1}{l}{CuPy as a NumPy drop-in replacement} &  \\
+\multicolumn{1}{l|}{\textit{k}mer counting} & \multicolumn{1}{l}{custom CUDA hash table} &  \\
+\multicolumn{1}{l|}{genotyping (LOGPMF)} & \multicolumn{1}{l}{custom CUDA kernel} &  \\
+\end{tabular}
+\end{center}
+\caption{
+  The implementations chosen to be integrated into KAGE for GPU acceleration.
+}
+\label{methods:integration_into_kage:tables:chosen_methods}
+\end{table}
+
+Recall from section \ref{background:kage}, that KAGE is composed of two separate programs: \textit{kmer\_mapper} - performing the \textit{k}mer hashing and counting, and \textit{kage} - performing the genotype-probability computations supported by the \textit{k}mer counts provided by \textit{kmer\_mapper}.
+We replaced KAGE's \textit{k}mer hashing and \textit{k}mer counting components in \textit{kmer\_mapper} with our GPU accelerated versions, and \textit{kage}'s LOGPMF function with our GPU accelerated version.
+Then, we benchmarked each piece of software to ensure runtime speedup, despite our assessments made for each component previously.
+
+After incorporating the GPU accelerated components into \textit{kmer\_mapper} and \textit{kage}, we benchmarked both programs which yielded the following runtimes:
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+  \multicolumn{1}{l|}{\textbf{Program}} & \multicolumn{1}{l}{\textbf{CPU}} & \multicolumn{1}{l}{\textbf{GPU}} & \\ \cline{1-3}
+  \multicolumn{1}{l|}{\textit{kmer\_mapper}} & \multicolumn{1}{l}{484 sec} & \multicolumn{1}{l}{61 sec} & \\
+  \multicolumn{1}{l|}{\textit{kage}} & \multicolumn{1}{l}{68 sec} & \multicolumn{1}{l}{54 sec} & \\
+\end{tabular}
+\end{center}
+\caption{
+  Benchmarking results from integrating the GPU accelerated components into \textit{kmer\_mapper} and \textit{kage}.
+  \textit{kmer\_mapper} and \textit{kage} together constitute the KAGE genotyping pipeline.
+  This benchmark was ran on a high-end compute server with an AMD EPYC 7742 64-Core CPU and two Nvidia Tesla V100 GPUs.
+  Both \textit{kmer\_mapper} and \textit{kage} were allowed 16 cores and the GPU versions were allowed one Nvidia Tesla V100 GPU.
+}
+\label{methods:integration_into_kage:tables:benchmark}
+\end{table}
+
+As can be seen in table \ref{methods:integration_into_kage:tables:benchmark}, the GPU accelerated \textit{k}mer hashing and counting components yielded significant runtime improvements to the \textit{k}mer counting portion (\textit{kmer\_mapper}) of KAGE.
+GPU acceleration yielded faster runtimes for the genotype-probabilities computation portion (\textit{kage}) of KAGE, although a less dramatic improvement.

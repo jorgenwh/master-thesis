@@ -18,11 +18,11 @@ If a thread resides in a three-dimensional thread block of dimensions $(Dx_b, Dy
 \begin{equation}
   i_b = (x_b + y_bDx_b + z_bDx_bDy_b)
 \end{equation}
-Then, we can include the grid as well to compute the system-wide unique index for the thread.
-If the thread's thread block resides in a grid of dimensions $(Dx_g, Dy_g, Dz_g)$ at index $(x_g, y_g, z_g)$, its unique system-wide index can be computed using:
+Then, we can compute the thread's unique grid-wide index.
+If the thread's thread block resides in a grid of dimensions $(Dx_g, Dy_g, Dz_g)$ at grid-index $(x_g, y_g, z_g)$, the thread's unique grid-wide index can be computed using:
 
 \begin{equation}
-  i = (x_g + y_gDx_g + z_gDx_gDy_g)(Dx_bDy_bDz_b) + i_b
+  i_g = (x_g + y_gDx_g + z_gDx_gDy_g)(Dx_bDy_bDz_b) + i_b
 \end{equation}
 
 This thread-hierarchy provides a natural way to perform computations over elements in i.g. vectors, matrices or tensors.

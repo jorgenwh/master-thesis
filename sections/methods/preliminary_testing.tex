@@ -1,4 +1,4 @@
-\subsection{Initial Testing} \label{methods:initial_testing}
+\subsection{Preliminary Testing} \label{methods:preliminary_testing}
 Before delving into the GPU accelerated methods used to produce the final GKAGE product, we will here describe an initial test we performed in order to assess two things. Firstly, whether we could effectively GPU accelerate existing NumPy solutions using CuPy, all while staying within the comfort of Python, and secondly, whether such an implementation would result in significant speedup over a CPU solution or at least provide insight into how plausible getting significant speedup by utilizing the GPU was.
 For this, we decided on focusing on the \textit{partial} \textit{k}mer counting problem, detailed in section \ref{background:kmers_and_kmer_counting}.
 
@@ -12,7 +12,7 @@ In addition, we know that most, if not all of the functionality used from NumPy,
 Thus, by replacing the NumPy functionality used in npstructures' data structures with CuPy's equivalent GPU accelerated functionality, we can GPU accelerate the necessary data structures in npstructures without having to leave Python.
 With this strategy we GPU accelerated npstructures' counter object using CuPy.
 
-\subsubsection{Using CuPy as a Drop-in Replacement for NumPy} \label{methods:initial_testing:using_cupy_as_a_drop_in_replacement_for_numpy}
+\subsubsection{Using CuPy as a Drop-in Replacement for NumPy} \label{methods:preliminary_testing:using_cupy_as_a_drop_in_replacement_for_numpy}
 Rather than creating a standalone package version of npstructures with GPU acceleration, we instead opted to add the possibility for GPU acceleration to the already existing package.
 This added a new self imposed requirement; we did not want CuPy to be a npstructures dependency since many users may wish to use it simply for the NumPy implementations.
 Additionally, we still needed a way to redirect NumPy function calls to their equivalent CuPy functions.
@@ -152,7 +152,7 @@ def set_backend(lib):
 
 By utilizing this method, we implemented partial GPU support for the npstructures library, including enabling GPU support for the counter object used to count occurrences of a predefined key-set in a sample.
 
-\subsubsection{Assessment} \label{methods:initial_testing:assessment}
+\subsubsection{Assessment} \label{methods:preliminary_testing:assessment}
 To assess the effect GPU accelerating npstructures by using CuPy as a drop-in replacement for NumPy, we benchmarked the GPU accelerated npstructures counter object by counting the occurrences of a predefined set of 50 million unique \textit{k}mers in a set of 20 million DNA reads, each of length 150.
 This benchmark used BioNumPy to read the FASTA file in chunks of 10 million bytes, 2-bit encode the reads and hash the valid \textit{k}mers before counting.
 The time spent preparing each chunk was not included in the final measured runtime, since we were only interested in seeing the effects of GPU accelerating npstructures' counter object.
@@ -214,7 +214,7 @@ Our intention was to GPU accelerate several consecutive components in a way wher
   Only the calls made to the counter object to count chunks of \textit{k}mers are timed, and these times are finally summed to get the total runtime spent on counting \textit{k}mers.
   The difference between the two runtimes are then used to infer the effects of GPU accelerating npstructures' counter object using our initial testing method.
 }
-\label{methods:initial_testing:figures:benchmark_overview}
+\label{methods:preliminary_testing:figures:benchmark_overview}
 \end{figure}
 
 We ran the \textit{k}mer counting pipeline and measured the time spent counting \textit{k}mers for both the NumPy-based CPU version of the counter and the CuPy-based GPU version.
@@ -233,11 +233,11 @@ This benchmark yielded the following results:
 \caption{
   The total time spent counting \textit{k}mers using npstructures' counter object, one with NumPy as the backend array-library, running on the CPU using one thread, and the other using CuPy as the backend, running on the GPU.
 }
-\label{methods:initial_testing:tables:benchmark}
+\label{methods:preliminary_testing:tables:benchmark}
 \end{table}
 
 \begin{figure}[H]
-\hspace*{7em}
+\centering
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,
@@ -282,7 +282,7 @@ This benchmark yielded the following results:
   Both methods use BioNumPy to read, 2-bit encode and hash chunks of \textit{k}mers, reading 10 million byte chunks from the FASTA at a time.
   Both methods also use npstructures' NumPy-based counter object to count the \textit{k}mer frequencies, although the CuPy-based version replaces NumPy with CuPy to achieve GPU acceleration.
 }
-\label{methods:initial_testing:figures:benchmark}
+\label{methods:preliminary_testing:figures:benchmark}
 \end{figure}
 
-As can be seen in table \ref{methods:initial_testing:tables:benchmark}, simply using CuPy as a drop-in replacement for NumPy in npstructures to GPU accelerate its counter object yielded a nearly 10X speedup in counting efficiency, without having to otherwise change the implementation or even leave Python.
+As can be seen in table \ref{methods:preliminary_testing:tables:benchmark}, simply using CuPy as a drop-in replacement for NumPy in npstructures to GPU accelerate its counter object yielded a nearly 10X speedup in counting efficiency, without having to otherwise change the implementation or even leave Python.

@@ -12,3 +12,4 @@ were integrated into KAGE and how the components were benchmarked to assure
 speedup. Additionally described in results how GPU genotyping did not result
 in speedup after the new sparse solution was implemented for the CPU, thus not
 being integrated into (G)KAGE.
+- Re-wrote abstract.

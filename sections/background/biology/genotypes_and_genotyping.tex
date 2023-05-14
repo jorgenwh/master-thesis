@@ -3,17 +3,12 @@ Much like variant, the term \textit{genotype} is used slightly ambiguously in th
 The term genotype may be used to refer to an individual's total genetic makeup.
 It may also be used to refer to the variants an individual carries in its chromosomes at a particular location along the genome.
 Throughout this thesis, we assume the latter definition.
-For humans, who have two of each chromosome, we may have the same or two different variations present at a particular location in the genome, making up the genotype.
+For humans, who have two copies of each chromosome, we may have the same or two different variations present at a particular location in the genome, making up the genotype.
 
-%The term \textit{genotype} refers to the set of variants an individual carries at a particular location along the genome sequence of all of its chromosomes \cite{nhgri_genotype}.
-%Recall that a genetic variant refers to a distinct variation at a particular location along an individual's genome when compared to a reference genome sequence.
-%The term \textit{genotype} refers to the set of variants an individual carries at such a location.
-%The term \textit{genotype} refers to the unique combination of genetic variants that an individual carries at a specific location within the genomic sequence of all their chromosomes.
-%For humans, who have two of each chromosome, a genotype would refer to two variants, one in each of the two chromosomes.
 \textit{Genotyping} an individual refers to the process of determining which genotypes an individual carries. 
 For humans, this would entail determining the set of variants present at each variant site.
 In most genotyping software tools today, genotypes are given in a format that specifies whether a particular variant is present in none, one or both of a human's chromosomes.
-For instance, given a reference genome sequence where a variant site is known to could manifest an A at a particular allele where the reference sequence contains a C, a human individual's genotype for this variant could either be referred to as $0/0$, meaning that the variant is present in neither of the chromosomes, $0/1$, meaning that the variant is present in one of the chromosomes, or $1/1$, meaning that the variant is present in both chromosomes.
+For instance, given a reference genome sequence where a variant site is known to could manifest an A at a particular allele where the reference sequence contains a G, a human individual's genotype for this variant could either be referred to as $0/0$, meaning that the variant allele A is present in neither of the chromosomes, $0/1$, meaning that it is present in one of the chromosomes, or $1/1$, meaning that it is present in both chromosomes.
 
 \definecolor{variantcolor}{RGB}{235,235,235}
 
@@ -28,9 +23,9 @@ For instance, given a reference genome sequence where a variant site is known to
   \node at(0.75,0)(n2){\large A};
   \node at(1.25,0)(n3){\large T};
   \node at(1.75,0)(n4){\large G};
-  \node at(2.25,1)(n5){\large C};
+  \node at(2.25,1)(n5){\large A};
   \node at(2.25,0)(n5){\large G};
-  \node at(2.25,-1)(n5){\large A};
+  \node at(2.25,-1)(n5){\large C};
   \node at(2.75,0)(n5){\large C};
   \node at(3.25,0)(n5){\large T};
   % Arrow
@@ -66,7 +61,7 @@ For instance, given a reference genome sequence where a variant site is known to
 \end{tikzpicture}
 }
 \caption{
-  In humans, who carry two of every chromosome, a genotype constitutes a set of two alleles or variants - one in each chromosome at the variant site. 
+  In humans, who carry two copies of every chromosome, a genotype constitutes a set of two alleles or variants - one in each chromosome at the variant site. 
   Along the reference sequence on the left, several possible variants may be known to occur at a specific site. 
   After examining the sequence of an individual, we try to determine the individual's genotype by scoring which variants are present in each chromosome at the location of interest.
   In this illustration, the individual's genotype may be described as two scores: $0/1$ for the SNP variant where the G is replaced by an A in chromosome$_1$, and $0/1$ for the G remaining the same as in the reference in chromosome$_2$.
@@ -83,8 +78,3 @@ As a result, a set of new prominent methods have emerged in recent years to help
 In such methods, small parts of the sequenced reads called \textit{k}mers are analyzed, and statistical models are used to compute genotype-probabilities supported by the results from the \textit{k}mer analysis and previous knowledge of variants and genotypes that have been accumulated over years of research \cite{kage,malva,1000_genomes_project}.
 One such alignment-free genotyper, KAGE, has recently shown that it can genotype a human individual more than 10 times faster than any other known genotyper tool, while still providing competitive accuracy scores for its genotype calls \cite{kage}.
 
-%However, given how many reads one have come to expect from high-throughput sequencing today [\ref{background:biology:high_throughput_dna_sequencing}] and how time consuming it is to align reads to a $3*10^9$ long reference sequence, although accurate, this strategy is very compute- and time consuming.
-%A new prominent strategy has emerged in recent years that helps to alleviate the compute- and time consumption aspect of genotyping.
-%Statistics based methods, usually referred to \textit{alignment-free} genotyping methods, where the variant calling step where reads are aligned to the reference genome is skipped altogether. 
-%In such methods, small parts of the sequenced reads called \textit{k}mers are analyzed, and statistical models are used to determine which genotypes are most probable given the results from the \textit{k}mer analysis and previous knowledge accumulated over years of research \cite{kage,malva,1000_genomes_project}.
-%One such alignment-free genotyper, KAGE, has recently shown that it can genotype a human individual more than 10 times faster than any other known genotyper tool, while still providing competitive accuracy scores \cite{kage}.

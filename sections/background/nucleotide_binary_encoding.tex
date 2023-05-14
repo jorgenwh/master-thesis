@@ -8,24 +8,40 @@ This is achieved by realizing that only 2 bits, giving \textit{$2^2=4$} possible
 The binary encoding can be extended further to represent whole nucleotide sequences in binary arrays.
 For example, an integer array, if interpreted 2 consecutive bits at a time, can represent such a sequence.
 
+\vspace*{.5em}
+
+\begin{table}[H]
+\begin{center}
+\begin{tabular}{lllll}
+  \cline{1-5}
+  \multicolumn{1}{l}{\small\textbf{Nucleotide}} & \multicolumn{1}{l}{A} & \multicolumn{1}{l}{C} & \multicolumn{1}{l}{G} & \multicolumn{1}{l}{T} \\
+  \multicolumn{1}{l}{\small\textbf{2-bit encoding}} & \multicolumn{1}{l}{00} & \multicolumn{1}{l}{01} & \multicolumn{1}{l}{10} & \multicolumn{1}{l}{11} \\
+  \cline{1-5}
+\end{tabular}
+\end{center}
+\label{background:nucleotide_binary_encoding:tables:nucleotide_to_binary}
+\end{table}
+
+\vspace*{-2em}
+
 \begin{figure}[H]
 \begin{center}
-\scalebox{1}{
-\begin{tikzpicture}
-  \node at(0,0)(){T};
-  \node at(0,.6)(){G};
-  \node at(0,1.2)(){C};
-  \node at(0,1.8)(){A};
-  \node at(1.25,0)(){11};
-  \node at(1.25,.6)(){10};
-  \node at(1.25,1.2)(){01};
-  \node at(1.25,1.8)(){00};
-  \draw [<->](.35,0) -- (.8,0);
-  \draw [<->](.35,.6) -- (.8,.6);
-  \draw [<->](.35,1.2) -- (.8,1.2);
-  \draw [<->](.35,1.8) -- (.8,1.8);
-\end{tikzpicture}
-}
+%\scalebox{1}{
+%\begin{tikzpicture}
+  %\node at(0,0)(){T};
+  %\node at(0,.6)(){G};
+  %\node at(0,1.2)(){C};
+  %\node at(0,1.8)(){A};
+  %\node at(1.25,0)(){11};
+  %\node at(1.25,.6)(){10};
+  %\node at(1.25,1.2)(){01};
+  %\node at(1.25,1.8)(){00};
+  %\draw [<->](.35,0) -- (.8,0);
+  %\draw [<->](.35,.6) -- (.8,.6);
+  %\draw [<->](.35,1.2) -- (.8,1.2);
+  %\draw [<->](.35,1.8) -- (.8,1.8);
+%\end{tikzpicture}
+%}
 
 \scalebox{1}{
 \begin{tikzpicture}
@@ -56,8 +72,8 @@ For example, an integer array, if interpreted 2 consecutive bits at a time, can 
   \node at(3,-1.2)(){11};
   \node at(3.6,-1.2)(){00};
   \node at(4.2,-1.2)(){10};
-  \draw [](-.35,-1.35) -- (-.35,-1.625);
-  \draw [](2.1,-1.35) -- (2.1,-1.625);
+  \draw [](-.35,-1.45) -- (-.35,-1.625);
+  \draw [](2.1,-1.45) -- (2.1,-1.625);
   \draw [](-.35,-1.625) -- (2.1,-1.625);
   \node at(.75,-2.05)(){\small{1 byte}};
 \end{tikzpicture}

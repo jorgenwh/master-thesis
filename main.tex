@@ -4,11 +4,11 @@
 % packages
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[margin=1in]{geometry} % ORIGINAL
+\usepackage[margin=1.25in]{geometry} % ORIGINAL
 \usepackage[skip=0.5cm]{parskip} % ORIGINAL
 %\usepackage[skip=10pt plus1pt, indent=20pt]{parskip} % NEW
 %\usepackage[skip=10pt plus1pt]{parskip} % NEW TEST
-\usepackage{setspace}
+%\usepackage{setspace}
 \usepackage{amsmath}
 \usepackage{times}
 \usepackage{graphicx}
@@ -35,10 +35,14 @@
 \usepackage{dirtree}
 \usepackage{pdfpages}
 \usepackage[toc,page]{appendix}
+\usepackage[onehalfspacing]{setspace}
 
 % --- stuff from google ---
 % Add an extra layer of headers
 \setcounter{secnumdepth}{4}
+
+% More spacing between rows in tables
+\renewcommand{\arraystretch}{1.35}
 
 \titleformat{\paragraph}
 {\normalfont\normalsize\bfseries}{\theparagraph}{1em}{}
@@ -60,9 +64,8 @@
 % make text lines be further away from each other
 %\setstretch{1.4}
 
-\linespread{1.35} % ORIGINAL
-%\linespread{1.3}
-%\linespread{1.25}
+%\linespread{1.35} % ORIGINAL
+%\linespread{1.3} % NEW 
 
 % env for equations and mathematical expressions
 \NewEnviron{EQUATIONS}{%

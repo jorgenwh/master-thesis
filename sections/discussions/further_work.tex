@@ -19,7 +19,7 @@ Currently, GKAGE performs all of these processes sequentially.
 \vspace{.5em}
 \begin{figure}[H]
 \begin{center}
-\scalebox{.95}{
+\scalebox{.92}{
 \begin{tikzpicture}
   % read fasta
   \node at(0,0)[draw,minimum width=2cm,minimum height=1.2cm](start){};
@@ -64,7 +64,7 @@ By utilizing CUDA streams we can parallelize the copying of data to the GPU and 
 
 \begin{figure}[H]
 \begin{center}
-\scalebox{.95}{
+\scalebox{.9}{
 \begin{tikzpicture}
   % hints
   \draw [thick,<->](5.875,2.45) -- (5.875,1.7);
@@ -117,3 +117,4 @@ By utilizing CUDA streams we can parallelize the copying of data to the GPU and 
 \label{discussion:parallelization_of_kmer_chunk_preparation:figures:parallel_pipeline}
 \end{center}
 \end{figure}
+

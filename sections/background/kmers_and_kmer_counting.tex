@@ -16,6 +16,7 @@ This problem is commonly referred to as \textit{k}mer counting.
 \scalebox{1}{
 \begin{tikzpicture}
   % read
+  %\node at(1.2,2.2)(){\fontfamily{phv}\selectfont\small read};
   \node at(1.2,2.2)(){\textit{read}};
   % sequence
   \node at(0,0){G};
@@ -25,7 +26,7 @@ This problem is commonly referred to as \textit{k}mer counting.
   \node at(1.4,0){T};
   \node at(1.75,0){G};
   \node at(2.1,0){C};
-  \node at(2.4,0){A};
+  \node at(2.45,0){A};
   % kmer indicators
   % kmer 1
   \draw [](0,-.225-.1) -- (0,-.3-.1);
@@ -49,12 +50,13 @@ This problem is commonly referred to as \textit{k}mer counting.
   \draw [](2.1,-1.1-.1) -- (2.1,-.225-.1);
   % kmer 6
   \draw [](1.75,-1.225-.1) -- (1.75,-1.3-.1);
-  \draw [](1.75,-1.3-.1) -- (2.4,-1.3-.1);
-  \draw [](2.4,-1.3-.1) -- (2.4,-.225-.1);
+  \draw [](1.75,-1.3-.1) -- (2.45,-1.3-.1);
+  \draw [](2.45,-1.3-.1) -- (2.45,-.225-.1);
   % arrow
   %\draw [thick,->](3.4,0) -- (4.05,0);
   \draw [double distance=1pt,->](3.4,0) -- (4.05,0);
   % k-mer counts
+  %\node at(5.725,2.2)(){\fontfamily{phv}\selectfont\small kmer counts};
   \node at(5.725,2.2)(){\textit{kmer counts}};
   % kmer (count) representations
   % kmer 1
@@ -106,56 +108,58 @@ Given how many valid \textit{k}mers one can observe in a set of hundreds of mill
 \scalebox{1}{
 \begin{tikzpicture}
   % titles
-  \node at(-0.55,3)(){\textit{input reads}};
+  %\node at(-0.55+2.55,3)(){\fontfamily{phv}\selectfont\small kmer counts};
+  \node at(-0.55+2.55,3)(){\textit{kmer counts}};
   % read 1
-  \node at(-1.85,2){G};
-  \node at(-1.5,2){C};
-  \node at(-1.15,2){\textcolor{kmer2}{A}};
-  \node at(-.8,2){\textcolor{kmer2}{G}};
-  \node at(-.45,2){\textcolor{kmer2}{T}};
-  \node at(-.1,2){G};
-  \node at(.25,2){C};
-  \node at(.6,2){G};
+  \node at(-1.85+2.55,2){G};
+  \node at(-1.5+2.55,2){C};
+  \node at(-1.15+2.55,2){\textcolor{kmer2}{A}};
+  \node at(-.8+2.55,2){\textcolor{kmer2}{G}};
+  \node at(-.45+2.55,2){\textcolor{kmer2}{T}};
+  \node at(-.1+2.55,2){G};
+  \node at(.25+2.55,2){C};
+  \node at(.6+2.55,2){G};
   % read 2 
-  \node at(-1.85,1.4){T};
-  \node at(-1.5,1.4){C};
-  \node at(-1.15,1.4){C};
-  \node at(-.8,1.4){G};
-  \node at(-.45,1.4){\textcolor{kmer3}{G}};
-  \node at(-.1,1.4){\textcolor{kmer3}{T}};
-  \node at(.25,1.4){\textcolor{kmer3}{C}};
-  \node at(.6,1.4){T};
+  \node at(-1.85+2.55,1.4){T};
+  \node at(-1.5+2.55,1.4){C};
+  \node at(-1.15+2.55,1.4){C};
+  \node at(-.8+2.55,1.4){G};
+  \node at(-.45+2.55,1.4){\textcolor{kmer3}{G}};
+  \node at(-.1+2.55,1.4){\textcolor{kmer3}{T}};
+  \node at(.25+2.55,1.4){\textcolor{kmer3}{C}};
+  \node at(.6+2.55,1.4){T};
   % read 3 
-  \node at(-1.85,.8){T};
-  \node at(-1.5,.8){\textcolor{kmer2}{A}};
-  \node at(-1.15,.8){\textcolor{kmer2}{G}};
-  \node at(-.8,.8){\textcolor{kmer2}{T}};
-  \node at(-.4,.8){T};
-  \node at(-.1,.8){G};
-  \node at(.25,.8){A};
-  \node at(.6,.8){G};
+  \node at(-1.85+2.55,.8){T};
+  \node at(-1.5+2.55,.8){\textcolor{kmer2}{A}};
+  \node at(-1.15+2.55,.8){\textcolor{kmer2}{G}};
+  \node at(-.8+2.55,.8){\textcolor{kmer2}{T}};
+  \node at(-.45+2.55,.8){T};
+  \node at(-.1+2.55,.8){G};
+  \node at(.25+2.55,.8){A};
+  \node at(.6+2.55,.8){G}; 
   % read 4 
-  \node at(-1.85,.2){C};
-  \node at(-1.5,.2){\textcolor{kmer2}{A}};
-  \node at(-1.15,.2){\textcolor{kmer2}{G}};
-  \node at(-.8,.2){\textcolor{kmer2}{T}};
-  \node at(-.4,.2){\textcolor{kmer4}{G}};
-  \node at(-.1,.2){\textcolor{kmer4}{A}};
-  \node at(.25,.2){\textcolor{kmer4}{C}};
-  \node at(.6,.2){A};
+  \node at(-1.85+2.55,.2){C};
+  \node at(-1.5+2.55,.2){\textcolor{kmer2}{A}};
+  \node at(-1.15+2.55,.2){\textcolor{kmer2}{G}};
+  \node at(-.8+2.55,.2){\textcolor{kmer2}{T}};
+  \node at(-.45+2.55,.2){\textcolor{kmer4}{G}};
+  \node at(-.1+2.55,.2){\textcolor{kmer4}{A}};
+  \node at(.25+2.55,.2){\textcolor{kmer4}{C}};
+  \node at(.6+2.55,.2){A};
   % read 5 
-  \node at(-1.85,-.4){A};
-  \node at(-1.5,-.4){\textcolor{kmer4}{G}};
-  \node at(-1.15,-.4){\textcolor{kmer4}{A}};
-  \node at(-.8,-.4){\textcolor{kmer4}{C}};
-  \node at(-.4,-.4){C};
-  \node at(-.1,-.4){\textcolor{kmer3}{G}};
-  \node at(.25,-.4){\textcolor{kmer3}{T}};
-  \node at(.6,-.4){\textcolor{kmer3}{C}};
+  \node at(-1.85+2.55,-.4){A};
+  \node at(-1.5+2.55,-.4){\textcolor{kmer4}{G}};
+  \node at(-1.15+2.55,-.4){\textcolor{kmer4}{A}};
+  \node at(-.8+2.55,-.4){\textcolor{kmer4}{C}};
+  \node at(-.45+2.55,-.4){C};
+  \node at(-.1+2.55,-.4){\textcolor{kmer3}{G}};
+  \node at(.25+2.55,-.4){\textcolor{kmer3}{T}};
+  \node at(.6+2.55,-.4){\textcolor{kmer3}{C}};
   % Arrow
   %\draw [thick,->](2.75,.8) -- (3.4,.8);
-  \draw [double distance=1pt,->](2.75,.8) -- (3.4,.8);
+  \draw [double distance=1pt,->](4.15,.8) -- (4.8,.8);
   % k-mer counts
+  %\node at(6.5,3)(){\fontfamily{phv}\selectfont\small kmer counts};
   \node at(6.5,3)(){\textit{kmer counts}};
   % k-mer 1
   \node at(5.8,1.7){\textcolor{kmer1}{A}};

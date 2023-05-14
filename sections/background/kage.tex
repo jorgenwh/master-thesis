@@ -10,6 +10,7 @@ KAGE recently showed (2022) that its accuracy was on par with the best existing 
 
 KAGE is implemented in Python and relies extensively on the NumPy library for performance.
 Its genotyping pipeline is split into two distinct programs: \textit{kmer\_mapper}, solving the \textit{partial} \textit{k}mer counting problem of counting \textit{k}mer frequencies for a predefined set of \textit{k}mers in the input reads, and \textit{kage}, which finally computes the genotype-probabilities based on the \textit{k}mer counts provided by \textit{kmer\_mapper}.
+We will use KAGE to refer to the full KAGE genotyping pipeline, and \textit{kage} to refer to the piece of software the performs the genotype-probability computations, which is one component of the total pipeline.
 
 \begin{figure}[H]
 \begin{center}

@@ -1,0 +1,13 @@
+\subsection{Relevance for Bioinformatics} \label{discussion:relevance_for_bioinformatics}
+In section \ref{results}, we showed that GKAGE can genotype a full human genome at 15x coverage up to an order of magnitude faster than KAGE.
+KAGE was already an order of magnitude faster than any other known genotyping tool that also provided competitive accuracies \cite{kage}.
+Thus, to the best of our knowledge, GKAGE is now the fastest existing genotyping tool available.
+
+One of GKAGE's primary strengths is how well it performs on consumer grade hardware.
+While it is commonplace for other genotyping tools to require tens of gigabytes of memory, GKAGE can genotype a full human genome without exceeding 4GB of allocated GPU memory.
+We believe that the improvements yielded by GKAGE are highly beneficial considering the rate of which whole-genome sequencing is becoming more available and tools for analyzing sequence data is becoming increasingly necessary.
+
+We also showed that since KAGE was implemented using NumPy \cite{numpy} array-programming for performance in Python, GPU acceleration could be added quite seamlessly using CuPy \cite{cupy}.
+In addition, we demonstrated how developers with more knowledge of how GPUs work could use either CuPy's just-in-time compiled custom kernel feature to implement GPU acceleration directly in Python, or write kernels directly in C++ using CUDA \cite{cuda} and then creating Python bindings using pybind11 \cite{pybind11}.
+We see these methods as highly feasible opportunities for unlocking performance enhancements via GPU acceleration. 
+This potential can be leveraged by those developing bioinformatics tools, as well as more broadly in the domain of scientific computing, in Python.

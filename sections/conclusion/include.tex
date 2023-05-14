@@ -1,1 +1,15 @@
 \section{Conclusion} \label{conclusion}
+In section \ref{introduction:thesis_goals}, we stated that one of the two goals of this thesis was to explore whether alignment-free genotyping could be sped up in any significant way by using the GPU.
+To investigate this, we attempted to GPU accelerate an existing genotyper, KAGE, which recently showed that it was an order of magnitude faster than any other known genotyper \cite{kage}.
+As a result of GPU accelerating components of KAGE, we presented GKAGE (GPU KAGE), a new GPU accelerated version of KAGE.
+GKAGE achieves up to 5X speedup compared to KAGE on a high-end compute server, and more than 10X speedup on commercial hardware, all while using very little GPU memory - a scarce resource.
+We believe that GKAGE is a useful contribution to the world of bioinformatics, considering the rate of which whole-genome sequencing is becoming more accessible and tools to analyze the generated sequence data is becoming increasingly necessary.
+
+The second goal we presented in section \ref{introduction:thesis_goals}, was to investigate and experiment with different ways of GPU accelerating existing Python code that relies on array-programming libraries such as NumPy \cite{numpy}, and to reveal the advantages and drawbacks of such methods.
+We achieved this by GPU accelerating different components of KAGE using a suite of different methods.
+For each method, we discussed its advantages and drawbacks, where dimensions such as ease-of-use, seamless integration and performance were central.
+We see the insights revealed by exploring these methods as showing that GPU acceleration is a feasible avenue to unlock performance enhancements in existing tools, particularly tools relying on large array-computations.
+%As large array-computations are commonplace in computational biology, and as GPU acceleration libraries such as CuPy \cite{cupy} are making GPU acceleration more accessible even to programmers without much knowledge about GPUs, we believe that there could be an avalanche of existing methods and tools that could benefit from integrating such acceleration.
+Large array-computations are commonplace in computational biology.
+Additionally, Python GPU acceleration libraries such as CuPy \cite{cupy} are making GPU acceleration more accessible, even to programmers with limited knowledge of the GPU's programming model and hardware.
+Given these factors, we believe that there could be an avalanche of existing methods and tools that could greatly benefit from integration such acceleration.

@@ -1,42 +1,45 @@
 \subsection{Benchmarking} \label{results:benchmarking}
-In order to benchmark the effectiveness of the added GPU acceleration in GKAGE, we decided to benchmark GKAGE against KAGE to account for the speedup.
-The choice of only benchmarking GKAGE against one other genotyping tool, KAGE, was made based on the fact that KAGE recently showed that it was an order of magnitude faster than any other known genotyper \cite{kage}.
-For completeness we also ran Gerbil \cite{gerbil}, a \textit{k}mer counting tool with GPU support, to assess how GKAGE's total runtime compares to a GPU accelerated \textit{k}mer counting tool that solves the \textit{full} \textit{k}mer counting problem.
+We here present our benchmarking results that demonstrate the effect of GPU accelerating the KAGE pipeline.
+While our initial benchmarks yielded positive results, one component of KAGE was replaced by an optimized solution by the KAGE developers in the time between our implementations were completed and GKAGE was released.
+As a result, the GPU accelerated version of the componet - the log of the probability mass function in the genotype-probability computation - was rendered redunant as it no longer provided sufficient speedup to be worthwhile using over the new solution introduced by the KAGE developers.
+Thus, we opted to only include the GPU accelerated components in \textit{kmer\_mapper}, enabling GPU acceleration for \textit{k}mer hashing and counting, while using KAGE's new solution in the \textit{kage} software for the best possible performance.
+For completeness, we still include the initial runtimes achieved, including the GPU accelerated LOGPMF function, to demonstrate the effects of GPU accelerating each component.
+Then, we show the final performance of GKAGE against KAGE.
 
-\subsubsection{Snakemake Pipeline}
-In order to adequately benchmark GKAGE, we set up a Snakemake pipeline that runs both KAGE and GKAGE on a full human genome and records the runtimes while also checking that the results of both processes are identical.
-Additionally, the pipeline runs and records the runtime of Gerbil for \textit{k}mer counting.
-This Snakemake pipeline is available online at \url{https://github.com/kage-genotyper/GKAGE-benchmarking}.
-
-\subsubsection{Systems}
-We benchmarked GKAGE against KAGE on two systems.
-\textbf{System 1}: a high-end compute server with a 64-core AMD EPYC 7742 CPU and two Nvidia Tesla V100 GPUs.
-\textbf{System 2}: a consumer grade desktop with a 6-core Intel Core i5-11400F CPU and a Nvidia GTX 1660 SUPER GPU.
-
-\vspace{1em}
+\subsubsection{Initial Runtimes} \label{results:benchmarking:initial_runtimes}
+After incorporating the GPU accelerated components into \textit{kmer\_mapper} and \textit{kage}, we benchmarked both programs to assess their respective runtime improvements.
+Additionally, we ran Gerbil \cite{gerbil} to compare the GPU accelerated \textit{kmer\_mapper}'s \textit{k}mer counting against an existing \textit{k}mer counting tool with GPU acceleration.
 \begin{table}[H]
 \begin{center}
 \begin{tabular}{lllll}
-\multicolumn{1}{l|}{\textbf{System}} & \multicolumn{1}{l}{\textbf{CPU}}                  & \multicolumn{1}{l}{\textbf{GPU}}                   &  \\ \cline{1-3}
-\multicolumn{1}{l|}{1: High-end server} & \multicolumn{1}{l}{AMD EPYC 7742}        & \multicolumn{1}{l}{2x Nvidia Tesla V100}     &  \\ 
-\multicolumn{1}{l|}{2: Consumer desktop} & \multicolumn{1}{l}{Intel Core i5-11400F} & \multicolumn{1}{l}{Nvidia GTX 1660 SUPER} &  \\
+  \multicolumn{1}{l|}{\textbf{Program}} & \multicolumn{1}{l}{\textbf{CPU}} & \multicolumn{1}{l}{\textbf{GPU}} & \\ \cline{1-3}
+  \multicolumn{1}{l|}{\textit{kmer\_mapper}} & \multicolumn{1}{l}{484 sec} & \multicolumn{1}{l}{61 sec} & \\
+  \multicolumn{1}{l|}{\textit{Gerbil}} & \multicolumn{1}{l}{-} & \multicolumn{1}{l}{156 sec} & \\
+  \multicolumn{1}{l|}{\textit{kage}} & \multicolumn{1}{l}{68 sec} & \multicolumn{1}{l}{54 sec} & \\
 \end{tabular}
 \end{center}
 \caption{
-  The two systems used to benchmark GKAGE against KAGE to account for the speedup achieved through GPU acceleration.
-  \textbf{System 1} is a high-end compute server with top-of-the-line hardware.
-  \textbf{System 2} is a consumer grade desktop gaming computer.
+  Benchmarking results from integrating the GPU accelerated components into \textit{kmer\_mapper} and \textit{kage}.
+  \textit{kmer\_mapper} and \textit{kage} together constitute the KAGE genotyping pipeline.
+  This benchmark was ran on a high-end compute server with an AMD EPYC 7742 64-Core CPU and two Nvidia Tesla V100 GPUs.
+  Both \textit{kmer\_mapper} and \textit{kage} were allowed 16 cores and the GPU versions were allowed one Nvidia Tesla V100 GPU.
+  Gerbil was allowed 16 cores as well as one Nvidia Tesla V100 GPU.
 }
-\label{results:gkage:tables:systems}
+\label{results:benchmarking:initial_runtimes:tables:runtimes}
 \end{table}
 
-Benchmarking on these two systems allowed us to benchmark GKAGE on both a very performant and a less performant system to examine the effects of GPU acceleration in both instances.
-A caveat with the high-end server system (system 1) is that it is a high-end compute server available to both staff and students at the Biomedical Informatics research group at the University of Oslo.
-This meant that others were frequently running jobs on the server, occupying both CPU and GPU processing cores and memory.
-To the best of our ability, we conducted our benchmarkings during periods of lower activity.
+As can be seen in table \ref{results:benchmarking:initial_runtimes:tables:runtimes}, the GPU accelerated \textit{k}mer hashing and counting components yielded significant runtime improvements to the \textit{k}mer counting portion of KAGE.
+Similarly, GPU acceleration yielded a faster runtime for the genotype-probabilities computation portion of KAGE, although a less dramatic improvement.
+Additionally, when enabling GPU acceleration for both \textit{kmer\_mapper} and Gerbil, \textit{kmer\_mapper} outperforms Gerbil for \textit{k}mer counting by a large margin.
 
-\subsubsection{Runtimes} \label{results:benchmarking:runtimes}
-We benchmarked GKAGE against KAGE on both system 1 and system 2.
+While the GPU accelerated functionality in the \textit{kage} software resulted in some runtime decrease, an optimized solution, provided by the KAGE team after we introduced our implementation, yielded significantly better runtime results (on the CPU).
+This new solution cut the runtime of \textit{kage} down to just 44 seconds on the same system used to find the runtimes presented in table \ref{results:benchmarking:initial_runtimes:tables:runtimes}.
+Thus, we opted not to include our GPU accelerated solution for \textit{kage} in our final version of GKAGE.
+
+\subsubsection{Final Runtimes} \label{results:benchmarking:final_runtimes}
+After replacing our GPU accelerated version of the LOGPMF computation in \textit{kage} with the new and more performant solution made by the KAGE developers, we achieved our final version of GKAGE.
+
+We benchmarked GKAGE against KAGE on both the high-end compute server (system 1) and the consumer grade desktop computer (system 2) that we introduced in section \ref{methods:benchmarking_setup:systems}.
 When running on system 1, we allowed KAGE 16 threads and GKAGE one Nvidia Tesla V100 GPU.
 When running on system 2, we allowed KAGE 6 threads and GKAGE the Nvidia GTX 1660 SUPER GPU.
 Gerbil, which only performed \textit{full} \textit{k}mer counting, was allowed 16 and 6 threads on system 1 and 2 respectively.
@@ -54,98 +57,9 @@ From this we found the following results:
 \caption{
   The runtimes (in seconds) found by benchmarking GKAGE against KAGE and running Gerbil for \textit{k}mer counting on a high-end server and a consumer desktop computer
 }
-\label{results:benchmarking:tables:runtimes}
+\label{results:benchmarking:final_runtimes:tables:runtimes}
 \end{table}
 
-%\begin{figure}[H]
-%\hspace*{3em}
-%\begin{subfigure}{.4\textwidth}
-%  \begin{tikzpicture}[font=\small]
-%    \pgfplotsset{
-%      compat=newest,
-%      xlabel near ticks,
-%      ylabel near ticks
-%    }
-%    \pgfplotsset{compat=1.11,
-%        /pgfplots/ybar legend/.style={
-%        /pgfplots/legend image code/.code={%
-%           \draw[##1,/tikz/.cd,yshift=-0.25em]
-%            (0cm,0cm) rectangle (3pt,0.8em);},
-%       },
-%    }
-%    \node at(2.75,5.5)(title){\textbf{System 1}};
- 
-%\begin{axis} [
-%  ylabel={runtime (seconds)},
-%  width=7cm,
-%  ybar,
-%  bar width=15pt,
-%  ymin=0,
-%  xtick=data,
-%  axis x line=bottom,
-%  axis y line=left,
-%  enlarge x limits=1.25,
-%  symbolic x coords={KAGE, GKAGE},
-%  xticklabel style={anchor=base, yshift=-\baselineskip},
-%  /pgf/number format/.cd,fixed,precision=3,
-%  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
-%  legend style={anchor=west},
-%]
-
-%\addplot[fill=blue] coordinates {
-%    (KAGE, 510)
-%    (GKAGE, 94)
-%};
-%\end{axis}
-
-%\end{tikzpicture}
-%\end{subfigure}
-%\begin{subfigure}{.4\textwidth}
-%  \begin{tikzpicture}[font=\small]
-%    \pgfplotsset{
-%      compat=newest,
-%      xlabel near ticks,
-%      ylabel near ticks
-%    }
-%    \pgfplotsset{compat=1.11,
-%        /pgfplots/ybar legend/.style={
-%        /pgfplots/legend image code/.code={%
-%           \draw[##1,/tikz/.cd,yshift=-0.25em]
-%            (0cm,0cm) rectangle (3pt,0.8em);},
-%       },
-%    }
-%    \node at(2.75,5.5)(title){\textbf{System 2}};
- 
-%\begin{axis} [
-%  width=7cm,
-%  ybar,
-%  bar width=15pt,
-%  ymin=0,
-%  xtick=data,
-%  axis x line=bottom,
-%  axis y line=left,
-%  enlarge x limits=1.25,
-%  symbolic x coords={KAGE, GKAGE},
-%  xticklabel style={anchor=base, yshift=-\baselineskip},
-%  /pgf/number format/.cd,fixed,precision=3,
-%  nodes near coords={\small\pgfmathprintnumber{\pgfplotspointmeta}},
-%  legend style={anchor=west},
-%]
-%
-%\addplot[fill=blue] coordinates {
-%    (KAGE, 1993)
-%    (GKAGE, 178)
-%};
-%\end{axis}
-%\end{tikzpicture}
-%\end{subfigure}
-%\caption{
-%  Benchmarking GKAGE against KAGE on both system 1 (high-end server) and system 2 (consumer desktop) revealed that GKAGE could genotype a full human genome more than 5 times faster than KAGE on a high-end server, and more than 11 times faster on a consumer desktop computer.
-%}
-%\label{results:benchmarking:figures:runtimes}
-%\end{figure}
-
-%
 \begin{figure}[H]
 \centering
   \begin{tikzpicture}[font=\small]
@@ -162,7 +76,6 @@ From this we found the following results:
        },
     }
     \node at(3.375,7.5)(){\small{\textbf{KAGE and GKAGE runtimes}}};
-    %\node at(3.45,7)(){\small{\textbf{the extended LOGPMF function from KAGE}}};
  
 \begin{axis} [
   ylabel={runtime (seconds)},
@@ -197,12 +110,12 @@ From this we found the following results:
 \caption{
   Benchmarking GKAGE against KAGE on both system 1 (high-end server) and system 2 (consumer desktop) revealed that GKAGE could genotype a full human genome more than 5 times faster than KAGE on a high-end server, and more than 11 times faster on a consumer desktop computer.
 }
-\label{results:benchmarking:figures:runtimes}
+\label{results:benchmarking:final_runtimes:figures:runtimes}
 \end{figure}
 %
 
 The results from the benchmarking revealed that GKAGE achieves significant speedup over KAGE when genotyping a full human genome.
-As seen in table \ref{results:benchmarking:tables:runtimes} and figure \ref{results:benchmarking:figures:runtimes}, we can see that GKAGE achieves more than 5X speedup over KAGE on a high-end compute server and more than 11X speedup on a consumer grade desktop computer.
+As seen in table \ref{results:benchmarking:final_runtimes:tables:runtimes} and figure \ref{results:benchmarking:final_runtimes:figures:runtimes}, GKAGE achieves more than 5X speedup over KAGE on a high-end compute server and more than 11X speedup on a consumer grade desktop computer.
 Additionally, GKAGE's runtime when performing the full genotyping pipeline is smaller than that of Gerbil, despite Gerbil only performing \textit{k}mer counting, also on the GPU.
 
 Since KAGE recently showed that it was an order of magnitude faster than any other known genotyping tool \cite{kage}, GKAGE's significant speedup leads us to conclude that it is, to the best of our knowledge, now clearly the fastest method for genotyping an individual, allowing for the genotyping of a human genome in just 3 minutes on consumer hardware and 1.5 minutes on a high-end compute server.

@@ -1,5 +1,7 @@
 \subsection{Preliminary Testing} \label{methods:preliminary_testing}
-Before delving into the GPU accelerated methods used to produce the final GKAGE product, we will here describe an initial test we performed in order to assess two things. Firstly, whether we could effectively GPU accelerate existing NumPy solutions using CuPy, all while staying within the comfort of Python, and secondly, whether such an implementation would result in significant speedup over a CPU solution or at least provide insight into how plausible getting significant speedup by utilizing the GPU was.
+Before delving into the GPU accelerated methods used to produce the final GKAGE product, we will here describe an initial test we performed in order to assess two things. 
+Firstly, we wanted to assess whether we could effectively GPU accelerate existing NumPy solutions using CuPy, all while staying within the comfort of Python. 
+And secondly, whether such an implementation would result in significant runtime improvement over a CPU solution or at least provide insight into the plausibility of realizing a runtime improvement.
 For this, we decided on focusing on the \textit{partial} \textit{k}mer counting problem, detailed in section \ref{background:kmers_and_kmer_counting}.
 
 As detailed in section \ref{background:implementation_tools_and_libraries:npstructures}, npstructures is a Python library that enhances the NumPy library by providing additional data structures with NumPy-like behaviour and performance, built on top of NumPy.
@@ -82,8 +84,8 @@ Exploiting Python's module system this way has the benefits of not making CuPy a
 
 \subsubsection{Resolving Unsupported or Poorly Performing Functionality}
 Two issues can arise when utilizing this method of GPU accelerating NumPy code.
-Firstly, some NumPy solutions may be effective on the CPU's architecture but ineffective on the GPU's, resulting in poor performance.
-This will often be the case when significant portions of the code needs to be ran in a serial fashion, as opposed to parallel, or when array sizes are too small to mask the overhead of copying data to and from the GPU memory.
+Firstly, some NumPy solutions may be effective on the CPU's architecture but ineffective on the GPU's, thus, resulting in poor performance.
+This will often be the case when significant portions of the code needs to be run in a serial fashion, as opposed to parallel, or when array sizes are too small to mask the overhead of copying data to and from the GPU memory.
 Secondly, certain NumPy functions are simply not supported by CuPy.
 In the case of the former issue, one might want to create an alternative solution that better utilizes the GPU's strengths, such as its massive parallelism.
 For the latter issue, there is no other practical option than to create a custom solution that achieves the desired behaviour by using what CuPy functionality is available.

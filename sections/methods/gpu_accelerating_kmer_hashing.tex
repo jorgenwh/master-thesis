@@ -104,7 +104,7 @@ The benchmarking yielded the following results:
 \end{center}
 \caption{
   The runtimes found by hashing all valid \textit{k}mers from a set of 20 million DNA reads, each of length 150.
-  The FASTA file containing the reads was read in chunks of 10 million bytes, and the BioNumPy library in Python was used to read, 2-bit encode and hash each chunk.
+  BioNumPy was used to read the FASTA file in chunks of 10 million bytes, then 2-bit encode and hash each chunk.
   We ran the benchmark both using NumPy as the backend-library for BioNumPy, meaning the hashing was performed entirely on the CPU using a single thread, and using CuPy as the backend-library for BioNumPy, meaning the raw data read from the FASTA file was copied to the GPU and then 2-bit encoded and hashed there.
 }
 \label{methods:gpu_accelerating_kmer_hashing:tables:benchmark}

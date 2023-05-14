@@ -18,7 +18,7 @@ Thus, we went with a simple scheme using open addressing and linear probing.
 
 Two arrays of equal size make up the data structure where one array stores the table's keys (\textit{k}mers) and the other array stores its values (counts).
 The keys array is an array of 64-bit unsigned integers.
-The choice of using 64 bits for the keys, as opposed to \textit{i}.\textit{e}. 32, was to accommodate for larger \textit{k}mer values since 32 bits would only allow for \textit{k} up to $(32/2)-1=15$.
+The choice of using 64 bits for the keys, as opposed to e.g. 32, was to accommodate for larger \textit{k}mer values since 32 bits would only allow for \textit{k} up to $(32/2)-1=15$.
 Using 64-bit keys increases our maximum \textit{k} size to 31, which is the default value for KAGE.
 This choice also reveals a limitation of our hash table, which is that it can not support \textit{k}mers where $k>31$ in its current form.
 The reason why 64 bits does not allow for \textit{k} up to 32, considering a 2-bit encoded 64-mer can be stored in a single 64-bit integer, is that the max 64-bit integer value is used as an indicator that a slot is empty in the hash table.
@@ -209,7 +209,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
 \end{center}
 \end{figure}
 
-\paragraph{Integration to Python}
+\paragraph{Python Integration}
 In order to integrate the hash table implemented in C++ using CUDA to Python so that it would be compatible with KAGE, we used pybind11 (introduced in section \ref{background:implementation_tools_and_libraries:pybind11}) to create Python bindings for the C++ class and then wrap the implementation in a Python class.
 pybind11 provides easy-to-use macros for this, allowing us to add bindings by simply creating a bindings C++ file and then compiling a module where our C++ functionality is contained.
 

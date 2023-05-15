@@ -99,9 +99,9 @@ This problem is commonly referred to as \textit{k}mer counting.
 \end{figure}
 
 The genotyping software tool KAGE, detailed in section \ref{background:kage}, contains \textit{k}mer counting as one of its core steps in its genotyping pipeline.
-However, the \textit{k}mer counting process in KAGE is slightly different from the process commonly refered to by the term \textit{k}mer counting.
+However, the \textit{k}mer counting process in KAGE is slightly different from the process commonly referred to by the term \textit{k}mer counting.
 Rather than counting the observed frequency of every valid \textit{k}mer in a set of input reads, KAGE only counts the observed frequencies of every \textit{k}mer in a predefined set.
-Given how many valid \textit{k}mers one can observe in a set of hundreds of millions of reads, which is typical when sequencing and genotyping a human genome, not needing to store each of these with an associated count value makes this new \textit{k}mer counting variant significantly less memory and time consuming.
+Given how many valid \textit{k}mers one can observe in a set of hundreds of millions of reads, which is typical when sequencing and genotyping a human genome, not needing to store each with an associated count value makes this new \textit{k}mer counting variant significantly less memory and time consuming.
 
 \begin{figure}[H]
 \begin{center}
@@ -196,4 +196,4 @@ Given how many valid \textit{k}mers one can observe in a set of hundreds of mill
 
 Henceforth in this thesis, we will in the favour of brevity refer to the former \textit{k}mer counting process where we count every valid \textit{k}mer's occurrence as \textit{full} \textit{k}mer counting, and to the latter process where we only count the occurrences of \textit{k}mers in a predefined set as \textit{partial} \textit{k}mer counting.
 
-While several \textit{k}mer counting software tools have been developed in previous work, with at least one, Gerbil \cite{gerbil}, having support for GPU acceleration \cite{kmer_counting_tools}, these tools are designed to solve the \textit{full} \textit{k}mer counting problem.
+While several \textit{k}mer counting software tools have been developed in previous work, with at least one, Gerbil \cite{gerbil}, supporting GPU acceleration \cite{kmer_counting_tools}, these tools are designed to solve the \textit{full} \textit{k}mer counting problem.

@@ -1,5 +1,5 @@
 \subsection{GPU Accelerating Genotyping} \label{methods:gpu_accelerating_genotyping}
-The genotyping step of KAGE (introduced in section \ref{background:kage}) computes genotype-probabilities, supported by the \textit{k}mer counts found during the \textit{k}mer counting portion.
+The genotyping step of KAGE (introduced in section \ref{background:kage}) computes genotype-probabilities supported by the \textit{k}mer counts found during the \textit{k}mer counting portion.
 A central part of this step is computing the \textit{logarithm of the probability mass function} (LOGPMF) a large number of times on large arrays.
 Because the LOGPMF computations took up most of the runtime in KAGE's genotyping step and its implementation relied on computing many parallel mathematical expressions for large arrays, we chose to focus on LOGPMF to GPU accelerate the genotyping step.
 
@@ -11,14 +11,149 @@ where $\Gamma$ is the gamma function.
 In KAGE, this formula is computed for every element at every index in two equal-sized arrays $k$ and $\mu$.
 The original implementation utilizes NumPy's efficient array-operations to compute LOGPMF efficiently using data-parallelism on the CPU.
 
+%\begin{figure}[H]
+%\begin{center}
+%\scalebox{.66}{
+%\scalebox{.71}{ Original
+%\begin{tikzpicture}
+  % input
+%  \node at(2.9,3.8){\textbf{input}};
+%  \node at(2.9,3.2){\textbf{arrays}};
+  % k
+%  \draw [->](-1.1,2.5) -- (2.3,2.5);
+%  \draw [->](-1.4,2.1) -- (-1.4,-.25);
+  % row 0
+%  \node at(-.75,2){$k_{0,0}$};
+%  \node at(.1,2){$k_{1,0}$};
+%  \node at(.7,2){.};
+%  \node at(.95,2){.};
+%  \node at(1.2,2){.};
+%  \node at(1.9,2){$k_{n,0}$};
+  % row 1
+%  \node at(-.75,1.35){$k_{0,1}$};
+%  \node at(.1,1.35){$k_{1,1}$};
+%  \node at(.7,1.35){.};
+%  \node at(.95,1.35){.};
+%  \node at(1.2,1.35){.};
+%  \node at(1.9,1.35){$k_{n,1}$};
+  % dots
+  % left
+%  \node at(-.325,.45){.};
+%  \node at(-.325,.7){.};
+%  \node at(-.325,.95){.};
+  % middle 
+%  \node at(.95,.45){.};
+%  \node at(.95,.7){.};
+%  \node at(.95,.95){.};
+  % right 
+%  \node at(1.9,.45){.};
+%  \node at(1.9,.7){.};
+%  \node at(1.9,.95){.};
+  % row m
+%  \node at(-.75,.05){$k_{0,m}$};
+%  \node at(.1,.05){$k_{1,m}$};
+%  \node at(.7,.05){.};
+%  \node at(.95,.05){.};
+%  \node at(1.2,.05){.};
+%  \node at(1.9,.05){$k_{n,m}$};
+  % mu
+%  \draw [->](-1.1+4.5,2.5) -- (2.3+4.5,2.5);
+%  \draw [->](-1.4+4.5,2.1) -- (-1.4+4.5,-.25);
+  % row 0
+%  \node at(-.75+4.5,2){$\mu_{0,0}$};
+%  \node at(.1+4.5,2){$\mu_{1,0}$};
+%  \node at(.7+4.5,2){.};
+%  \node at(.95+4.5,2){.};
+%  \node at(1.2+4.5,2){.};
+%  \node at(1.9+4.5,2){$\mu_{n,0}$};
+  % row 1
+%  \node at(-.75+4.5,1.35){$\mu_{0,1}$};
+%  \node at(.1+4.5,1.35){$\mu_{1,1}$};
+%  \node at(.7+4.5,1.35){.};
+%  \node at(.95+4.5,1.35){.};
+%  \node at(1.2+4.5,1.35){.};
+%  \node at(1.9+4.5,1.35){$\mu_{n,1}$};
+  % dots
+  % left
+%  \node at(-.325+4.5,.45){.};
+%  \node at(-.325+4.5,.7){.};
+%  \node at(-.325+4.5,.95){.};
+  % middle 
+%  \node at(.95+4.5,.45){.};
+%  \node at(.95+4.5,.7){.};
+%  \node at(.95+4.5,.95){.};
+  % right 
+%  \node at(1.9+4.5,.45){.};
+%  \node at(1.9+4.5,.7){.};
+%  \node at(1.9+4.5,.95){.};
+  % row m
+%  \node at(-.75+4.5,.05){$\mu_{0,m}$};
+%  \node at(.1+4.5,.05){$\mu_{1,m}$};
+%  \node at(.7+4.5,.05){.};
+%  \node at(.95+4.5,.05){.};
+%  \node at(1.2+4.5,.05){.};
+%  \node at(1.9+4.5,.05){$\mu_{n,m}$};
+  % arrow 1
+%  \draw [->,thick](7.2,1.25) -- (7.7,1.25);
+  % equation
+%  \node at(11.85,1.25){$o_{i,j}=k_{i,j}*\log(\mu_{i,j})-\mu_{i,j}-\ln(|\Gamma(k_{i,j}+1)|)$};
+  % arrow 2
+%  \draw [->,thick](16,1.25) -- (16.5,1.25);
+  % output
+%  \node at(18.6,3.8){\textbf{output}};
+%  \node at(18.6,3.2){\textbf{array}};
+%  \draw [->](-1.1+18.15,2.5) -- (2.3+18.15,2.5);
+%  \draw [->](-1.4+18.15,2.1) -- (-1.4+18.15,-.25);
+  % row 0
+%  \node at(-.75+18.15,2){$o_{0,0}$};
+%  \node at(.1+18.15,2){$o_{1,0}$};
+%  \node at(.7+18.15,2){.};
+%  \node at(.95+18.15,2){.};
+%  \node at(1.2+18.15,2){.};
+%  \node at(1.9+18.15,2){$o_{n,0}$};
+  % row 1
+%  \node at(-.75+18.15,1.35){$o_{0,1}$};
+%  \node at(.1+18.15,1.35){$o_{1,1}$};
+%  \node at(.7+18.15,1.35){.};
+%  \node at(.95+18.15,1.35){.};
+%  \node at(1.2+18.15,1.35){.};
+%  \node at(1.9+18.15,1.35){$o_{n,1}$};
+  % dots
+  % left
+%  \node at(-.325+18.15,.45){.};
+%  \node at(-.325+18.15,.7){.};
+%  \node at(-.325+18.15,.95){.};
+  % middle 
+%  \node at(.95+18.15,.45){.};
+%  \node at(.95+18.15,.7){.};
+%  \node at(.95+18.15,.95){.};
+  % right 
+%  \node at(1.9+18.15,.45){.};
+%  \node at(1.9+18.15,.7){.};
+%  \node at(1.9+18.15,.95){.};
+  % row m
+%  \node at(-.75+18.15,.05){$o_{0,m}$};
+%  \node at(.1+18.15,.05){$o_{1,m}$};
+%  \node at(.7+18.15,.05){.};
+%  \node at(.95+18.15,.05){.};
+%  \node at(1.2+18.15,.05){.};
+%  \node at(1.9+18.15,.05){$o_{n,m}$};
+%\end{tikzpicture}
+%}
+%\caption{
+%  The LOGPMF computation in KAGE is performed on large arrays, relying on NumPy's efficient and data-parallel solutions to run efficiently on the CPU.
+%}
+%\label{methods:gpu_accelerating_genotyping:figures:logpmf}
+%\end{center}
+%\end{figure}
+
 \begin{figure}[H]
 \begin{center}
-\scalebox{.66}{
-%\scalebox{.71}{ Original
+\scalebox{.8}{
 \begin{tikzpicture}
   % input
-  \node at(2.9,3.8){\textbf{input}};
-  \node at(2.9,3.2){\textbf{arrays}};
+  \node at(2.9,3.8){\small\textbf{input}};
+  \node at(2.9,3.2){\small\textbf{arrays}};
   % k
   \draw [->](-1.1,2.5) -- (2.3,2.5);
   \draw [->](-1.4,2.1) -- (-1.4,-.25);
@@ -94,50 +229,49 @@ The original implementation utilizes NumPy's efficient array-operations to compu
   \node at(1.2+4.5,.05){.};
   \node at(1.9+4.5,.05){$\mu_{n,m}$};
   % arrow 1
-  \draw [->,thick](7.2,1.25) -- (7.7,1.25);
+  \draw [->,thick,double distance=.5pt](2.9,-1) -- (2.9,-1.6);
   % equation
-  \node at(11.85,1.25){$o_{i,j}=k_{i,j}*\log(\mu_{i,j})-\mu_{i,j}-\ln(|\Gamma(k_{i,j}+1)|)$};
-  % arrow 2
-  \draw [->,thick](16,1.25) -- (16.5,1.25);
+  \node at(2.9,-2.35){$o_{i,j}=k_{i,j}*\log(\mu_{i,j})-\mu_{i,j}-\ln(|\Gamma(k_{i,j}+1)|)$};
+  \draw [->,thick,double distance=.5pt](2.9,-3.1) -- (2.9,-3.7);
   % output
-  \node at(18.6,3.8){\textbf{output}};
-  \node at(18.6,3.2){\textbf{array}};
-  \draw [->](-1.1+18.15,2.5) -- (2.3+18.15,2.5);
-  \draw [->](-1.4+18.15,2.1) -- (-1.4+18.15,-.25);
+  \node at(2.9,-4.25-.2){\small\textbf{output}};
+  \node at(2.9,-4.85-.2){\small\textbf{array}};
+  \draw [->](1.35,-5.55-.2) -- (4.75,-5.55-.2);
+  \draw [->](1.05,-5.95-.2) -- (1.05,-8.3-.2);
   % row 0
-  \node at(-.75+18.15,2){$o_{0,0}$};
-  \node at(.1+18.15,2){$o_{1,0}$};
-  \node at(.7+18.15,2){.};
-  \node at(.95+18.15,2){.};
-  \node at(1.2+18.15,2){.};
-  \node at(1.9+18.15,2){$o_{n,0}$};
+  \node at(-.75-15.7+18.15,2-8.05-.2){$o_{0,0}$};
+  \node at(.1-15.7+18.15,2-8.05-.2){$o_{1,0}$};
+  \node at(.7-15.7+18.15,2-8.05-.2){.};
+  \node at(.95-15.7+18.15,2-8.05-.2){.};
+  \node at(1.2-15.7+18.15,2-8.05-.2){.};
+  \node at(1.9-15.7+18.15,2-8.05-.2){$o_{n,0}$};
   % row 1
-  \node at(-.75+18.15,1.35){$o_{0,1}$};
-  \node at(.1+18.15,1.35){$o_{1,1}$};
-  \node at(.7+18.15,1.35){.};
-  \node at(.95+18.15,1.35){.};
-  \node at(1.2+18.15,1.35){.};
-  \node at(1.9+18.15,1.35){$o_{n,1}$};
+  \node at(-.75-15.7+18.15,1.35-8.05-.2){$o_{0,1}$};
+  \node at(.1-15.7+18.15,1.35-8.05-.2){$o_{1,1}$};
+  \node at(.7-15.7+18.15,1.35-8.05-.2){.};
+  \node at(.95-15.7+18.15,1.35-8.05-.2){.};
+  \node at(1.2-15.7+18.15,1.35-8.05-.2){.};
+  \node at(1.9-15.7+18.15,1.35-8.05-.2){$o_{n,1}$};
   % dots
   % left
-  \node at(-.325+18.15,.45){.};
-  \node at(-.325+18.15,.7){.};
-  \node at(-.325+18.15,.95){.};
+  \node at(-.325-15.7+18.15,.45-8.05-.2){.};
+  \node at(-.325-15.7+18.15,.7-8.05-.2){.};
+  \node at(-.325-15.7+18.15,.95-8.05-.2){.};
   % middle 
-  \node at(.95+18.15,.45){.};
-  \node at(.95+18.15,.7){.};
-  \node at(.95+18.15,.95){.};
+  \node at(.95-15.7+18.15,.45-8.05-.2){.};
+  \node at(.95-15.7+18.15,.7-8.05-.2){.};
+  \node at(.95-15.7+18.15,.95-8.05-.2){.};
   % right 
-  \node at(1.9+18.15,.45){.};
-  \node at(1.9+18.15,.7){.};
-  \node at(1.9+18.15,.95){.};
+  \node at(1.9-15.7+18.15,.45-8.05-.2){.};
+  \node at(1.9-15.7+18.15,.7-8.05-.2){.};
+  \node at(1.9-15.7+18.15,.95-8.05-.2){.};
   % row m
-  \node at(-.75+18.15,.05){$o_{0,m}$};
-  \node at(.1+18.15,.05){$o_{1,m}$};
-  \node at(.7+18.15,.05){.};
-  \node at(.95+18.15,.05){.};
-  \node at(1.2+18.15,.05){.};
-  \node at(1.9+18.15,.05){$o_{n,m}$};
+  \node at(-.75-15.7+18.15,.05-8.05-.2){$o_{0,m}$};
+  \node at(.1-15.7+18.15,.05-8.05-.2){$o_{1,m}$};
+  \node at(.7-15.7+18.15,.05-8.05-.2){.};
+  \node at(.95-15.7+18.15,.05-8.05-.2){.};
+  \node at(1.2-15.7+18.15,.05-8.05-.2){.};
+  \node at(1.9-15.7+18.15,.05-8.05-.2){$o_{n,m}$};
 \end{tikzpicture}
 }
 \caption{
@@ -148,7 +282,7 @@ The original implementation utilizes NumPy's efficient array-operations to compu
 \end{figure}
 
 \subsubsection{Replacing NumPy with CuPy}
-Since the original KAGE solution for computing LOGPMF was implemented using NumPy, our first GPU acceleration was to use the method described in section \ref{methods:preliminary_testing:using_cupy_as_a_drop_in_replacement_for_numpy} where we used CuPy as a drop-in replacement for NumPy to GPU accelerate existing NumPy-based code.
+Since the original KAGE solution for computing LOGPMF was implemented using NumPy, we first attempted to GPU accelerate the LOGPMF using the method described in section \ref{methods:preliminary_testing:using_cupy_as_a_drop_in_replacement_for_numpy}, where we used CuPy as a drop-in replacement for NumPy.
 The NumPy solution from KAGE relies on SciPy \cite{scipy} to compute the natural logarithm of the gamma function: $\ln(|\Gamma(x)|)$.
 For our CuPy solution, we instead used CuPy's cupyx.scipy's implementation.
 
@@ -176,14 +310,14 @@ def cupy_poisson_logpmf(k, r):
 \end{figure}
 
 \subsubsection{Assessment} \label{methods:gpu_accelerating_genotyping:cupy_logpmf_assessment}
-In order to assess the effects of GPU accelerating KAGE's LOGPMF function by using CuPy, we benchmarked both functions by computing LOGPMF for input arrays $k$ and $r$.
+For the purpose of assessing the effect of GPU accelerating KAGE's LOGPMF function by using CuPy, we benchmarked both the original NumPy-based and the GPU accelerated CuPy-based functions by computing LOGPMF for input arrays $k$ and $r$.
 The $k$ array was initialized with 40 million 32-bit integers, randomly set to values between 1 and 100.
 $r$ was initialized with 40 million 64-bit floating point numbers, randomly set to values between 1 and 100.
 
-The CuPy-based GPU accelerated function presented in figure \ref{methods:gpu_accelerating_genotyping:figures:logpmf_array_implementations} requires both input arrays, $k$ and $r$, to already be allocated in GPU memory.
+The CuPy-based GPU accelerated function presented in figure \ref{methods:gpu_accelerating_genotyping:figures:logpmf_array_implementations} requires both input arrays, $k$ and $r$, to be allocated in GPU memory.
 Benchmarking only the function calls as presented therefore ignores the overhead of copying both $k$ and $r$ to GPU memory before the function call can be made.
-Thus, for completion, we did not only benchmark both the NumPy and CuPy solutions. We additionally benchmarked the CuPy solution where $k$ and $r$ start off in CPU RAM and are copied to GPU memory before processing, and the result array is copied back to CPU RAM afterwards. 
-This way, we accounted for the overhead of copying data to and from the GPU.
+Thus, for completion, we did not only benchmark both the NumPy and CuPy solutions. We additionally benchmarked the CuPy solution where $k$ and $r$ start off in RAM and are copied to GPU memory before processing and the result array is copied back to RAM afterwards. 
+This way, our benchmarking accounted for the overhead of copying data to and from the GPU.
 
 Our benchmarking yielded the following results:
 \begin{table}[H]
@@ -207,8 +341,8 @@ Our benchmarking yielded the following results:
 
 \begin{figure}[H]
 %\hspace*{6.8em}
-\centering
-\scalebox{.85}{
+\begin{center}
+\scalebox{.95}{
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,
@@ -251,6 +385,7 @@ Our benchmarking yielded the following results:
 \end{axis}
 \end{tikzpicture}
 }
+\end{center}
 \caption{
   Time (milliseconds) spent computing the LOGPMF for input arrays of 40 million elements.
 }
@@ -260,7 +395,7 @@ Our benchmarking yielded the following results:
 \subsubsection{Implementing LOGPMF using CUDA}
 While the method of using CuPy as a drop-in replacement for NumPy provided a significant speedup when computing the LOGPMF, it reveals a problem that arises when using NumPy and CuPy in Python.
 When computing a nested expression, such as when computing the LOGPMF shown in equation \ref{methods:gpu_accelerating_genotyping:equations:logpmf}, the expression will be computed and evaluated following Python's evaluation rules, subsequently creating several temporary arrays.
-This means that array allocations, de-allocations, memory writes and reads are happening needlessly while evaluating the Python expression.
+As a result, array allocations, de-allocations, memory writes, and reads are happening needlessly while evaluating the Python expression.
 
 By moving into C++ and using CUDA, we can create our own CUDA kernel to compute the LOGPMF for large arrays, avoiding these redundant operations.
 We implemented a simple kernel where we avoid needlessly storing sub-expressions in temporary arrays.
@@ -309,7 +444,8 @@ Our benchmarking yielded the following results:
 
 \begin{figure}[H]
 %\hspace*{2.75cm}
-\centering
+\begin{center}
+\scalebox{.95}{
   \begin{tikzpicture}[font=\small]
     \pgfplotsset{
       compat=newest,
@@ -355,16 +491,18 @@ Our benchmarking yielded the following results:
 \legend{CuPy, CUDA}
 \end{axis}
 \end{tikzpicture}
+}
+\end{center}
 \caption{
   Time (milliseconds) spent computing the LOGPMF for input arrays of 40 million elements.
 }
 \label{methods:gpu_accelerating_genotyping:figures:logpmf_benchmark_2}
 \end{figure}
 
-As can be seen in table \ref{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark_2}, implementing our own CUDA solution, alleviating the wasteful array allocations and memory reads and writes, resulted in a significant speedup.
+As shown in table \ref{methods:gpu_accelerating_genotyping:tables:logpmf_benchmark_2}, implementing our own CUDA solution, alleviating the wasteful array allocations and memory reads and writes, resulted in a significant speedup.
 
 \subsubsection{Extending the LOGPMF Implementation}
-Despite already having achieved significant speedup using both CuPy and CUDA to GPU accelerate LOGPMF, further examination of KAGE revealed that more of the context around the LOGPMF function call was eligible to be GPU accelerated.
+Despite already having achieved significant speedup using CuPy and CUDA to GPU accelerate LOGPMF, further examination of KAGE revealed that more of the context around the LOGPMF function call was eligible to be GPU accelerated.
 The original part of KAGE that made calls to the LOGPMF function is presented below:
 \begin{figure}[H] 
 \begin{center}
@@ -420,7 +558,8 @@ Our benchmarking yielded the following results:
 
 \begin{figure}[H]
 %\hspace*{2.75cm}
-\centering
+\begin{center}
+\scalebox{.95}{
   \begin{tikzpicture}[font=\small]
     \pgfplotsset{
       compat=newest,
@@ -471,6 +610,8 @@ Our benchmarking yielded the following results:
 \legend{NumPy, CuPy, CUDA}
 \end{axis}
 \end{tikzpicture}
+}
+\end{center}
 \caption{
   Benchmarking results for the extended LOGPMF function.
   The NumPy solution running on the CPU does not need to account for copying data to and from the GPU, thus, their runtimes are identical.

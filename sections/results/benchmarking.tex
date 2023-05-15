@@ -40,8 +40,8 @@ Thus, we opted not to include our GPU accelerated solution for \textit{kage} in 
 After replacing our GPU accelerated version of the LOGPMF computation in \textit{kage} with the new and more performant solution made by the KAGE developers, we achieved our final version of GKAGE.
 
 We benchmarked GKAGE against KAGE on both the high-end compute server (system 1) and the consumer grade desktop computer (system 2) that we introduced in section \ref{methods:benchmarking_setup:systems}.
-When running on system 1, we allowed KAGE 16 threads and GKAGE one Nvidia Tesla V100 GPU.
-When running on system 2, we allowed KAGE 6 threads and GKAGE the Nvidia GTX 1660 SUPER GPU.
+When running on system 1, we allowed KAGE and GKAGE 16 threads and GKAGE one Nvidia Tesla V100 GPU.
+When running on system 2, we allowed KAGE and GKAGE 6 threads and GKAGE the Nvidia GTX 1660 SUPER GPU.
 Gerbil, which only performed \textit{full} \textit{k}mer counting, was allowed 16 and 6 threads on system 1 and 2 respectively.
 We ran the Snakemake pipeline on both systems, benchmarking GKAGE against KAGE and running Gerbil.
 From this we found the following results:
@@ -61,7 +61,8 @@ From this we found the following results:
 \end{table}
 
 \begin{figure}[H]
-\centering
+\begin{center}
+\scalebox{.95}{
   \begin{tikzpicture}[font=\small]
     \pgfplotsset{
       compat=newest,
@@ -107,6 +108,8 @@ From this we found the following results:
 \legend{KAGE, GKAGE}
 \end{axis}
 \end{tikzpicture}
+}
+\end{center}
 \caption{
   Benchmarking GKAGE against KAGE on both system 1 (high-end server) and system 2 (consumer desktop) revealed that GKAGE could genotype a full human genome more than 5 times faster than KAGE on a high-end server, and more than 11 times faster on a consumer desktop computer.
 }
@@ -116,6 +119,6 @@ From this we found the following results:
 
 The results from the benchmarking revealed that GKAGE achieves significant speedup over KAGE when genotyping a full human genome.
 As seen in table \ref{results:benchmarking:final_runtimes:tables:runtimes} and figure \ref{results:benchmarking:final_runtimes:figures:runtimes}, GKAGE achieves more than 5X speedup over KAGE on a high-end compute server and more than 11X speedup on a consumer grade desktop computer.
-Additionally, GKAGE's runtime when performing the full genotyping pipeline is smaller than that of Gerbil, despite Gerbil only performing \textit{k}mer counting, also on the GPU.
+Additionally, GKAGE's runtime when performing the full genotyping pipeline is smaller than that of Gerbil with GPU acceleration, despite Gerbil only performing \textit{k}mer counting.
 
 Since KAGE recently showed that it was an order of magnitude faster than any other known genotyping tool \cite{kage}, GKAGE's significant speedup leads us to conclude that it is, to the best of our knowledge, now clearly the fastest method for genotyping an individual, allowing for the genotyping of a human genome in just 3 minutes on consumer hardware and 1.5 minutes on a high-end compute server.

@@ -1,15 +1,13 @@
 \subsection{Nucleotide Binary Encoding} \label{background:nucleotide_binary_encoding}
-
-DNA nucleotide sequences (described in section \ref{background:biology:dna_chromosomes_and_genomes}) inside computer software is commonly represented simply by a sequence of the 8 bit characters A, C, T and G (or alternatively the lowercase a, c, t and g).
+DNA nucleotide sequences (described in section \ref{background:biology:dna_chromosomes_and_genomes}) inside computer software are commonly represented simply by a sequence of the 8-bit characters A, C, T and G (or alternatively the lowercase a, c, t and g).
 This representation, however, is cumbersome to operate on and requires large amounts of memory to store.
 To circumvent these issues, a widely adopted technique is to encode the nucleotides into binary form, often referred to as \textit{2-bit encoding}.
-This leads to much quicker processing of nucleotide sequences and reduces the memory usage needed to store the sequences by 75\%.
+This encoding leads to much quicker processing of nucleotide sequences and reduces the memory usage needed to store the sequences by 75\%.
 This is achieved by realizing that only 2 bits, giving \textit{$2^2=4$} possible unique states, is enough to represent all of the four DNA nucleotides A, C, G and T.
 The binary encoding can be extended further to represent whole nucleotide sequences in binary arrays.
 For example, an integer array, if interpreted 2 consecutive bits at a time, can represent such a sequence.
 
-\vspace*{.5em}
-
+\begin{figure}[H]
 \begin{table}[H]
 \begin{center}
 \begin{tabular}{lllll}
@@ -19,30 +17,10 @@ For example, an integer array, if interpreted 2 consecutive bits at a time, can 
   \cline{1-5}
 \end{tabular}
 \end{center}
-\label{background:nucleotide_binary_encoding:tables:nucleotide_to_binary}
+%\label{background:nucleotide_binary_encoding:tables:nucleotide_to_binary}
 \end{table}
-
-\vspace*{-2em}
-
-\begin{figure}[H]
+\vspace*{-1em}
 \begin{center}
-%\scalebox{1}{
-%\begin{tikzpicture}
-  %\node at(0,0)(){T};
-  %\node at(0,.6)(){G};
-  %\node at(0,1.2)(){C};
-  %\node at(0,1.8)(){A};
-  %\node at(1.25,0)(){11};
-  %\node at(1.25,.6)(){10};
-  %\node at(1.25,1.2)(){01};
-  %\node at(1.25,1.8)(){00};
-  %\draw [<->](.35,0) -- (.8,0);
-  %\draw [<->](.35,.6) -- (.8,.6);
-  %\draw [<->](.35,1.2) -- (.8,1.2);
-  %\draw [<->](.35,1.8) -- (.8,1.8);
-%\end{tikzpicture}
-%}
-
 \scalebox{1}{
 \begin{tikzpicture}
   \node at(0,1)(title){};

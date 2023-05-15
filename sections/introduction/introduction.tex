@@ -1,7 +1,7 @@
 A central problem in biology is to effectively uncover and characterize genetic sequence variations in humans.
 By understanding where and how the human genome varies from individual to individual, we can vastly improve our understanding of how an individual's genetic makeup affects its observable traits - its phenotype.
-%To realize this goal, it is inescapable that we need fast and reliable methods for genotyping individuals in order to gather the vast amounts of data necessary to adequately explore links between genotypes and phenotypes.
-To realize this goal, it is inescapable that we need fast and reliable methods to analyze how genetic variations manifest in the population in order to gather the vast amounts of data necessary to adequately explore links between genotypes and phenotypes.
+%To realize this goal, it is inescapable that we need fast and reliable methods to analyze how genetic variations manifest in the population in order to gather the vast amounts of data necessary to adequately explore links between genotypes and phenotypes.
+To realize this goal, it is inescapable that we need fast and reliable methods to analyze how genetic variations manifest in the population, in order to gather the vast amounts of data necessary to explore links between genotypes and phenotypes adequately.
 Today, these methods are commonly referred to as \textit{genotyping} - the process of determining which genetic variants are present in both of the chromosomes of an individual.
 
 As the price of high-throughput sequencing has steadily become cheaper over the last few decades \cite{nhgri_sequencing_cost}, whole genome sequencing of human genomes has become more accessible than ever before.
@@ -9,21 +9,21 @@ Today, we can relatively cheaply sequence a whole human genome and expect to rec
 From just such reads, where we neither know where the read originates from in the sequence's genome or where it may be erroneous, we want to perform the difficult task of accurately genotyping the individual, and to perform this analysis as quickly as possible.
 
 The traditional and more established methods for genotyping a human individual have involved aligning all sequenced reads to a reference genome to examine where the reads differ from the reference, noting the genotypes supported.
-Such \textit{alignment-based} methods are computationally expensive and time consuming, with established genotypers such as GATK \cite{gatk} needing tens of gigabytes of memory and several hours to run \cite{kage}.
+Such \textit{alignment-based} methods are computationally expensive and time consuming, with established genotypers such as GATK \cite{gatk} requiring tens of gigabytes of memory and several hours to run \cite{kage}.
 In recent years, new \textit{alignment-free} strategies for genotyping human individuals have emerged.
-Because of work such as the 1000 Genomes Project \cite{1000_genomes_project}, we today have access to vast amounts of knowledge about human genetic variation and genotype information.
-Alignment-free genotyping methods leverage such knowledge to skip the taxing alignment step altogether in favour of genotyping individuals directly based on analysis of \textit{k}mers - short substrings of the read sequences - and previous knowledge of known genetic variation \cite{kage,malva}.
-Recently, a new genotyping tool, KAGE, showed that by deploying an alignment-free method, it is possible to yield competitive genotype prediction accuracies while being an order of magnitude faster than any other known genotyper \cite{kage}.
+Because of work such as the 1000 Genomes Project \cite{1000_genomes_project}, we today have access to vast knowledge about human genetic variation and genotype information.
+Alignment-free genotyping methods leverage such knowledge to skip the demanding alignment step altogether in favour of genotyping individuals directly based on analysis of \textit{k}mers - short substrings of the read sequences - and previous knowledge of known genetic variation \cite{kage,malva}.
+Recently, a new genotyping tool, KAGE, showed that by deploying an alignment-free method, it could achieve competitive genotype prediction accuracies while being an order of magnitude faster than any other known genotyper \cite{kage}.
 
 In recent years, with the introduction of the \textit{general purpose graphical processing unit} (GPGPU), the \textit{graphical processing unit} (GPU) has become increasingly popular for solving problems that require heavy amounts of compute, with many such problems existing in the space of scientific computing.
 Common for all traditional genotyping tools is that they are implemented to run on the \textit{central processing unit} (CPU).
 This likely stems from the fact that memory usage commonly reaches tens, and sometimes hundreds of gigabytes when running these tools \cite{kage}, and that not all problems are fit to run on the GPU architecture.
 However, the currently fastest known genotyping tool, KAGE, requires significantly less memory compared to its competitors.
 Additionally, KAGE is implemented in Python, and performs a significant amount of large array operations - a type of operation well suited for the GPU architecture - using the Python library NumPy \cite{numpy}.
-Because of this, KAGE seemingly stood to benefit from GPU acceleration.
+Because of this, KAGE seemingly stands to benefit from GPU acceleration.
 
 In this thesis, we will explore whether we can speed up (alignment-free) genotyping in any significant way by utilizing the GPU.
-We will start with KAGE as a base genotyper, and explore possible avenues for implementing GPU acceleration in KAGE to assess whether it results in significant speedup.
+We will start with KAGE as a base genotyper, and explore different avenues for implementing GPU acceleration in KAGE to assess whether they results in significant speedup.
 Since KAGE is implemented in Python and consists of several steps that can in effect be considered independent, several possible avenues for GPU acceleration are possible.
-We will explore several of them to assess what options developers may have to GPU accelerate existing work in Python, and evaluate the advantages and drawbacks of each.
+We will explore a subset of them, and assess what options developers may have to GPU accelerate existing work in Python, and evaluate the advantages and drawbacks of each method.
 

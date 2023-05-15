@@ -1,14 +1,10 @@
 \textit{Graphical Processing Units} (GPUs) are massively parallel processing units designed for high-throughput parallel computations.
-This is as opposed to \textit{Central Processing Units} (CPUs), which are designed to quickly perform many serial computations.
+\textit{Central Processing Units}, on the other hand, are designed to perform many serial computations quickly, reserving more transistors to caching and predicting how programs will branch in the future.
 GPUs were originally developed to accelerate computations performed on images, a highly parallel task where it is commonplace to have millions of relatively small independent computations that must be performed quickly in a single memory buffer.
-Although GPUs have mainly been used for graphical computations, they have in recent years been adopted in other areas as well with the introduction of the \textit{General Purpose Graphical Processing Unit} (GPGPU).
+Although GPUs have mainly been used for graphical computations, they have in recent years been adopted in other areas with the introduction of the \textit{General Purpose Graphical Processing Unit} (GPGPU).
 The concept of the GPGPU is to use a GPU to accelerate computations in other domains where CPUs have traditionally been used.
 Fields such as artificial intelligence and the broader scientific computing community have enjoyed great utility from GPUs, using them to accelerate embarrassingly parallel problems, e.g., matrix operations.
 Despite being comparable in power consumption, a GPU can provide much higher instruction throughput and memory bandwidth compared to its CPU competitors.
 These capability advantages exist in GPUs because they were specifically designed to perform well with regards to these dimensions.
-
-%As of 2023, Nvidia controls the vast majority of the GPU market share, with only \textit{Advanced Micro Devices} (AMD) and Intel as current serious competitors (\textbf{try to find a serious cite}).
-%Furthermore, Nvidia GPUs with their CUDA programming model is considered to be the standard for scientific computing today (\textbf{cite}).
-%Although most of the GPUs manufactured by different GPU manufacturing companies are very similar in both architecture and compute models, the term \textit{GPU} will for the remainder of this thesis specifically refer to Nvidia GPUs, as the work presented in this thesis was developed and tested using only Nvidia GPUs.
 
 While several distinct brands of GPUs exist, the work presented in this thesis only leverages GPUs produced by Nvidia, one of the leading accelerated computing manufacturers for scientific computing today \cite{gpu_marketshare}.

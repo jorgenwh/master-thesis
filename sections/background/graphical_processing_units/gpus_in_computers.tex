@@ -5,7 +5,7 @@ iGPUs are GPUs integrated onto the same die as a computer's CPU, where the two s
 dGPUs are dedicated GPU devices that are physically distinct from the host computer's CPU and RAM, and have their own physical RAM.
 dGPUs are significantly more powerful in terms of compute throughput when compared to iGPUs.
 However, having their own physical RAM introduces an overhead;
-Memory buffers with input data have to be copied to the dGPU's RAM before processing, and results have to be copied back from the dGPU's RAM to the host RAM.
+Memory buffers with input data must be copied to the dGPU's RAM before processing, and results copied back from the dGPU's RAM to the host RAM.
 
 \begin{figure}[H]\label{figure:igpu-and-dgpu-system}
 \begin{center}
@@ -22,8 +22,8 @@ Memory buffers with input data have to be copied to the dGPU's RAM before proces
   %\draw [-stealth](cpu) -- (ram);
   \draw [->](cpu) -- (ram);
 \end{tikzpicture}
-%\hspace{4.5em}
-\hspace{7em}
+\hspace{4.5em}
+%\hspace{7em}
 \begin{tikzpicture}
   % draw CPU die
   \node at(0,2)[rectangle,draw](cpu){\fontfamily{phv}\selectfont\small CPU};

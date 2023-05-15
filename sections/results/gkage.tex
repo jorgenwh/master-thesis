@@ -18,11 +18,11 @@
 %In fact, running GKAGE is achieved by running KAGE, using the -g flag to enable GPU acceleration.
 %KAGE (and GKAGE) can be found at \url{https://github.com/kage-genotyper}.
 
-As part of this master's project, we also present GKAGE: a new and improved version of KAGE that utilizes CUDA enabled GPUs to significantly reduce the runtime of genotyping.
+As part of this master's project, we also present GKAGE: a new and improved version of KAGE that utilizes CUDA enabled GPUs to reduce the runtime of genotyping significantly.
 As shown in section \ref{results:benchmarking:final_runtimes}, GKAGE outperforms KAGE up to 5X on a high-end compute server and 11X on a consumer grade desktop computer in terms of runtime, while producing identical outputs.
 Since KAGE recently showed that it was an order of magnitude faster than any other known genotyping tool, to the best of our knowledge, GKAGE is now the fastest existing method to genotype an individual.
 Additionally, GKAGE can run on commercial hardware, requiring less than 4GB of GPU memory.
-KAGE (and GKAGE) can be found at \url{https://github.com/kage-genotyper}.
+KAGE and GKAGE are accessible from the web and can be found at \url{https://github.com/kage-genotyper}.
 
 The final KAGE pipeline with GPU acceleration integrated can be seen in figure \ref{results:gkage:figures:gkage} below.
 

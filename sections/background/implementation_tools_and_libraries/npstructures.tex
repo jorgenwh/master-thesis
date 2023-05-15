@@ -34,8 +34,9 @@ array([0, 1, 2, 3, 4, 5, 6, 7, 8])
 
 \paragraph{Hash Table and Counter}
 npstructures also provides a memory efficient hash table built on top of the ragged array data structure.
-This hash table is designed to give dictionary-like behaviour for NumPy-arrays, meaning chunks of key-value pairs can be operated on at once using fast NumPy array routines.
-This hash table object is in turn the base for a counter object that allows for counting of occurrences of a predefined set of keys.
+This is designed to give dictionary-like behaviour for NumPy-arrays where chunks of key-value pairs can be operated on at once using fast NumPy array routines.
+The hash table object is the base for a counter object that allows for counting of occurrences of a predefined set of keys.
 
-The counter (built on top of the hash table) achieves its memory efficiency by implementing a type of bucketed hash table where a ragged array is used to represent the table, and the number of rows of the array is equal to the number of buckets in the table, and the varying column lengths are equal to the bucket sizes.
+The counter (built on top of the hash table) achieves its memory efficiency by implementing a type of bucketed hash table where a ragged array is used to represent the table. 
+The number of rows of the array is equal to the number of buckets in the table, and the varying column lengths are equal to the bucket sizes.
 Upon initialization, the hash table hashes every key in the static key-set provided and computes how many keys hash to each row in the ragged array, thereby determining the column lengths (bucket sizes) for each row.

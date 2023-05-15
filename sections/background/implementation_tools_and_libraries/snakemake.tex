@@ -1,0 +1,7 @@
+\subsubsection{Snakemake} \label{background:snakemake}
+Snakemake \cite{snakemake} is a workflow management system built on top of Python that allows for the creation of reproducible and scalable data analyses.
+This is achieved through creating \textit{workflows}, using a human readable, Python based scripting language.
+Such workflows are created as sets of rules, where each rule define how to produce one or more output files from one or more input files, for example by running a piece of software.
+Once a workflow has been defined, Snakemake determines the order of which rules should be executed in order to produced the desired output.
+Snakemake also ensures that workflows are reproducible by tracking input files, output files, and parameters used for executing rules, and parallelization of rule execution.
+

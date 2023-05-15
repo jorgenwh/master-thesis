@@ -1,6 +1,7 @@
 \subsection{Integration into KAGE} \label{methods:integration_into_kage}
-Previously in section \ref{methods}, we described how we implemented GPU acceleration for three components of KAGE: the \textit{k}mer hashing, \textit{k}mer counting and genotyping components.
-Several different methods were explored, and some yielded better performance than others.
+Previously in section \ref{methods}, we described how we implemented GPU acceleration for three components of KAGE: the \textit{k}mer hashing, \textit{k}mer counting, and genotyping components.
+Several different methods were explored with different yields in terms of runtime efficiency.
+%Several different methods were explored, and some yielded better performance than others.
 Common for each GPU accelerated component is that they were GPU accelerated in isolation to keep their modular behaviour identical to the non-GPU accelerated versions.
 Thus, each accelerated component could be used as drop-in substitutes for their non-GPU counterparts in KAGE.
 
@@ -23,11 +24,13 @@ The selected methods can be seen in table \ref{methods:integration_into_kage:tab
 \label{methods:integration_into_kage:tables:chosen_methods}
 \end{table}
 
-Recall from section \ref{background:kage}, that KAGE is composed of two separate pieces of software: \textit{kmer\_mapper} - performing the \textit{k}mer hashing and counting, and \textit{kage} - performing the genotype-probability computations supported by the \textit{k}mer counts provided by \textit{kmer\_mapper}.
-We substituted \textit{kmer\_mapper}'s \textit{k}mer hashing and \textit{k}mer counting components, and \textit{kage}'s LOGPMF function, with our GPU accelerated version.
+%The integration of our GPU functionality into KAGE was carried out in close collaboration with the KAGE developers.
+Recall from section \ref{background:kage} that KAGE is composed of two separate pieces of software: \textit{kmer\_mapper} - performing the \textit{k}mer hashing and counting, and \textit{kage} - performing the genotype-probability computations supported by the \textit{k}mer counts provided by \textit{kmer\_mapper}.
+In close collaboration with the KAGE developers, we substituted \textit{kmer\_mapper}'s \textit{k}mer hashing and \textit{k}mer counting components, and \textit{kage}'s LOGPMF function, with our GPU accelerated versions.
 Additionally, in the final GPU accelerated version of \textit{kmer\_mapper}, the \textit{k}mer hashing component delivered the resulting \textit{k}mer arrays directly to the \textit{k}mer counting hash table, thus, avoiding needless data copying between the host and the GPU.
 As a result, \textit{kmer\_mapper} only encounters the overhead of copying data between the host and the GPU once, copying the raw input buffer read from the FASTA file to the GPU. 
 Then, 2-bit encoding, \textit{k}mer hashing and \textit{k}mer counting are all performed directly on the GPU.
 
 The final GPU accelerated version of KAGE, composed of the GPU accelerated versions of \textit{kmer\_mapper} and \textit{kage}, was ultimately named GKAGE (GPU KAGE).
+GKAGE was directly integrated into KAGE, and when installing KAGE from the web today, it comes with the GPU accelerated functionality out-of-the-box.
 

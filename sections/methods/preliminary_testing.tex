@@ -1,11 +1,11 @@
 \subsection{Preliminary Testing} \label{methods:preliminary_testing}
-Before delving into the GPU accelerated methods used to produce the final GKAGE product, we will here describe an initial test we performed in order to assess two things. 
+Before delving into the GPU accelerated methods used to produce the final GKAGE product, we will here describe an initial test we performed to assess two things. 
 Firstly, we wanted to assess whether we could effectively GPU accelerate existing NumPy solutions using CuPy, all while staying within the comfort of Python. 
 And secondly, whether such an implementation would result in significant runtime improvement over a CPU solution or at least provide insight into the plausibility of realizing a runtime improvement.
-For this, we decided on focusing on the \textit{partial} \textit{k}mer counting problem, detailed in section \ref{background:kmers_and_kmer_counting}.
+For this, we focused on the \textit{partial} \textit{k}mer counting problem, detailed in section \ref{background:kmers_and_kmer_counting}.
 
-As detailed in section \ref{background:implementation_tools_and_libraries:npstructures}, npstructures is a Python library that enhances the NumPy library by providing additional data structures with NumPy-like behaviour and performance, built on top of NumPy.
-Additionally in section \ref{background:implementation_tools_and_libraries:npstructures}, we detailed a subset of npstructures' data structures, one of which was a counter object that efficiently counts occurrences of a predefined keys-set in a sample.
+As detailed in section \ref{background:implementation_tools_and_libraries:npstructures}, npstructures is a Python library that enhances the NumPy library by providing additional data structures with NumPy-like behaviour and performance.
+Additionally, in section \ref{background:implementation_tools_and_libraries:npstructures}, we detailed a subset of npstructures' data structures, one of which was a counter object that efficiently counts occurrences of a predefined keys-set in a sample.
 This counter object had previously been utilized to count a predefined set of \textit{k}mer's frequencies, albeit on the CPU.
 
 Since npstructures' data structures are all heavily reliant upon NumPy's array routines for fast performance, they are designed around utilizing the CPU's vectorization and data parallelism.
@@ -46,7 +46,7 @@ class SomeClassUsingNumPy:
     return self.data
 \end{lstlisting}
 
-Our package's initialization file imports our function and our class from their respective modules, and all functionality is usable without needing to import CuPy in either module or initialization file.
+Our package's initialization file imports our function and class from their respective modules, and all functionality is usable without needing to import CuPy in either module or initialization file.
 Pay attention to the initialization file's \textit{set\_backend} function which takes a library as a parameter and reassigns the np variable in both package modules from the NumPy to the provided library.
 
 \begin{center}
@@ -65,7 +65,7 @@ def set_backend(lib):
   my_classes.np = lib
 \end{lstlisting}
 
-In our own program, where we will import our package, \textit{mypackage}, we can either directly use our package's implementation with NumPy, or we can do as the following example shows and import CuPy and set the backend in the entire package to use CuPy functionality instead of NumPy.
+In our program, where we will import our package, \textit{mypackage}, we can either directly use our package's implementation with NumPy, or do as the following example shows and import CuPy and set the backend in the entire package to use CuPy functionality instead of NumPy.
 
 \begin{center}
 program.py
@@ -91,7 +91,7 @@ In the case of the former issue, one might want to create an alternative solutio
 For the latter issue, there is no other practical option than to create a custom solution that achieves the desired behaviour by using what CuPy functionality is available.
 We circumvented both of these issues by creating custom implementations where we had the freedom to use the full extent of CuPy's functionality to reproduce the desired behaviour.
 For classes, this can be achieved by subclassing and overriding methods where we wish to create our new custom implementations.
-To demonstrate this, we will have to slightly edit our example package, \textit{mypackage}.
+To demonstrate this, we will have to edit our example package, \textit{mypackage}.
 
 Consider if our package's class definition had instead been the following:
 \begin{center}
@@ -127,7 +127,8 @@ class CPSomeClassUsingNumPy(SomeClassUsingNumPy):
     self.data = cp.pad(arr, (1, 1), 'constant', constant_values=1)
 \end{lstlisting}
 
-In the above example we override the \textit{pad\_with\_ones} method with our alternative implementation that uses a different CuPy function that is supported by CuPy, the \textit{pad} function.
+In the above example we override the \textit{pad\_with\_ones} method with our CuPy implementation.
+Our alternative CuPy implementation uses a different CuPy function to achieve the same behaviour as NumPy's insert, the \textit{pad} function.
 Now, our two different \textit{pad\_with\_ones} implementations will behave equivalently, although our custom implementation will leverage CuPy and be GPU accelerated.
 
 Finally, we need to make one small change to our package's initialization file so that users of our package will import our CuPy compatible subclass of \textit{SomeClassUsingNumPy} after setting the backend to CuPy:
@@ -162,7 +163,7 @@ It is important to note that while this benchmark provided a good assessment of 
 We justified the omission of this overhead because of two reasons.
 Firstly, during our initial testing we were only interested in assessing the runtime differences during processing on the GPU versus the CPU when using CuPy as a drop-in replacement for NumPy.
 Secondly, we only GPU accelerated one component of a much larger pipeline, and in such a case, the true effects of GPU acceleration may be overshadowed.
-Our intention was to GPU accelerate several consecutive components in a way where only a single copy step would need to be performed before several consecutive processing steps could benefit from GPU acceleration, minimizing the effects of the CPU to GPU copy overhead.
+We intended to GPU accelerate several consecutive components in a way where only a single copy step would need to be performed before several consecutive processing steps could benefit from GPU acceleration, minimizing the effects of the CPU to GPU copy overhead.
 
 \definecolor{cpucolor}{RGB}{255,255,225}
 \definecolor{gpucolor}{RGB}{225,255,255}
@@ -221,7 +222,7 @@ Our intention was to GPU accelerate several consecutive components in a way wher
 
 We ran the \textit{k}mer counting pipeline and measured the time spent counting \textit{k}mers for both the NumPy-based CPU version of the counter and the CuPy-based GPU version.
 The total time spent counting \textit{k}mers was measured by timing each call to the counter object and summing these runtimes in order to get the total counting time.
-For the GPU version, we made sure to synchronize the GPU to the CPU between each call, since kernel calls made from the CPU to the GPU are asynchronous otherwise.
+For the GPU version, we synchronized the GPU to the CPU between each call, since kernel calls made from the CPU to the GPU are asynchronous otherwise.
 This benchmark yielded the following results: 
 
 \begin{table}[H]
@@ -239,7 +240,8 @@ This benchmark yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\centering
+\begin{center}
+\scalebox{.95}{
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,
@@ -279,6 +281,8 @@ This benchmark yielded the following results:
 };
 \end{axis}
 \end{tikzpicture}
+}
+\end{center}
 \caption{
   Elapsed time counting the occurrences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
   Both methods use BioNumPy to read, 2-bit encode and hash chunks of \textit{k}mers, reading 10 million byte chunks from the FASTA at a time.

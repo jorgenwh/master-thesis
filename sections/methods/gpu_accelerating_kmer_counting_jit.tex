@@ -7,7 +7,7 @@ By exploiting this, we were able to re-implement our parallel hash table directl
 This implementation can be found online at \url{https://github.com/jorgenwh/cupycounter}.
 
 \subsubsection{Assessment}
-Again, we used the same benchmark used to assess the CuPy-based npstructures counter and the CUDA hash table (section \ref{methods:preliminary_testing:assessment}), to also assess the CuPy JIT (just-in-time) compiled implementation where we wrote custom kernels to get near-identical behaviour and performance as the CUDA hash table, all directly in Python.
+Again, we used the same benchmark used to assess the CuPy-based npstructures counter and the CUDA hash table (section \ref{methods:preliminary_testing:assessment}) also to assess the CuPy JIT (just-in-time) compiled implementation where we wrote custom kernels to get near-identical behaviour and performance as the CUDA hash table, all directly in Python.
 The benchmark yielded the following results:
 \begin{table}[H]
 \begin{center}
@@ -27,7 +27,8 @@ The benchmark yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\centering
+\begin{center}
+\scalebox{.95}{
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,
@@ -69,11 +70,13 @@ The benchmark yielded the following results:
 };
 \end{axis}
 \end{tikzpicture}
+}
+\end{center}
 \caption{
   Elapsed time counting the occurrences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
 }
 \label{methods:gpu_accelerating_kmer_counting_jit:figures:benchmark}
 \end{figure}
 
-As can be seen in table \ref{methods:gpu_accelerating_kmer_counting_jit:tables:benchmark}, the CuPy just-in-time compiled method of GPU accelerating \textit{k}mer counting resulted in (close to) identical performance as the CUDA hash table implementation, all in spite of being implemented directly in Python using CuPy's custom kernel support.
+As shown in table \ref{methods:gpu_accelerating_kmer_counting_jit:tables:benchmark}, the CuPy just-in-time compiled method of GPU accelerating \textit{k}mer counting resulted in (close to) identical performance as the CUDA hash table implementation, all in spite of being implemented directly in Python using CuPy's custom kernel support.
 The memory usage using the CuPy just-in-time compiled solution was also practically identical to that of the CUDA hash table.

@@ -1,10 +1,8 @@
 \begin{abstract}
 In the last few decades, high-throughput DNA sequencing has steadily become more cost effective and accessible.
-%When sequencing a human genome today, it is not uncommon to produce hundreds of millions of short snippets of the genetic sequence.
-%These snippets are produced without knowledge of where they originate from in the original genome sequence or which bases in the snippet may be erroneous.
 With the potential for millions of genomes being sequenced in the coming years, tools for analyzing the large amounts of genetic sequence data produced will become increasingly important.
 Genotyping - the process of determining the genetic sequence variants present in the chromosomes of a genome - is a core application for such genetic sequence data.
-Work in alignment-free genotyping, a new method that forgoes aligning each sequenced snippet to a reference genome sequence, have recently showed that statistical models on analysis of \textit{k}mers can yield competitive accuracies while being significantly faster compared to more traditional alignment-based methods.
+Work in alignment-free genotyping, a new method that forgoes aligning each sequenced snippet to a reference genome sequence, has recently revealed that statistical models on analysis of \textit{k}mers can yield competitive accuracies while being significantly faster compared to more traditional alignment-based methods.
 A recently published genotyping tool, KAGE, showed that an alignment-free genotyper implemented in Python could yield competitive accuracies while being more than 10 times faster than any other known method.
 This thesis explores how parts of KAGE, that is implemented in Python and deal with large matrix- and array-operations, can be GPU accelerated using a number of different methods with different advantages and shortcomings. 
 We then finally present GKAGE, a GPU accelerated version of KAGE. 

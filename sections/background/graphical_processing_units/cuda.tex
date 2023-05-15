@@ -4,15 +4,15 @@ CUDA \cite{cuda} is Nvidia's general purpose parallel computing platform and pro
 Although the CUDA software environment can be imported in several supported programming languages, development of GPU accelerated programs have traditionally been done in C++ with CUDA functionality imported through header files \cite{cuda}.
 
 The CUDA programming model is designed to be utilized to solve parallel problems where the GPU is used.
-To programmers, the programming model is made up of a hierarchy of three units of different granularity: \textit{threads}, \textit{blocks}, and \textit{grids}.
+To programmers, the programming model comprises a hierarchy of three units of different granularity: \textit{threads}, \textit{blocks}, and \textit{grids}.
 
 \paragraph{Threads, Blocks and Grids}
 CUDA threads are the most granular units of parallelism in the CUDA programming model.
-Thread blocks are collections of threads that can be either one-, two- or three-dimensional.
+Thread blocks are collections of threads that can be one-, two- or three-dimensional.
 Grids are at the top of the hierarchy, as collections of thread blocks.
-Both thread blocks and the grids can either be one-, two- or three-dimensional.
+Both thread blocks and the grids can be one-, two- or three-dimensional.
 Thus, their dimensions are referred to as $x$ for width, $y$ for height and $z$ for depth.
-In the CUDA model, each individual thread can be distinctly identified by its index in a thread block, and the thread block's index in a grid.
+In the CUDA model, each thread can be distinctly identified by its index in a thread block, and the thread block's index in a grid.
 When developing parallel programs, each thread has direct access to its (up to) three-dimensional index inside its thread block, and its thread block's (up to) three-dimensional index in its grid.
 If a thread resides in a three-dimensional thread block of dimensions $(Dx_b, Dy_b, Dz_b)$ at index $(x_b, y_b, z_b)$, its unique index within said block can be computed using:
 \begin{equation}
@@ -27,7 +27,7 @@ If the thread's thread block resides in a grid of dimensions $(Dx_g, Dy_g, Dz_g)
 
 This thread-hierarchy provides a natural way to perform computations over elements in e.g. vectors, matrices or tensors.
 All threads in a thread block must reside on the same \textit{stream multiprocessor core} in the GPU.
-Therefore, there is a size limit on how large thread blocks can be.
+Therefore, a size limit exists on how large thread blocks can be.
 The two types of Nvidia GPUs used in this thesis, the Nvidia Tesla V100 and the Nvidia GTX 1660 SUPER, have limits of 2048 and 1024 threads per thread block respectively.
 
 \definecolor{devicecolor}{RGB}{220,255,255}
@@ -92,12 +92,12 @@ The two types of Nvidia GPUs used in this thesis, the Nvidia Tesla V100 and the 
 \end{figure}
 
 \paragraph{Kernels}
-When writing parallel programs for the GPU using CUDA, \textit{kernel} functions define how the GPU should solve problems in a parallel fashion by using the thread-hierarchy.
+When writing parallel programs for the GPU using CUDA, \textit{kernel} functions define how the GPU should solve problems in a parallel fashion using the thread-hierarchy.
 Kernels are functions that, when called, launch once for each thread in the thread-hierarchy configurations, all in parallel.
 Thus, the code that resides in the kernel definition is executed in parallel by every distinct CUDA thread.
-Inside the kernel, each CUDA thread has access to its unique index within its thread block as well as unique thread block index within its grid.
+Inside the kernel, each CUDA thread has access to its unique index within its thread block as well as a unique thread block index within its grid.
 The thread blocks' dimensions and number of threads are typically determined by the problem and limited by the max number of threads per streaming multiprocessor core on the system.
-For the grid, the size is typically determined by the size of the problem, and computed as a result of how many thread blocks must be launched to fully complete the necessary computations.
+For the grid, the size is generally determined by the size of the problem, and computed as a result of how many thread blocks must be launched to complete the necessary computations fully.
 
 Below is a simple example program where a kernel is implemented to increment every integer in a vector by one.
 \begin{figure}[H]
@@ -132,7 +132,7 @@ int main() {
 \lstset{language=C++,style=cppcode}
 
 The example program above is implemented in C++.
-Certain keywords used are CUDA specific, and are not supported without including the necessary CUDA headers beforehand.
+Certain keywords used are CUDA specific, and are only supported by including the necessary CUDA header files beforehand.
 \lstinline{__global__} is used to declare that a function is a kernel.
 The number of CUDA threads launched to run a kernel is specified in the \lstinline{<<<...>>>} part of the kernel call.
 
@@ -142,17 +142,17 @@ Every distinct CUDA thread has its own set of registers and local memory.
 Typically, all the relevant data for a single CUDA thread is contained within its set of registers.
 If, however, a thread runs out of registers or otherwise uses too much memory, it will turn to its local memory.
 A CUDA thread's local memory is a piece of the GPU's global memory allocated for the thread.
-While accessing memory from registers is swift, memory requests to and from global memory is slow in comparison.
+While accessing memory from registers is swift, memory requests to and from global memory are slow in comparison.
 It is therefore desirable to avoid spilling memory from registers into local memory for individual threads.
 
 Each thread block has a shared memory region accessible by all threads contained in the block.
-This memory region shares its lifetime with its associated block and is also very fast in comparison to global memory.
+This memory region shares its lifetime with its associated block and is also very fast compared to global memory.
 
 The GPU's global RAM is the largest memory region in the GPU, typically ranging from a few to several gigabytes.
-The global memory is several orders of magnitude slower compared to the previously mentioned memory regions, so effective memory access patterns to minimize the number of memory requests and maximizing bandwidth usage are paramount for performance.
+The global memory is several orders of magnitude slower than the previously mentioned memory regions, so effective memory access patterns to minimize the number of memory requests and maximize bandwidth usage are paramount for performance.
 
 \paragraph{Programming and Considerations}
-The GPU is described by Nvidia to be a \textit{Single Instruction Multiple Threads} (SIMT) machine \cite{cuda}.
+Nvidia describes the GPU to be a \textit{Single Instruction Multiple Threads} (SIMT) machine \cite{cuda}.
 Although CUDA threads are described as threads, modern GPUs can in effect be considered to be massive \textit{Single Instruction Multiple Data} (SIMD) machines. 
 Strict flow control is therefore important; 
 The same set of instructions should run in the same order for maximum utilization of the GPU's capability.

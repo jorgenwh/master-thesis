@@ -4,7 +4,7 @@
 % packages
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[margin=1.25in]{geometry} % ORIGINAL
+%\usepackage[margin=1.35in]{geometry} % ORIGINAL
 \usepackage[skip=0.5cm]{parskip} % ORIGINAL
 %\usepackage[skip=10pt plus1pt, indent=20pt]{parskip} % NEW
 %\usepackage[skip=10pt plus1pt]{parskip} % NEW TEST
@@ -164,7 +164,7 @@
   basicstyle={\small\ttfamily},
   numbers=left,
   numberstyle=\tiny,
-  keywordstyle=\color{black}\bfseries\em,
+  keywordstyle=\color{black}\bfseries,
   breaklines=true,
   breakatwhitespace=true,
   tabsize=3,
@@ -195,39 +195,66 @@
 \author{\Large{Master's Thesis}\\\\Jørgen Wictor Henriksen}
 
 \begin{document}
+% roman page numbering for preface
+\pagenumbering{roman}
+
 % UiO front page
 \uiomasterfp[author={Jørgen Wictor Henriksen},date={Spring 2023},dept={Department of Bioinformatics},color=blue,long,supervisors={Ivar Grytten \and Knut Rand \and Geir Kjetil Sandve},program={Programming and System Architecture},title={Speeding up Genotyping through GPU Acceleration},subtitle={}]
+\setcounter{page}{1}
 
 % abstract
 \input{sections/abstract/include.tex}
+\addcontentsline{toc}{section}{Abstract}
+
+% acknowledgements
 \newpage
+\input{sections/acknowledgements/include.tex}
+\addcontentsline{toc}{section}{Acknowledgement}
 
 % table of contents
-\tableofcontents
 \newpage
+\tableofcontents
 
 % sections
+% introduction
+\newpage
+~\newpage
+% restart page numbering counter and switch to normal numbers
+\pagenumbering{arabic}
+\setcounter{page}{1}
 \input{sections/introduction/include.tex}
+
+% background
 \newpage
-%\input{sections/thesis_goal/include.tex}
-%\newpage
+~\newpage
 \input{sections/background/include.tex}
+
+% methods
 \newpage
+~\newpage
 \input{sections/methods/include.tex}
+
+% results
 \newpage
+~\newpage
 \input{sections/results/include.tex}
+
+% discussions 
 \newpage
+~\newpage
 \input{sections/discussions/include.tex}
+
+% conclusion
 \newpage
+~\newpage
 \input{sections/conclusion/include.tex}
-\newpage
 
 % bibliography
-%\printbibliography
-\printbibliography[heading=bibintoc,title={References}]
 \newpage
+\printbibliography[heading=bibintoc,title={References}]
 
 % Appendices
+\newpage
 \input{sections/appendices/include.tex}
 
 \end{document}

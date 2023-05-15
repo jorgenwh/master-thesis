@@ -1,13 +1,13 @@
 \subsection{GPU Accelerating \textit{k}mer Hashing} \label{methods:gpu_accelerating_kmer_hashing}
 The \textit{k}mer hashing component of KAGE is responsible for reading genomic reads from FASTA, FASTQ or other file types, encoding the reads as 2-bit encoded data and finally hashing all valid \textit{k}mers from the 2-bit encoded reads.
-In KAGE, the final product yielded by this component is a 64-bit unsigned integer array where each element is a 2-bit encoded 31-mer represented in the right-most 62 bits of the integer.
+In KAGE, this component's output is a 64-bit unsigned integer array where each element is a 2-bit encoded 31-mer represented in the right-most 62 bits of the integer.
 Since the number of valid \textit{k}mers in a typical FASTA or FASTQ from sequencing a human genome is extremely vast, the file is usually read, encoded and hashed in chunks to alleviate the required amount of memory.
 Functionality for this exists in the BioNumPy Python package.
 BioNumPy implements this using NumPy and some parts of npstructures, resulting in an efficient solution that relies on NumPy's fast array operations for its performance.
 
 \subsubsection{Replacing NumPy with CuPy}
-The Python package BioNumPy, which provides an implementation for \textit{k}mer encoding and hashing directly in Python, is built on top of NumPy and npstructures.
-We utilized the method we described in section \ref{methods:preliminary_testing} and used CuPy as a drop-in replacement for NumPy to add further GPU acceleration support to npstructures, and to add partial GPU support to BioNumPy.
+The Python package BioNumPy, which implements \textit{k}mer encoding and hashing directly in Python, is built on top of NumPy and npstructures.
+We utilized the method described in section \ref{methods:preliminary_testing} and used CuPy as a drop-in replacement for NumPy to add further GPU acceleration support to npstructures, and partial GPU support to BioNumPy.
 The resulting pipeline remained the same, but with two notable differences.
 \begin{compactenum}
   \item The raw byte chunk read from the FASTA files would be copied directly to the GPU.
@@ -47,9 +47,9 @@ The resulting pipeline remained the same, but with two notable differences.
   \node at(3.3,-2.25)[]{\fontfamily{phv}\selectfont\smaller{repeat}};
 \end{tikzpicture}
 \end{center}
-\end{figure}
-
-\begin{figure}[H]
+%\end{figure}
+\vspace{1em}
+%\begin{figure}[H]
 \begin{center}
 \begin{tikzpicture}
   \node at(1.75,1.5)[]{\fontfamily{phv}\selectfont\smaller{\textbf{CuPy pipeline}}};
@@ -87,10 +87,10 @@ The resulting pipeline remained the same, but with two notable differences.
 \end{figure}
 
 Upon completing the 2-bit encoding and \textit{k}mer hashing of the chunk, the resulting \textit{k}mer array already resides in GPU memory for the counting step.
-Previously, when the 2-bit encoding and \textit{k}mer hashing was performed using only the CPU, the resulting \textit{k}mer array would need to be copied to the GPU for counting when deploying the GPU accelerated \textit{k}mer counting functionality detailed in section \ref{methods:gpu_accelerating_kmer_counting}.
+Previously, when the 2-bit encoding and \textit{k}mer hashing were performed using only the CPU, the resulting \textit{k}mer array would need to be copied to the GPU for counting when deploying the GPU accelerated \textit{k}mer counting functionality detailed in section \ref{methods:gpu_accelerating_kmer_counting}.
 
 \subsubsection{Assessment}
-In order to assess the effects of GPU accelerating \textit{k}mer hashing, we measured the total runtime of reading, 2-bit encoding and hashing every valid \textit{k}mer from a FASTA file containing 20 million reads, each of length 150.
+To assess the effects of GPU accelerating \textit{k}mer hashing, we measured the total runtime of reading, 2-bit encoding and hashing every valid \textit{k}mer from a FASTA file containing 20 million reads, each of length 150.
 The FASTA was read in chunks of 10 million bytes.
 We benchmarked this runtime using BioNumPy with the standard NumPy backend, and again using CuPy as the backend to compare.
 The benchmarking yielded the following results:
@@ -111,7 +111,8 @@ The benchmarking yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\centering
+\begin{center}
+\scalebox{.92}{
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,
@@ -151,14 +152,15 @@ The benchmarking yielded the following results:
 };
 \end{axis}
 \end{tikzpicture}
-%\end{center}
+}
+\end{center}
 \caption{
   Elapsed time spent reading, 2-bit encoding and hashing all valid \textit{k}mers from 20 million reads in 10 million byte chunks using both NumPy as CuPy to perform the processing on the CPU and GPU respectively.
 }
 \label{methods:gpu_accelerating_kmer_hashing:figures:benchmark}
 \end{figure}
 
-As can be seen in table \ref{methods:gpu_accelerating_kmer_hashing:tables:benchmark}, GPU accelerating BioNumPy's \textit{k}mer hashing functionality, simply by using CuPy as a drop-in replacement for NumPy, yielded a more than 12X speedup when hashing every valid \textit{k}mer in a set of 20 million reads of length 150.
+As shown in table \ref{methods:gpu_accelerating_kmer_hashing:tables:benchmark}, GPU accelerating BioNumPy's \textit{k}mer hashing functionality, simply by using CuPy as a drop-in replacement for NumPy, yielded a more than 12X speedup when hashing every valid \textit{k}mer in a set of 20 million reads of length 150.
 This dramatic increase in efficiency is achieved despite having to copy each chunk of raw data read from the FASTA file to the GPU memory before processing can begin.
 Recall that in section \ref{methods:preliminary_testing:assessment}, we justified only benchmarking the time spent counting \textit{k}mers on the GPU without including the overhead of copying the \textit{k}mer chunks to the GPU memory.
 Combined with the \textit{k}mer hashing component's GPU acceleration, which yields a dramatic increase in efficiency despite including this overhead, \textit{k}mer chunks that are hashed on the GPU will already reside in the GPU's memory for counting.

@@ -1,20 +1,21 @@
 \subsection{Benchmarking Setup} \label{methods:benchmarking_setup}
 In order to benchmark the effectiveness of the added GPU acceleration in GKAGE, we decided to benchmark GKAGE against KAGE to account for the speedup.
-The choice of only benchmarking GKAGE against one other genotyping tool, KAGE, was made based on the fact that KAGE recently showed (2022) that it was an order of magnitude faster than any other known genotyper \cite{kage}.
+The choice of only benchmarking GKAGE against KAGE was made because of the fact that KAGE recently showed (2022) that it was an order of magnitude faster than any other known genotyper \cite{kage}.
 
 In section \ref{background:kmers_and_kmer_counting} we mentioned that another \textit{k}mer counting tool, Gerbil \cite{gerbil}, has support for GPU acceleration, but that Gerbil is designed to solve the \textit{full} \textit{k}mer counting problem (for \textit{partial} and \textit{full} \textit{k}mer counting, refer to section \ref{background:kmers_and_kmer_counting}).
 Therefore, for completeness, we also ran Gerbil (with GPU acceleration enabled) to compare its runtime against GKAGE's (\textit{kmer\_mapper}'s) \textit{k}mer counting runtime where only the \textit{partial} \textit{k}mer counting problem is solved.
 
 \subsubsection{Snakemake Pipeline} \label{methods:benchmarking_setup:snakemake_pipeline}
-In order to adequately benchmark GKAGE, we set up a Snakemake pipeline that runs both KAGE and GKAGE on a full human genome with 15x sequencing coverage and records the runtimes while also checking that the results of both processes are identical.
+In order to adequately benchmark GKAGE, we set up a Snakemake pipeline that runs KAGE and GKAGE on a full human genome with 15x sequencing coverage. 
+Additionally, the Snakemake pipeline records the runtimes and asserts that the results of both processes are identical.
 The Snakemake pipeline will automatically download all necessary input files from the web. 
-Then, the full KAGE genotyping pipeline, consisting of both \textit{kmer\_mapper} and \textit{kage}, is performed both with and without GPU acceleration enabled.
+Then, the full KAGE genotyping pipeline, consisting of \textit{kmer\_mapper} and \textit{kage}, is performed with and without GPU acceleration enabled.
 Additionally, the pipeline runs Gerbil with GPU acceleration enabled for \textit{k}mer counting.
 All runtimes and results are cached and a HTML table is produced with the final runtimes.
 This Snakemake pipeline is available online at \url{https://github.com/kage-genotyper/GKAGE-benchmarking}.
 
 \subsubsection{Systems} \label{methods:benchmarking_setup:systems}
-We benchmarked GKAGE against KAGE on two distinct systems.
+We benchmarked GKAGE against KAGE on two different systems.
 \textbf{System 1}: a high-end compute server with a 64-core AMD EPYC 7742 CPU and two Nvidia Tesla V100 GPUs.
 \textbf{System 2}: a consumer grade desktop with a 6-core Intel Core i5-11400F CPU and a Nvidia GTX 1660 SUPER GPU.
 
@@ -35,8 +36,7 @@ We benchmarked GKAGE against KAGE on two distinct systems.
 \label{methods:benchmarking_setup:systems:tables:systems}
 \end{table}
 
-%Benchmarking on these two systems allowed us to benchmark GKAGE and compare its performance against KAGE and Gerbil on both a very performant as well as a less performant system to examine the effects of GPU acceleration in both instances.
 Benchmarking on these two systems allowed us to benchmark GKAGE and compare its performance against KAGE and Gerbil on both a very as well as a less performant system to examine the effects of GPU acceleration in both instances.
 A caveat with the high-end server system (system 1) is that it is a high-end compute server available to both staff and students at the Biomedical Informatics research group at the University of Oslo.
-This meant that others were frequently running jobs on the server, occupying both CPU and GPU processing cores and memory.
+Therefore, others frequently ran jobs on the server, occupying CPU and GPU processing cores and memory.
 To the best of our ability, we conducted our benchmarkings during periods of lower activity.

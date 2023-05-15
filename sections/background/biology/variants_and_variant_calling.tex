@@ -2,19 +2,19 @@
 When examining the genome of several individuals within the same species, one will find locations along the genome where the nucleotides differ for the different individuals.
 These distinct nucleotide manifestations are commonly referred to as \textit{variants}.
 The term \textit{variant calling} refers to the process of determining which variants are present in an individual's genome.
-In practice, the term variant is often used to refer to a segment of an individual's genome that differs from a reference genome sequence.
-Thus, variant calling, in practice, is often referred to the process of determining where and how an individual's genomic sequence differs from a reference genome sequence.
+In practice, however, the term variant often refers to a segment of an individual's genome that differs from a reference genome sequence.
+Thus, variant calling is often, in practice, referred to as the process of determining where and how an individual's genomic sequence differs from a reference genome sequence.
 The traditional way of performing variant calling is to use an alignment-based method, which consists of the following three steps:
 1) sequence the genome of interest to get DNA reads (described in section \ref{background:biology:high_throughput_dna_sequencing}), 
 2) align the reads to the reference genome by finding where along the reference genome sequence each read fits best, typically by using a comparison heuristic to determining which location the read originates from, and 
 3) examine the alignments and note where and how the reference and the individual's sequences differ to determine the variants present in the individual's genome \cite{variant_calling}.
 A popular and well-established alignment-based method for variant calling is to use the GATK \cite{gatk} toolkit.% - a collection of command-line tools for analyzing genomic sequence data.
 
-Variants found in genomes of individuals of the same species can manifest in several different forms.
+Variants found in the genomes of individuals of the same species can manifest in several different forms.
 Three common types of variants are:
 \begin{compactitem}
   \item A \textit{single nucleotide polymorphism} (SNP) is a variant in which only a single nucleotide differs in the sequenced genome when compared to a reference genome at a location of interest.
-  \item An \textit{indel} refers to one of two types of variants: \textit{insertion} - a sequence of nucleotides, not present in the reference genome, has been introduced in the sequenced genome, and \textit{deletion} - a sequence of nucleotides, present in the reference genome, are missing in the sequenced genome.
+  \item An \textit{indel} refers to one of two types of variants: \textit{insertion} - a sequence of nucleotides, not present in the reference genome, that has been introduced in the sequenced genome, and \textit{deletion} - a sequence of nucleotides, present in the reference genome, are missing in the sequenced genome.
   \item A \textit{structural variant} is a larger-scale genomic variation referring to insertion, deletion or inversion events affecting more than 50 bases \cite{structural_variant_size}.
 \end{compactitem}
 
@@ -98,7 +98,7 @@ Three common types of variants are:
 \end{center}
 \end{figure}
 
-The software tool KAGE, which is described in section \ref{background:kage}, focuses particularly on genotyping SNPs and indels.
+The software tool KAGE, described in section \ref{background:kage}, focuses particularly on genotyping SNPs and indels.
 
 A common way to represent genome sequence variations is to encode them according to the \textit{Variant Call Format} (VCF) file format.
 The VCF file format encodes a single variant per line, and each line contains a number of columns where each column encodes a particular piece of information about the associated variant, such as \cite{vcf}:

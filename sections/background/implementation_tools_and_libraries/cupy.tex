@@ -1,9 +1,9 @@
 \subsubsection{CuPy} \label{background:implementation_tools_and_libraries:cupy}
 CuPy is GPU accelerated NumPy \cite{numpy} and SciPy \cite{scipy} compatible array library that, much like NumPy \cite{numpy}, provides a multi-dimensional array object as well as mathematical functions and routines to operate on these arrays.
 In fact, CuPy's interface is designed to closely follow that of NumPy, meaning that most array-based code written in NumPy can seamlessly be replaced with CuPy to GPU accelerate the array operations.
-CuPy, unlike NumPy, will store all array data in GPU memory and all array routines will be performed by the GPU.
+CuPy, unlike NumPy, will store array data in GPU memory, and all array routine and function calls made using CuPy arrays will be run on the GPU.
 
 CuPy also offers some access to CUDA functionality such as CUDA streams used to copy memory to and from the GPU's memory while simultaneously processing data, and device synchronization to halt the CPU until a process started on the GPU has completed.
-Additionally CuPy provides support for creating custom kernels that can operate on GPU allocated arrays, directly in Python.
+Additionally CuPy supports creating custom kernels that can operate on GPU allocated arrays, directly in Python.
 These kernels are then JIT (just-in-time) compiled when the program first encounters the kernel.
-Thus, CuPy provides a useful module where GPU accelerated implementations can be made directly with a NumPy-like array interface, while also supporting more granular custom kernels that can operate on the data in these arrays, all directly inside Python.
+Thus, CuPy provides a useful module where GPU accelerated implementations can be made directly with a NumPy-like array interface, also supporting more granular custom kernels that can operate on the data in these arrays directly inside Python.

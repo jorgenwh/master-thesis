@@ -2,31 +2,42 @@
 While several \textit{k}mer counting solutions have been developed in previous work, with at least one having support for GPU acceleration \cite{kmer_counting_tools}, most such tools are designed to solve the \textit{full} \textit{k}mer counting problem, which we described in section \ref{background:kmers_and_kmer_counting}.
 Additionally in section \ref{background:kmers_and_kmer_counting}, we described how KAGE's \textit{k}mer counting step is a less compute and memory demanding problem which we defined as \textit{partial} \textit{k}mer counting.
 As a reminder: we defined \textit{partial} \textit{k}mer counting as the process of only counting the observed occurrences of a predefined set of \textit{k}mers in a sample.
-Repurposing \textit{k}mer counting tools that are designed to solve the \textit{full} \textit{k}mer counting problem is futile if the goal is speedup.
+Repurposing \textit{k}mer counting tools designed to solve the \textit{full} \textit{k}mer counting problem is futile if the goal is speedup.
 Thus, we opted to implement our own GPU accelerated \textit{k}mer counting tool where its design is considered in the context of the \textit{partial} \textit{k}mer counting problem.
 
-Although we had success in GPU accelerating a hash table in npstructures using CuPy, we decided to also attempt to implement a hash table directly in C++ using CUDA, Nvidia's programming platform.
-This would allow for a more granular implementation as we would no longer be constrained to a solution originally designed for NumPy array functions.
+Although we succeeded in GPU accelerating a hash table in npstructures using CuPy, we decided also to attempt to implement a hash table directly in C++ using CUDA, Nvidia's programming platform.
+Moving to C++ and CUDA would allow for a more granular implementation as we would no longer be constrained to a solution originally designed for NumPy array functions.
 
 \subsubsection{GPU Hash Table Implemented using CUDA}
-The hash table's interface needed to support three main operations: 1) \textbf{insert} - insert each \textit{k}mer found in an input array of \textit{k}mers (although only once upon initialization), 2) \textbf{count} - increment the value associated with each \textit{k}mer found in an input array of \textit{k}mers, and 3) \textbf{query} - fetch the values associated with each \textit{k}mer found in an input array of \textit{k}mers.
+The hash table's interface needed to support three main operations: 
+%1) \textbf{insert} - insert each \textit{k}mer found in an input array of \textit{k}mers (although only once upon initialization), 
+%2) \textbf{count} - increment the value associated with each \textit{k}mer found in an input array of \textit{k}mers, and 
+%3) \textbf{query} - fetch the values associated with each \textit{k}mer found in an input array of \textit{k}mers.
+\begin{compactenum}
+  \item
+    \textbf{\textit{insert}} - insert each \textit{k}mer found in an input array of \textit{k}mers (although only once upon initialization),
+  \item
+    \textbf{\textit{count}} - increment the value associated with each \textit{k}mer found in an input array of \textit{k}mers, and
+  \item
+    \textbf{\textit{query}} - fetch the values associated with each \textit{k}mer found in an input array of \textit{k}mers.
+\end{compactenum}
 
 Common for all three operations mentioned above is that they need to adhere to an addressing and probing scheme.
 Since our hash table resides on the GPU, certain common paradigms such as open hashing - where each address in the table contains a pointer to a linked-list or tree-type data structure for placing values - are immediately disqualified.
 This is because GPUs, which architectures are designed for massive data parallelism, perform poorly when needing to dereference pointers and make many strided memory accesses.
-Thus, we went with a simple scheme using open addressing and linear probing. 
+Thus, we used a simple scheme using open addressing and linear probing. 
 
-Two arrays of equal size make up the data structure where one array stores the table's keys (\textit{k}mers) and the other array stores its values (counts).
+Two arrays of equal size comprise the data structure where one array stores the table's keys (\textit{k}mers) and the other array stores its values (counts).
 The keys array is an array of 64-bit unsigned integers.
-The choice of using 64 bits for the keys, as opposed to e.g. 32, was to accommodate for larger \textit{k}mer values since 32 bits would only allow for \textit{k} up to $(32/2)-1=15$.
+The choice of using 64 bits for the keys, as opposed to e.g. 32, was to accommodate larger \textit{k}mer values since 32 bits would only allow for \textit{k} up to $(32/2)-1=15$.
 Using 64-bit keys increases our maximum \textit{k} size to 31, which is the default value for KAGE.
 This choice also reveals a limitation of our hash table, which is that it can not support \textit{k}mers where $k>31$ in its current form.
-The reason why 64 bits does not allow for \textit{k} up to 32, considering a 2-bit encoded 64-mer can be stored in a single 64-bit integer, is that the max 64-bit integer value is used as an indicator that a slot is empty in the hash table.
+The reason why 64 bits does not allow for \textit{k} up to 32, considering a 2-bit encoded 64-mer can be stored in a single 64-bit integer, is because the max 64-bit integer value is used as an indicator that a slot is empty in the hash table.
 The values array is an array of 32-bit unsigned integers.
 While 16-bit unsigned integers would suffice for our purpose of counting \textit{k}mers, the choice of using 32-bit unsigned integers instead was made because the CUDA framework does not have a readily usable implementation of the atomicAdd function for 16-bit integers.
 
 The probing scheme we used - linear probing - describes how we solve collisions in the hash table. 
-This scheme is shared for all three operations supported by the hash table: insert, count and query.
+This scheme is shared for all three operations supported by the hash table: insert, count, and query.
 A murmur hash \cite{murmur} is used to hash and compute the first search index for a \textit{k}mer.
 The initial probe index $p_0$ and every consecutive probe index $p_i$ for a \textit{k}mer $k$ can be found using:
 \begin{equation}
@@ -59,9 +70,8 @@ end
 }
 \end{figure}
 
-Using a a murmur hash function when computing the initial probe position in the hash table results in more uniform placements as opposed to if we only use the \textit{k}mer's integer value instead.
-This in turn results in less clustering when inserting \textit{k}mers, meaning we need to deal with fewer collisions.
-%\textbf{(include speedup from using murmur hash compared to no hash?)}
+When computing the initial probe position in the hash table, using a murmur hash function results in more uniform placements across the table as opposed to just using the \textit{k}mers integer value instead.
+This, in turn, results in less clustering when inserting \textit{k}mers, meaning we need to deal with fewer collisions.
 
 \definecolor{misscolor}{RGB}{255,215,215}
 \definecolor{hitcolor}{RGB}{215,255,215}
@@ -213,7 +223,7 @@ This in turn results in less clustering when inserting \textit{k}mers, meaning w
 In order to integrate the hash table implemented in C++ using CUDA to Python so that it would be compatible with KAGE, we used pybind11 (introduced in section \ref{background:implementation_tools_and_libraries:pybind11}) to create Python bindings for the C++ class and then wrap the implementation in a Python class.
 pybind11 provides easy-to-use macros for this, allowing us to add bindings by simply creating a bindings C++ file and then compiling a module where our C++ functionality is contained.
 
-\begin{figure}[H]
+\begin{figure}[ht!]
 \begin{center}
 bindings.cpp
 \end{center}
@@ -257,8 +267,10 @@ The produced module is finally wrapped around a Python class that takes care of 
 
 The final implementation of this CUDA accelerated hash table can be found and installed at \url{https://github.com/kage-genotyper/cucounter}.
 
+\newpage
+~\newpage
 \subsubsection{Assessment} \label{methods:gpu_accelerating_kmer_counting:assessment}
-In order to assess this new CUDA hash table implementation, we ran the benchmark described in section \ref{methods:preliminary_testing:assessment}, but using the CUDA hash table with Python bindings for \textit{k}mer counting instead of npstructures' counter object.
+To assess our new CUDA hash table implementation, we ran the benchmark described in section \ref{methods:preliminary_testing:assessment}, but using the CUDA hash table with Python bindings for \textit{k}mer counting instead of npstructures' counter object.
 The benchmark yielded the following results:
 \begin{table}[H]
 \begin{center}
@@ -277,7 +289,8 @@ The benchmark yielded the following results:
 \end{table}
 
 \begin{figure}[H]
-\centering
+\begin{center}
+\scalebox{.95}{
 \begin{tikzpicture}[font=\small]
   \pgfplotsset{
     compat=newest,
@@ -319,10 +332,12 @@ The benchmark yielded the following results:
 \end{axis}
 \end{tikzpicture}
 %\end{center}
+}
+\end{center}
 \caption{
   Elapsed time counting the occurrences of 50 million unique \textit{k}mers in a set of 20 million reads, each of 150 bases.
 }
 \label{methods:gpu_accelerating_kmer_counting:figures:benchmark}
 \end{figure}
 
-As can be seen in table \ref{methods:gpu_accelerating_kmer_counting:tables:benchmark}, the CUDA hash table implemented in C++ with Python bindings provided significantly better counting efficiency compared to the CuPy-based npstructures counter, with nearly 80X speedup compared to the original NumPy-based counter and more than 8X speedup compared to the CuPy-based counter.
+As shown in table \ref{methods:gpu_accelerating_kmer_counting:tables:benchmark}, the CUDA hash table implemented in C++ with Python bindings provided significantly better counting efficiency compared to the CuPy-based npstructures counter, with nearly 80X speedup compared to the original NumPy-based counter and more than 8X speedup compared to the CuPy-based counter.

@@ -5,6 +5,6 @@ More specifically, this thesis will investigate whether alignment-free genotypin
 To investigate this, we will attempt to integrate GPU accelerated functionality into a base alignment-free genotyper, KAGE, the fastest known genotyping tool that also yields competitive results.
 KAGE, is implemented in Python and relies heavily on the array-library NumPy for performance.
 Thus, there are several possible avenues for integrating GPU support. 
-Low level implementations in C++ using the CUDA framework provides great granularity and control, but require deep knowledge and understanding of hardware, the C++ programming language and CUDA.
+Low level implementations in C++ using the CUDA framework provides great granularity and control, but require deep knowledge and understanding of hardware, the C++ programming language, and CUDA.
 Alternative methods may be to use existing Python packages that provide out-of-the-box GPU accelerated functionality.
 This leads us to the second goal of this thesis - to investigate and experiment with different ways of GPU accelerating existing Python code that relies on array-programming libraries such as NumPy, and to reveal advantages and drawbacks of each method.

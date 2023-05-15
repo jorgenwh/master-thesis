@@ -1,5 +1,8 @@
-In this section we describe how GPU acceleration support was provided for the KAGE genotyping pipeline, resulting in GKAGE - a version of KAGE where parts of the pipeline are GPU accelerated.
-We will give an account of how we determined which parts to focus on GPU accelerating, as well as describe a testing strategy that allowed us to GPU accelerate existing NumPy code directly in Python to see whether significant runtime speedup was plausible.
-Then, we will describe how we implemented the GPU accelerated solutions introduced into KAGE, resulting in GKAGE.
-For each GPU acceleration method, we include an assessment showing the effects of GPU acceleration and how they compare to previous CPU runtimes.
-These preliminary benchmarking results for the GPU acceleration methods are included because they were used to guide development when GPU accelerating KAGE.
+In this section we cover the development process of GKAGE - a version of KAGE where parts of the pipeline are GPU accelerated for improved performance. 
+
+Firstly, we give an account of how we determined which parts to focus on GPU accelerating. 
+Secondly, we describe a testing strategy that allowed us to GPU accelerate existing NumPy code directly in Python to effectively assess whether significant runtime improvements was plausible.
+Then, we cover how we developed GPU acceleration for three different components of KAGE by testing several different GPU acceleration methods, and for each component include an assessment showing the effects of GPU acceleration compared to the previous CPU runtimes.
+These preliminary benchmarking results for the GPU acceleration methods are included because they were used to guide development.
+Finally, we describe how we selected which GPU acceleration methods to integrate into KAGE, and how we then set up a Snakemake \cite{snakemake} pipeline to benchmark GKAGE's performance against KAGE.
+

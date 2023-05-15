@@ -3,10 +3,9 @@ While GKAGE demonstrates that alignment-free genotyping can be sped up through G
 We will here identify some possible avenues where the current implementation can be altered or improved in order to better use the hardware and technology available to gain more speedup.
 
 \subsubsection{Better GPU Hash Table}
-While the GPU hash table used in GKAGE for \textit{k}mer counting is plenty effective for our purpose of demonstrating the effectiveness of GPU acceleration in alignment-free genotyping, alternative hash tables exist that, with correct integration, should perform better.
+While the GPU hash table used in GKAGE for \textit{k}mer counting is plenty adequate to demonstrate the effectiveness of GPU acceleration in alignment-free genotyping, alternative hash tables exist that, with correct integration, should perform better.
 Since optimizing GPU hash tables can be considered a discipline in and of itself, and beyond the scope of this thesis, our GPU hash table implements a naive solution for collision handling and probing.
-An interesting avenue would be to integrate a version of a bucketed static cuckoo hash table from Awad et al., (2023) \cite{bght} to evaluate how a state-of-the-art GPU accelerated hash table would perform compared to our own implementation.
-%Although faster, we doubt the effect would be dramatic in our case.
+An interesting avenue would be to integrate a version of a bucketed static cuckoo hash table from Awad et al., (2023) \cite{bght} to evaluate how a state-of-the-art static GPU accelerated hash table would perform compared to our implementation.
 
 \subsubsection{Parallelization of \textit{k}mer Chunk Preparation}
 Recall that in the \textit{k}mer counting step in KAGE, the input FASTA file is read in chunks.
@@ -119,3 +118,7 @@ By utilizing CUDA streams we can parallelize the copying of data to the GPU and 
 \end{center}
 \end{figure}
 
+\subsubsection{Integrated Graphical Processing Units}
+While only discrete graphical units (dGPUs) were used in this project, interesting further work may lie in exploring how systems with integrated graphical processing units (iGPUs) can be used for genotyping.
+Particularly as genotyping may become increasingly common on consumer grade hardware, with fewer processing cores and less memory than larger and more powerful systems, iGPUs may contend with the more powerful dGPUs.
+The advantage of using iGPUs are that they share the physical memory region with the CPU, meaning that the overhead of copying memory back and forth between the RAM and GPU is alleviated.

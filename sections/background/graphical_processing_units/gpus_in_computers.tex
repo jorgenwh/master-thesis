@@ -57,7 +57,7 @@ Memory buffers with input data must be copied to the dGPU's RAM before processin
 \end{center}
 \end{figure}
 
-For the work presented in this thesis, only dGPUs were utilized. 
+For the work presented in this thesis, only dGPUs were utilized, as we did not have access to any iGPU systems.
 Therefore, the term GPU will from here on out be referring to a dGPU and not an iGPU.
 This means that all GPU implementations discussed in this thesis will include copying memory back and forth from the \textit{host} (CPU) RAM and the \textit{device} (GPU) RAM.
 It is also possible for a single computer to have several connected GPUs, allowing for further parallelization of both memory transfers and compute, however this was not utilized in this thesis' work.

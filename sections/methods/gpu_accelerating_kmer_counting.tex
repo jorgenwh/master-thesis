@@ -10,17 +10,14 @@ Moving to C++ and CUDA would allow for a more granular implementation as we woul
 
 \subsubsection{GPU Hash Table Implemented using CUDA}
 The hash table's interface needed to support three main operations: 
-%1) \textbf{insert} - insert each \textit{k}mer found in an input array of \textit{k}mers (although only once upon initialization), 
-%2) \textbf{count} - increment the value associated with each \textit{k}mer found in an input array of \textit{k}mers, and 
-%3) \textbf{query} - fetch the values associated with each \textit{k}mer found in an input array of \textit{k}mers.
-\begin{compactenum}
+\begin{compactitem}
   \item
     \textbf{\textit{insert}} - insert each \textit{k}mer found in an input array of \textit{k}mers (although only once upon initialization),
   \item
     \textbf{\textit{count}} - increment the value associated with each \textit{k}mer found in an input array of \textit{k}mers, and
   \item
     \textbf{\textit{query}} - fetch the values associated with each \textit{k}mer found in an input array of \textit{k}mers.
-\end{compactenum}
+\end{compactitem}
 
 Common for all three operations mentioned above is that they need to adhere to an addressing and probing scheme.
 Since our hash table resides on the GPU, certain common paradigms such as open hashing - where each address in the table contains a pointer to a linked-list or tree-type data structure for placing values - are immediately disqualified.
